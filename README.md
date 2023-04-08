@@ -45,7 +45,7 @@
   
  * **Start a binary in /testing/binaries/p2im after you run the setup.py and followed the installation guide:**    
    ``python3 rAIversing.py new -p p2im/Heat_Press``  (they are all ``ARM:LE:32:Cortex``)  
- 
+
  
  * **Continue a session started with the previous command:**  
    ``python3 rAIversing.py new -p p2im/Heat_Press``

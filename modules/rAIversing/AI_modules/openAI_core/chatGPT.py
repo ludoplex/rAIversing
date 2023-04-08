@@ -78,8 +78,6 @@ def api_key(path_to_api_key=os.path.join(AI_MODULES_ROOT, "openAI_core", "api_ke
     return chat
 
 
-
-
 class ChatGPTModule(AiModuleInterface):
     def __init__(self):
         self.chat = None
@@ -88,8 +86,7 @@ class ChatGPTModule(AiModuleInterface):
         self.logger = logging.getLogger("ChatGPTModule")
         self.console = Console()
 
-
-    def init_api(self,path_to_api_key=None):
+    def init_api(self, path_to_api_key=None):
         with open(path_to_api_key) as f:
             self.api_key = f.read()
         self.chat = revChatGPT.V3.Chatbot(api_key=self.api_key)
@@ -123,7 +120,6 @@ class ChatGPTModule(AiModuleInterface):
         if answer is None or answer == "":
             raise NoResponseException("No Answer from Chat (empty string)")
 
-
         return answer.replace("<|im_sep|>", "")
 
     def remove_plaintext_from_response(self, response):  # type: (str) -> str
@@ -148,35 +144,31 @@ class ChatGPTModule(AiModuleInterface):
         out = code.replace("\n\\n", "\n")
         return out.replace('\\\\', '\\')
 
-
-
     def process_response(self, response_string_orig):
         try:
             response_dict = json.loads(response_string_orig, strict=False)
-            return response_dict,response_string_orig
+            return response_dict, response_string_orig
         except:
             pass
-
 
         response_string = self.remove_plaintext_from_response(response_string_orig)
         try:
             response_dict = json.loads(response_string, strict=False)
-            return response_dict,response_string_orig
+            return response_dict, response_string_orig
         except:
             pass
-
 
         response_string = self.format_string_correctly(response_string)
         try:
             response_dict = json.loads(response_string, strict=False)
-            return response_dict,response_string_orig
+            return response_dict, response_string_orig
         except:
             pass
 
         response_string = self.remove_trailing_commas(response_string)
         try:
             response_dict = json.loads(response_string, strict=False)
-            return response_dict,response_string_orig
+            return response_dict, response_string_orig
         except:
             pass
 
@@ -218,9 +210,8 @@ class ChatGPTModule(AiModuleInterface):
                     try:
                         response_dict = clear_extra_data(response_string, e)
                         break
-                    except Exception as e:
+                    except Exception as e2:
                         pass
-
 
                 raise e
 
@@ -231,12 +222,12 @@ class ChatGPTModule(AiModuleInterface):
         full_prompt = assemble_prompt_v2(input_code)
         renaming_dict = {}
         response_string = ""
-        #print(full_prompt)
+        # print(full_prompt)
 
         for i in range(0, retries):
             try:
                 response_string = self.prompt(full_prompt)
-                #print(response_string)
+                # print(response_string)
                 with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                     f.write(response_string)
                 with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "r") as f:
@@ -264,10 +255,10 @@ class ChatGPTModule(AiModuleInterface):
                     if i > 1:
                         continue
 
-                    if len(full_prompt)//2 > len(response_string) > len(full_prompt)//4:
+                    if len(full_prompt) // 2 > len(response_string) > len(full_prompt) // 4:
                         self.logger.warning(f"Response was: {response_string}")
                         self.logger.warning(f"Prompt was: {full_prompt}")
-                    if len(response_string.split("\n"))<3:
+                    if len(response_string.split("\n")) < 3:
                         self.logger.warning(f"Function was: {extract_function_name(input_code)}")
                     continue
             except APIConnectionError as e:
@@ -275,7 +266,7 @@ class ChatGPTModule(AiModuleInterface):
                     raise MaxTriesExceeded("Max tries exceeded")
                 if "Too Many Requests" in str(e):
                     self.logger.warning(f"Got too many requests from model, will sleep now retrying {i + 1}/{retries}")
-                    time.sleep(30)
+                    time.sleep(120)
                     continue
             except Exception as e:
                 self.logger.warning(f"Type of error: {type(e)}")
@@ -300,7 +291,6 @@ class ChatGPTModule(AiModuleInterface):
         response_dict, response_string = self.process_response(response)
         return response_dict, response_string
 
-
-    def calc_used_tokens(self,function):
+    def calc_used_tokens(self, function):
         enc = tiktoken.encoding_for_model("gpt-3.5-turbo-0301")
-        return int(1.65*len(enc.encode(function)))
+        return int(1.65 * len(enc.encode(function)))

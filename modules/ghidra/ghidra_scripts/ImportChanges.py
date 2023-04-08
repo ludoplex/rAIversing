@@ -69,6 +69,10 @@ def main(json_file_path=None):
             if function_data["skipped"] or "imported" in function_data.keys() and function_data["imported"]:
                 continue
 
+            # We can skip functions that are not improved in the json (This is not really needed but might be useful)
+            if not function_data["improved"]:
+                continue
+
             func.setName(new_name, IMPORTED)
 
             # print("Symbols:")

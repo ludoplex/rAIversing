@@ -12,8 +12,9 @@ class MaxTriesExceeded(Exception):
 class NoResponseException(Exception):
     """Raised when no response is received"""
 
+
 def ptr_escape(string):
-    rand_str=get_random_string(5)
+    rand_str = get_random_string(5)
     return string.replace("PTR_FUN_", rand_str)
 
 
@@ -26,6 +27,7 @@ def check_and_fix_bin_path(binary_path):
         else:
             raise FileNotFoundError(f"Binary {binary_path} not found in {BINARIES_ROOT}")
 
+
 def check_and_fix_project_path(project_path):
     if os.path.isdir(os.path.abspath(project_path)):
         return os.path.abspath(project_path)
@@ -35,9 +37,11 @@ def check_and_fix_project_path(project_path):
         else:
             raise NotADirectoryError(f"Project {project_path} not found in {PROJECTS_ROOT}")
 
+
 def check_and_create_project_path(project_path):
     if not os.path.isdir(project_path):
         os.mkdir(project_path)
+
 
 def extract_function_name(code):
     if "WARNING: Removing unreachable block (ram," in code:
@@ -64,10 +68,10 @@ def check_and_fix_double_function_renaming(code, renaming_dict, name):
 
 
 def is_already_exported(project_location, binary_name):
-    if os.path.isfile(os.path.join(project_location, f"{binary_name.replace('.','_')}.json")):
+    if os.path.isfile(os.path.join(project_location, f"{binary_name.replace('.', '_')}.json")):
         return True
     else:
-        print(f"""File {os.path.join(project_location, f'{binary_name.replace(".","_")}.json')} not found""")
+        print(f"""File {os.path.join(project_location, f'{binary_name.replace(".", "_")}.json')} not found""")
         return False
 
 
@@ -146,4 +150,3 @@ def check_valid_code(code):
         return False
     else:
         return True
-
