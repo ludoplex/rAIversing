@@ -172,7 +172,7 @@ class rAIverseEngine:
                     continue
 
                 if "FUN_" in new and not overwrite:
-                    self.logger.warning(f"Skipping renaming of {old} to {new}")
+                    #self.logger.warning(f"Skipping renaming of {old} to {new}")
                     continue
                 if not "FUN_" in old and not overwrite:       #Currently just renaming functions but i already have the "hooks" for pointers
                     continue

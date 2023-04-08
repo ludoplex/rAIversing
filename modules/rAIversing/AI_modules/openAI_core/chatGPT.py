@@ -1,6 +1,7 @@
 import json
 import logging
 import time
+import requests
 
 import revChatGPT.V1
 import revChatGPT.V3
@@ -11,7 +12,7 @@ from rich.console import Console
 from rAIversing.AI_modules import AiModuleInterface
 from rAIversing.pathing import *
 from rAIversing.utils import extract_function_name, NoResponseException, clear_extra_data, split_response, \
-    check_valid_code, MaxTriesExceeded, format_newlines_in_code
+    check_valid_code, MaxTriesExceeded, InvalidResponseException, format_newlines_in_code
 
 PROMPT_TEXT = \
     """
@@ -277,6 +278,15 @@ class ChatGPTModule(AiModuleInterface):
                     self.logger.warning(f"Got too many requests from model, will sleep now retrying {i + 1}/{retries}")
                     time.sleep(120)
                     continue
+            except InvalidResponseException as e:
+                if i >= retries - 1:
+                    raise MaxTriesExceeded("Max tries exceeded")
+                continue
+            except requests.exceptions.ChunkedEncodingError as e:
+                if i >= retries - 1:
+                    raise MaxTriesExceeded("Max tries exceeded")
+                continue
+
             except Exception as e:
                 self.logger.warning(f"Type of error: {type(e)}")
                 if "The server is overloaded or not ready yet." in str(e):

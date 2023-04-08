@@ -12,6 +12,8 @@ class MaxTriesExceeded(Exception):
 class NoResponseException(Exception):
     """Raised when no response is received"""
 
+class InvalidResponseException(Exception):
+    """Raised when the response is invalid"""
 
 def ptr_escape(string):
     rand_str = get_random_string(5)
@@ -130,8 +132,7 @@ def split_response(response_dict):
             elif "new" in key:
                 new_key = key
             else:
-                print(renaming_dict)
-                raise Exception("Invalid response format")
+                raise InvalidResponseException("Invalid response format")
         if type(response_dict[old_key]) == list and type(response_dict[new_key]) == list:
             for old, new in zip(response_dict[old_key], response_dict[new_key]):
                 renaming_dict[old] = new
