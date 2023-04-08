@@ -173,10 +173,11 @@ class ChatGPTModule(AiModuleInterface):
         except:
             pass
 
-        response_string = format_newlines_in_code(response_string)
-        #For cases where the code is not escaped and contains double quotes
 
         try:
+            response_string = format_newlines_in_code(response_string)
+            #For cases where the code is not escaped and contains double quotes
+
             response_dict = json.loads(response_string, strict=False)
             return response_dict, response_string_orig
         except:
