@@ -150,3 +150,15 @@ def check_valid_code(code):
         return False
     else:
         return True
+
+
+def format_newlines_in_code(code):
+    front = code.split('improved_code": "')[0]
+    main = code.split('improved_code": "')[1].split('}",')[0]
+    back = code.split('improved_code": "')[1].split('}",')[1]
+    main = main.replace('\\', '\\\\')
+    main = main.replace('\n', '\\n')
+    main = main.replace('"', '\\"')
+    main = main.replace('\'', '\\"')
+
+    return front + 'improved_code": "' + main + '}\",' + back

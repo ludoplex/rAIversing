@@ -11,7 +11,7 @@ from rich.console import Console
 from rAIversing.AI_modules import AiModuleInterface
 from rAIversing.pathing import *
 from rAIversing.utils import extract_function_name, NoResponseException, clear_extra_data, split_response, \
-    check_valid_code, MaxTriesExceeded
+    check_valid_code, MaxTriesExceeded, format_newlines_in_code
 
 PROMPT_TEXT = \
     """
@@ -166,6 +166,15 @@ class ChatGPTModule(AiModuleInterface):
             pass
 
         response_string = self.remove_trailing_commas(response_string)
+        try:
+            response_dict = json.loads(response_string, strict=False)
+            return response_dict, response_string_orig
+        except:
+            pass
+
+        response_string = format_newlines_in_code(response_string)
+        #For cases where the code is not escaped and contains double quotes
+
         try:
             response_dict = json.loads(response_string, strict=False)
             return response_dict, response_string_orig
