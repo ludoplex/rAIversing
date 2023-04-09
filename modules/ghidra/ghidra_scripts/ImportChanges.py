@@ -132,7 +132,10 @@ def main(json_file_path=None):
                     # If the name is already taken, we add an underscore to the end (again)
                     except ghidra.util.exception.DuplicateNameException:
                         new_name = new_name + "_"
-                        var.setName(new_name, IMPORTED)
+                        try:
+                            var.setName(new_name, IMPORTED)
+                        except Exception as e:
+                            continue
 
                     #print(str(type(var)) + " Renaming " + var_name + " to " + new_name + " in function " + func_name)
                     print("Var Renaming " + var_name + " to " + new_name + " in function " + func_name)
