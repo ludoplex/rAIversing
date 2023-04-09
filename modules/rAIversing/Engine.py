@@ -12,12 +12,12 @@ from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.pathing import PROJECTS_ROOT
 from rAIversing.utils import check_and_fix_bin_path, extract_function_name, \
     generate_function_name, MaxTriesExceeded, check_and_fix_double_function_renaming, \
-    check_do_nothing, get_random_string, ptr_escape, prompt_parallel, prompt_dispatcher
+    check_do_nothing, get_random_string, ptr_escape, prompt_parallel, prompt_dispatcher, handle_spawn_worker
 
 
 class rAIverseEngine:
     def __init__(self, ai_module, json_path="", binary_path="", max_tokens=3000):
-        self.max_parallel_functions = os.cpu_count()//2
+        self.max_parallel_functions = os.cpu_count() // 2
         self.max_tokens = max_tokens
         self.ai_module = ai_module  # type: chatGPT
         self.functions = {}
@@ -251,98 +251,111 @@ class rAIverseEngine:
                 count += 1
         return count
 
-
-
     def run_parallel_rev(self):
         function_layer = 0
         overall_processed_functions = self.count_processed()
         skipped_remaining_functions = False
+        self.skip_too_big()
+
         while not self.check_all_improved():
             self.console.log(f"[bold yellow]Gathering functions for layer [/bold yellow]{function_layer}")
             self.handle_unlocking()
             lfl = self.get_lowest_function_layer()
             if len(lfl) == 0:
                 self.logger.warning(f"No functions found in layer {function_layer}")
-
                 self.console.print(f"These functions remain {self.get_missing_functions()}")
-                if skipped_remaining_functions:
-                    self.console.log(f"Breaking as no options are left! (Maybe recursion?)")
-                    break
-                self.console.print(f"Skipping too big functions....")
-                for name in self.get_missing_functions():
-                    if self.ai_module.calc_used_tokens(
-                            self.ai_module.assemble_prompt(self.functions[name]["code"])) > self.max_tokens:
-                        self.skip_function(name)
+                break
 
-                skipped_remaining_functions = True
-                continue
             self.console.print(
                 f"Starting layer {function_layer} with {len(lfl)} of {len(self.functions)} functions. Overall processed functions: {overall_processed_functions}/{len(self.functions)} Used tokens: {self.used_tokens}")
+
             function_layer += 1
             processed_functions = 0
+            started = 0
+            prompting_args = []
+            processes = []
 
             m = mp.Manager()
             result_queue = m.Queue()
 
+            self.build_prompting_args(lfl, prompting_args, result_queue)
+            total = len(prompting_args)
 
+            for i in range(0, min(total, self.max_parallel_functions)):
+                p = mp.Process(target=prompt_parallel, args=prompting_args.pop(0))
+                p.start()
+                processes.append(p)
+                started += 1
+            while processed_functions < total:
+                name, result = result_queue.get()
+                processed_functions += 1
+                if result == "SKIP":
+                    self.skip_function(name)
+                    continue
+                else:
+                    self.handle_result_processing(name, result)
+                current_cost = self.ai_module.calc_used_tokens(
+                    self.ai_module.assemble_prompt(self.functions[name]["code"]))
+                self.used_tokens += current_cost
+                self.console.print(
+                    f"{processed_functions}/{total} | Improved function [blue]{name}[/blue] for {current_cost} Tokens | Used tokens: {self.used_tokens}")
 
+                if processed_functions % 5 == 0:
+                    self.save_functions()
+                    self.console.log(f"Saved functions after {processed_functions}/{len(lfl)} functions")
 
+                handle_spawn_worker(processes, prompting_args, started)
 
-            while len(lfl) > 0:
-
-
-                current_chunk = lfl[:min(self.max_parallel_functions, len(lfl))]
-                del lfl[:min(self.max_parallel_functions, len(lfl))]
-                self.console.print(f"Starting chunk with {len(current_chunk)}/{len(lfl)} functions")
-                prompting_args = []
-                for name in current_chunk:
-
-                    current_cost = self.ai_module.calc_used_tokens(
-                        self.ai_module.assemble_prompt(self.functions[name]["code"]))
-                    if current_cost > self.max_tokens:
-                        self.console.print(f"Function [blue]{name}[/blue] is too big [red]{current_cost}[/red] Skipping")
-                        self.skip_function(name)
-                    else:
-
-                        prompting_args.append((self.ai_module, result_queue,name,str(self.functions[name]["code"]), self.retries))
-
-                results_dict = prompt_dispatcher(prompting_args, len(prompting_args), self, result_queue)
-
-                for name, result in results_dict.items():
-                    processed_functions += 1
-                    if result == "SKIP":
-                        self.skip_function(name)
-                        continue
-                    else:
-                        try:
-                            improved_code = result[0]
-                            renaming_dict = result[1]
-                            to_be_improved_code = self.functions[name]["code"]
-                            improved_code = self.undo_bad_renaming(renaming_dict, improved_code, to_be_improved_code)
-                            improved_code = check_and_fix_double_function_renaming(improved_code, renaming_dict, name)
-                            improved_code, new_name = generate_function_name(improved_code, name)
-                            renaming_dict[name] = new_name
-                            self.functions[name]["improved"] = True
-
-
-                        except Exception as e:
-                            self.logger.warning(f"Error while improving {name} {e}")
-                            exit(0)
-                        self.functions[name]["code"] = improved_code
-                        self.functions[name]["current_name"] = new_name
-                        self.functions[name]["renaming"] = renaming_dict
-                        self.rename_for_all_functions(renaming_dict)
-
-                    if processed_functions % 5 == 0:
-                        self.save_functions()
-                        self.console.log(f"Saved functions after {processed_functions}/{len(lfl)} functions")
-                self.save_functions()
+            for p in processes:
+                p.join()
+                p.close()
+            self.save_functions()
+            self.console.log(f"Saved functions after {processed_functions}/{len(lfl)} functions")
             overall_processed_functions += processed_functions
         self.save_functions()
-        self.console.log(f"Saved functions after {processed_functions}/{len(lfl)} functions")
+
+    def skip_too_big(self):
+        self.console.print(f"Skipping too big functions....")
+        for name in self.get_missing_functions():
+            current_cost = self.ai_module.calc_used_tokens(
+                self.ai_module.assemble_prompt(self.functions[name]["code"]))
+            if current_cost > self.max_tokens:
+                self.console.print(f"Function [blue]{name}[/blue] is too big [red]{current_cost}[/red] Skipping")
+                self.skip_function(name)
+
+    def build_prompting_args(self, lfl, prompting_args, result_queue):
+        for name in lfl:
+
+            current_cost = self.ai_module.calc_used_tokens(
+                self.ai_module.assemble_prompt(self.functions[name]["code"]))
+            if current_cost > self.max_tokens:
+                self.console.print(f"Function [blue]{name}[/blue] is too big [red]{current_cost}[/red] Skipping")
+                self.skip_function(name)
+            else:
+                prompting_args.append(
+                    (self.ai_module, result_queue, name, str(self.functions[name]["code"]), self.retries))
+
+    def handle_result_processing(self, name, result):
+        try:
+            improved_code = result[0]
+            renaming_dict = result[1]
+            to_be_improved_code = self.functions[name]["code"]
+            improved_code = self.undo_bad_renaming(renaming_dict, improved_code, to_be_improved_code)
+            improved_code = check_and_fix_double_function_renaming(improved_code, renaming_dict, name)
+            improved_code, new_name = generate_function_name(improved_code, name)
+            renaming_dict[name] = new_name
+            self.functions[name]["improved"] = True
+
+
+        except Exception as e:
+            self.logger.warning(f"Error while improving {name} {e}")
+            exit(0)
+        self.functions[name]["code"] = improved_code
+        self.functions[name]["current_name"] = new_name
+        self.functions[name]["renaming"] = renaming_dict
+        self.rename_for_all_functions(renaming_dict)
 
     def run_recursive_rev(self):
-
 
         function_layer = 0
         overall_processed_functions = self.count_processed()

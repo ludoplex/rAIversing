@@ -86,6 +86,7 @@ def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=N
         raie.dry_run()
         return
     if parallel > 1:
+        raie.max_parallel_functions = parallel
         raie.run_parallel_rev()
     else:
         raie.run_recursive_rev()
@@ -113,6 +114,7 @@ def run_on_new_binary(binary_path, arch, ai_module=None, custom_headless_binary=
         raie.dry_run()
         return
     if parallel > 1:
+        raie.max_parallel_functions = parallel
         raie.run_parallel_rev()
     else:
         raie.run_recursive_rev()

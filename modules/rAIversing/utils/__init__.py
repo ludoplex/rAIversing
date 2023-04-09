@@ -203,3 +203,11 @@ def prompt_dispatcher(args, total, self, result_queue):
         p.join()
         p.close()
     return results_dict
+
+
+def handle_spawn_worker(processes, prompting_args, started):
+    if len(prompting_args) > 0:
+        p = mp.Process(target=prompt_parallel, args=prompting_args.pop(0))
+        p.start()
+        processes.append(p)
+        started += 1
