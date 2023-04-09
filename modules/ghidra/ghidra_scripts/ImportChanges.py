@@ -99,7 +99,10 @@ def main(json_file_path=None):
                     # If the name is already taken, we add an underscore to the end
                     except ghidra.util.exception.DuplicateNameException:
                         new_name = new_name + "_"
-                        symbol.setName(new_name, IMPORTED)
+                        try:
+                            symbol.setName(new_name, IMPORTED)
+                        except Exception as e:
+                            continue
 
                     except Exception as e:
                         if "NoneType" in str(e):
