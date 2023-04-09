@@ -11,7 +11,7 @@ def setup_test_binaries_p2im():
 
     #copy usable binaries from p2im-real_firmware/binary to testing/samples/binaries/p2im
     if not os.path.exists(f"{BINARIES_ROOT}/p2im"):
-        os.mkdir(f"{BINARIES_ROOT}/p2im")
+        os.makedirs(f"{BINARIES_ROOT}/p2im")
         os.system(f"cp {TESTING_ROOT}/p2im-real_firmware/binary/* {BINARIES_ROOT}/p2im")
 
     #strip binaries

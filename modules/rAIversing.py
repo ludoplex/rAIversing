@@ -88,7 +88,7 @@ def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=N
 
 
 def run_on_new_binary(binary_path, arch, ai_module=None, custom_headless_binary=None, max_tokens=3000, dry_run=False,
-                      output_path=""):
+                      output_path="", parallel=False):
     if ai_module is None:
         raise ValueError("No AI module was provided")
     import_path = check_and_fix_bin_path(binary_path)
@@ -105,7 +105,10 @@ def run_on_new_binary(binary_path, arch, ai_module=None, custom_headless_binary=
     if dry_run:
         raie.dry_run()
         return
-    raie.run_recursive_rev()
+    if parallel:
+        raie.run_parallel_rev()
+    else:
+        raie.run_recursive_rev()
     raie.export_processed(all_functions=True)
     if output_path != "":
         import_changes_to_existing_project(project_location, binary_name, project_name,
@@ -146,6 +149,7 @@ if __name__ == "__main__":
                                action='store_true')
     new_selection.add_argument('-o', '--output_path', help='Output path for the project aka ~/projects/my_binary',
                                default="")
+    new_selection.add_argument('-t', '--threaded', help='Run in parallel', action='store_true')
 
     continue_selection.add_argument('-p', '--path',
                                     help=f'/path/to/directory/containing/project.rep/ can be either absolute or relative to {PROJECTS_ROOT}',
@@ -172,7 +176,7 @@ if __name__ == "__main__":
     elif args.command == "new":
         print(args)
         run_on_new_binary(args.path, args.arch, ai_module, custom_headless_binary=args.ghidra_path,
-                          max_tokens=args.max_token, dry_run=args.dry, output_path=args.output_path)
+                          max_tokens=args.max_token, dry_run=args.dry, output_path=args.output_path,parallel=args.threaded)
 
     elif args.command == "continue":
         print(args)

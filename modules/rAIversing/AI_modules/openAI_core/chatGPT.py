@@ -239,10 +239,10 @@ class ChatGPTModule(AiModuleInterface):
             try:
                 response_string = self.prompt(full_prompt)
                 # print(response_string)
-                with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
-                    f.write(response_string)
-                with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "r") as f:
-                    response_string = f.read()
+                #with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                #    f.write(response_string)
+                #with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "r") as f:
+                #    response_string = f.read()
                 response_dict, response_string = self.process_response(response_string)
                 improved_code, renaming_dict = split_response(response_dict)
                 if check_valid_code(improved_code):

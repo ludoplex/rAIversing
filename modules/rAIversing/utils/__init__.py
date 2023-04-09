@@ -1,9 +1,13 @@
 import json
+import multiprocessing
 import random
 import string
+import threading
+import time
 
+from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.pathing import *
-
+import multiprocessing as mp
 
 class MaxTriesExceeded(Exception):
     """Raised when the max tries is exceeded"""
@@ -12,8 +16,10 @@ class MaxTriesExceeded(Exception):
 class NoResponseException(Exception):
     """Raised when no response is received"""
 
+
 class InvalidResponseException(Exception):
     """Raised when the response is invalid"""
+
 
 def ptr_escape(string):
     rand_str = get_random_string(5)
@@ -163,3 +169,37 @@ def format_newlines_in_code(code):
     main = main.replace('\'', '\\"')
 
     return front + 'improved_code": "' + main + '}\",' + back
+
+
+def prompt_parallel(ai_module,result_queue,name,code,retries):
+    try:
+        #print(f"Starting {name}")
+        result= ai_module.prompt_with_renaming(code, retries)
+        result_queue.put((name,result))
+    except Exception as e:
+        print(f"Error in {name}: {e}")
+        result_queue.put((name, "SKIP"))
+
+
+def prompt_dispatcher(args, total, self, result_queue):
+    started = 0
+    processes = []
+
+    for arg in args:
+        p = mp.Process(target=prompt_parallel, args=arg)
+        p.start()
+        processes.append(p)
+        started += 1
+
+    results_dict = {}
+    while len(results_dict) < len(args):
+        name, result = result_queue.get()
+        results_dict[name] = result
+        current_cost = self.ai_module.calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"]))
+        self.console.print(
+            f"{len(results_dict)}/{total} | Improving function [blue]{name}[/blue] for {current_cost} Tokens | Used tokens: {self.used_tokens}")
+        self.used_tokens += current_cost
+    for p in processes:
+        p.join()
+        p.close()
+    return results_dict
