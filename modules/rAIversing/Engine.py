@@ -74,10 +74,9 @@ class rAIverseEngine:
                     lflList.append(name)
 
         if len(lflList) == 0:
-            missing = self.get_missing_functions()
             sorted_missing = self.get_sorted_missing()
             if len(sorted_missing) > 1:
-                print(sorted_missing)
+                self.logger.info(f'{len(sorted_missing)} functions missing, locking {sorted_missing[0]}')
                 lock_candidate = sorted_missing.pop(0)
                 self.lock_function(lock_candidate)
                 lflList = self.get_lowest_function_layer()
@@ -86,8 +85,8 @@ class rAIverseEngine:
                         self.to_be_redone.append(lflList)
                         for name in lflList:
                             self.functions[name]["code_backup"] = self.functions[name]["code"]
-                    print(lflList)
-                    print("Locked functions: ", self.locked_functions)
+                    #print(lflList)
+                    self.logger.info(f"Locked functions: {self.locked_functions}")
         if len(lflList) == 0:
             missing = self.get_missing_functions()
             regex = r"FUN_\w+"
@@ -228,7 +227,7 @@ class rAIverseEngine:
                 temporary_remapping[rand_str] = old
                 if new_names.count(new) > 1:
                     code = code.replace(new, rand_str, 1)
-                    self.logger.warning(f"Multiple old names for {new} in {name}")
+                    #self.logger.warning(f"Multiple old names for {new} in {name}")
                 else:
                     code = code.replace(new, rand_str)
                     continue
@@ -266,7 +265,7 @@ class rAIverseEngine:
                 self.console.print(f"These functions remain {self.get_missing_functions()}")
                 break
 
-            self.console.print(
+            self.console.log(
                 f"Starting layer {function_layer} with {len(lfl)} of {len(self.functions)} functions. Overall processed functions: {overall_processed_functions}/{len(self.functions)} Used tokens: {self.used_tokens}")
 
             function_layer += 1
@@ -287,24 +286,38 @@ class rAIverseEngine:
                 processes.append(p)
                 started += 1
             while processed_functions < total:
-                name, result = result_queue.get()
-                processed_functions += 1
-                if result == "SKIP":
-                    self.skip_function(name)
-                    continue
-                else:
-                    self.handle_result_processing(name, result)
-                current_cost = self.ai_module.calc_used_tokens(
-                    self.ai_module.assemble_prompt(self.functions[name]["code"]))
-                self.used_tokens += current_cost
-                self.console.print(
-                    f"{processed_functions}/{total} | Improved function [blue]{name}[/blue] for {current_cost} Tokens | Used tokens: {self.used_tokens}")
+                try:
+                    name, result = result_queue.get()
+                    processed_functions += 1
+                    if result == "SKIP":
+                        self.skip_function(name)
+                        continue
+                    else:
+                        self.handle_result_processing(name, result)
+                    current_cost = self.ai_module.calc_used_tokens(
+                        self.ai_module.assemble_prompt(self.functions[name]["code"]))
+                    self.used_tokens += current_cost
+                    self.console.print(
+                        f"{processed_functions}/{total} | Improved function [blue]{name}[/blue] for {current_cost} Tokens | Used tokens: {self.used_tokens}")
 
-                if processed_functions % 5 == 0:
+                    if processed_functions % 5 == 0:
+                        self.save_functions()
+                        self.console.print(f"Saved functions after {processed_functions}/{len(lfl)} functions")
+
+                    handle_spawn_worker(processes, prompting_args, started)
+                except KeyboardInterrupt:
+                    self.console.print(f"[bold red] \nKeyboard interrupt. Saving functions and exiting")
                     self.save_functions()
-                    self.console.log(f"Saved functions after {processed_functions}/{len(lfl)} functions")
-
-                handle_spawn_worker(processes, prompting_args, started)
+                    for p in processes:
+                        p.join()
+                        p.close()
+                    exit(0)
+                except Exception as e:
+                    self.console.print(f"Exception occured: {e}")
+                    self.console.print(f"Saving functions")
+                    self.save_functions()
+                    self.console.print(f"Saved functions. Exiting")
+                    exit(0)
 
             for p in processes:
                 p.join()

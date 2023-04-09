@@ -176,6 +176,10 @@ def prompt_parallel(ai_module,result_queue,name,code,retries):
         #print(f"Starting {name}")
         result= ai_module.prompt_with_renaming(code, retries)
         result_queue.put((name,result))
+    except KeyboardInterrupt:
+        return
+
+
     except Exception as e:
         print(f"Error in {name}: {e}")
         result_queue.put((name, "SKIP"))
