@@ -8,7 +8,7 @@ from rAIversing.Ghidra_Custom_API import binary_to_c_code, import_changes_to_ghi
 from rAIversing.evaluator import eval_p2im_firmwares
 from rAIversing.pathing import *
 from rAIversing.utils import check_and_fix_bin_path, check_and_fix_project_path, \
-    is_already_exported
+    is_already_exported, format_newlines_in_code
 
 
 def testbench(ai_module):
@@ -44,16 +44,20 @@ do_nothing"""
 
     with open(os.path.join(MODULES_ROOT, "rAIversing/AI_modules/openAI_core/temp/temp_response.json"), "r") as f:
         string = f.read()
-        response_dict = json.loads(string, strict=False)
-    print(response_dict)
 
+        string = format_newlines_in_code(string)
+        print(string)
+        response_dict = json.loads(string, strict=False)
+
+    print(response_dict)
+    print(response_dict["improved_code"])
 
 def evaluation(ai_module=None):
     eval_p2im_firmwares(ai_module)
 
 
 def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=None, custom_headless_binary=None,
-                          max_tokens=3000, dry_run=False):
+                          max_tokens=3000, dry_run=False,parallel=1):
     if ai_module is None:
         raise ValueError("No AI module was provided")
     if not os.path.isdir(os.path.abspath(path)):
@@ -81,14 +85,17 @@ def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=N
     if dry_run:
         raie.dry_run()
         return
-    raie.run_recursive_rev()
+    if parallel > 1:
+        raie.run_parallel_rev()
+    else:
+        raie.run_recursive_rev()
     raie.export_processed(all_functions=True)
     import_changes_to_existing_project(import_path, binary_name, project_name,
                                        custom_headless_binary=custom_headless_binary)
 
 
 def run_on_new_binary(binary_path, arch, ai_module=None, custom_headless_binary=None, max_tokens=3000, dry_run=False,
-                      output_path="", parallel=False):
+                      output_path="", parallel=1):
     if ai_module is None:
         raise ValueError("No AI module was provided")
     import_path = check_and_fix_bin_path(binary_path)
@@ -105,7 +112,7 @@ def run_on_new_binary(binary_path, arch, ai_module=None, custom_headless_binary=
     if dry_run:
         raie.dry_run()
         return
-    if parallel:
+    if parallel > 1:
         raie.run_parallel_rev()
     else:
         raie.run_recursive_rev()
@@ -127,6 +134,7 @@ if __name__ == "__main__":
     parser.add_argument('-t', '--access_token_path', help='OpenAI access token path', default=None)
     parser.add_argument('-g', '--ghidra_path', help='/path/to/custom/ghidra/support/analyzeHeadless', default=None)
     parser.add_argument('-m', '--max_token', help='Max Tokens before Skipping Functions', default=3000, type=int)
+    parser.add_argument('-t', '--threads', help='Number of parallel requests', default=1, type=int)
     subparsers = parser.add_subparsers(help='sub-command help', dest='command')
 
     ghidra_selection = subparsers.add_parser('ghidra', help='Run rAIversing on a ghidra project')
@@ -149,11 +157,8 @@ if __name__ == "__main__":
                                action='store_true')
     new_selection.add_argument('-o', '--output_path', help='Output path for the project aka ~/projects/my_binary',
                                default="")
-    new_selection.add_argument('-t', '--threaded', help='Run in parallel', action='store_true')
 
-    continue_selection.add_argument('-p', '--path',
-                                    help=f'/path/to/directory/containing/project.rep/ can be either absolute or relative to {PROJECTS_ROOT}',
-                                    required=True)
+
 
     args = parser.parse_args()
 
@@ -171,17 +176,13 @@ if __name__ == "__main__":
     elif args.command == "ghidra":
         print(args)
         run_on_ghidra_project(args.path, args.project_name, args.binary_name, ai_module=ai_module,
-                              custom_headless_binary=args.ghidra_path, max_tokens=args.max_token)
+                              custom_headless_binary=args.ghidra_path, max_tokens=args.max_token,parallel=args.threads)
 
     elif args.command == "new":
         print(args)
         run_on_new_binary(args.path, args.arch, ai_module, custom_headless_binary=args.ghidra_path,
-                          max_tokens=args.max_token, dry_run=args.dry, output_path=args.output_path,parallel=args.threaded)
+                          max_tokens=args.max_token, dry_run=args.dry, output_path=args.output_path,parallel=args.threads)
 
-    elif args.command == "continue":
-        print(args)
-        run_on_ghidra_project(args.path, ai_module=ai_module, custom_headless_binary=args.ghidra_path,
-                              max_tokens=args.max_token)
     else:
         parser.print_help()
         exit(0)

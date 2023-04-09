@@ -50,10 +50,6 @@
  * **Continue a session started with the previous command:**  
    ``python3 rAIversing.py new -p p2im/Heat_Press``
 
- 
- * **Continue a session started with new but the binary was who knows where:**  
-   ``python3 rAIversing.py continue -p binary_name ``
-
 
  * **Do a Dry-Run to check how many tokens the model would use approximately:**  
    ``python3 rAIversing.py new -p ~/binary_i_found_in_the_mail -d``
@@ -98,16 +94,15 @@ You can just use the archived ghidra project to see the results of rAIversing to
 ## Usage
 >#### General
 >``` 
->usage: rAIversing [-h] [--testbench] [--evaluation] [-a API_KEY_PATH] [-t ACCESS_TOKEN_PATH] [-g GHIDRA_PATH] [-m MAX_TOKEN] {ghidra,new,continue} ...
+>usage: rAIversing [-h] [--testbench] [--evaluation] [-a API_KEY_PATH] [-t ACCESS_TOKEN_PATH] [-g GHIDRA_PATH] [-m MAX_TOKEN] {ghidra,new} ...
 >
 >Reverse engineering tool using AI
 >
 >positional arguments:
->   {ghidra,new,continue}
+>   {ghidra,new}
 >sub-command                 help
 >   ghidra                    Run rAIversing on a ghidra project
->   new                       Run rAIversing on a new binary
->   continue                  Continue a previous rAIversing session that was started with the new command
+>   new                       Run rAIversing on a new binary or continue a previous session
 >
 >optional arguments:
 >   -h, --help                show this help message and exit
@@ -117,6 +112,7 @@ You can just use the archived ghidra project to see the results of rAIversing to
 >   -t, --access_token_path   Custom OpenAI access token path
 >   -g, --ghidra_path         /path/to/custom/ghidra/support/analyzeHeadless
 >   -m, --max_token           Maximum number of tokens before function is skipped (size of function)
+>   -t, --threads         Number of parallel requests to the AI (default: 1)
 >```
 >#### Using an existing ghidra project
 >```
@@ -140,14 +136,6 @@ You can just use the archived ghidra project to see the results of rAIversing to
 >   -d, --dry             Dry run to calculate how many tokens will be used
 >   -o, --output_path     Output path for the project aka ~/projects/my_binary
 >```
->
->#### Continue a project
->```
->usage: rAIversing continue [-h] -p PATH
->
->optional arguments:
->   -h, --help            show this help message and exit
->   -p PATH, --path PATH  /path/to/directory/containing/project.rep/ can be either absolute or relative to ~/rAIversing/projects
 
 TODO: stop saving if timeout or other "invalid" errors occur  
 TODO: reprompt if new name is already in use ???  
