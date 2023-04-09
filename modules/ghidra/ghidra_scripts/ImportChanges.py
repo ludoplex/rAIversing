@@ -101,7 +101,7 @@ def main(json_file_path=None):
                         new_name = new_name + "_"
                         try:
                             symbol.setName(new_name, IMPORTED)
-                        except Exception as e:
+                        except ghidra.util.exception.DuplicateNameException:
                             continue
 
                     except Exception as e:
@@ -137,7 +137,7 @@ def main(json_file_path=None):
                         new_name = new_name + "_"
                         try:
                             var.setName(new_name, IMPORTED)
-                        except Exception as e:
+                        except ghidra.util.exception.DuplicateNameException:
                             continue
 
                     #print(str(type(var)) + " Renaming " + var_name + " to " + new_name + " in function " + func_name)
