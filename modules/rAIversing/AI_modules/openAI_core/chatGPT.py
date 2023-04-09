@@ -159,12 +159,12 @@ class ChatGPTModule(AiModuleInterface):
         except:
             pass
 
-        response_string = self.format_string_correctly(response_string)
-        try:
-            response_dict = json.loads(response_string, strict=False)
-            return response_dict, response_string_orig
-        except:
-            pass
+        #response_string = self.format_string_correctly(response_string)
+        #try:
+        #    response_dict = json.loads(response_string, strict=False)
+        #    return response_dict, response_string_orig
+        #except:
+        #    pass
 
         response_string = self.remove_trailing_commas(response_string)
         try:
@@ -173,6 +173,12 @@ class ChatGPTModule(AiModuleInterface):
         except:
             pass
 
+        response_string = self.add_missing_commas(response_string)
+        try:
+            response_dict = json.loads(response_string, strict=False)
+            return response_dict, response_string_orig
+        except:
+            pass
 
         try:
             response_string = format_newlines_in_code(response_string)
@@ -215,7 +221,10 @@ class ChatGPTModule(AiModuleInterface):
                 if """Expecting ',' delimiter:""" in str(e):
                     print(e)
                     print("###### RESPONSE START 2######")
-                    print(response_string)
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                        f.write(response_string_orig)
+
+                    print(response_string_orig)
                     print("###### RESPONSE END 2######")
                 elif "Extra data" in str(e):
                     try:
@@ -314,3 +323,13 @@ class ChatGPTModule(AiModuleInterface):
     def calc_used_tokens(self, function):
         enc = tiktoken.encoding_for_model("gpt-3.5-turbo-0301")
         return int(1.65 * len(enc.encode(function)))
+
+    def add_missing_commas(self, response_string):
+        """Adds missing commas to the response string"""
+        response_string = response_string.replace('\"\n\"', '\",\n\"')
+        response_string = response_string.replace('\"\n \"', '\",\n \"')
+        response_string = response_string.replace('\"\n  \"', '\",\n  \"')
+        response_string = response_string.replace('\"\n   \"', '\",\n   \"')
+        response_string = response_string.replace('\"\n    \"', '\",\n    \"')
+
+        return response_string
