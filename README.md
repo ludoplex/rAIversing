@@ -108,8 +108,8 @@ You can just use the archived ghidra project to see the results of rAIversing to
 >   -h, --help                show this help message and exit
 >   --testbench               Run testbench
 >   --evaluation              Run evaluation
+>   --access_token_path       Custom OpenAI access token path (deprecated)
 >   -a, --api_key_path        Custom OpenAI API key path (preferred)
->   -t, --access_token_path   Custom OpenAI access token path
 >   -g, --ghidra_path         /path/to/custom/ghidra/support/analyzeHeadless
 >   -m, --max_token           Maximum number of tokens before function is skipped (size of function)
 >   -t, --threads         Number of parallel requests to the AI (default: 1)
