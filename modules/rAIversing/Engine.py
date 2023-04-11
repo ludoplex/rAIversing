@@ -10,9 +10,9 @@ from rich.console import Console
 from rAIversing.AI_modules import AiModuleInterface
 from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.pathing import PROJECTS_ROOT
-from rAIversing.utils import check_and_fix_bin_path, extract_function_name, \
-    generate_function_name, MaxTriesExceeded, check_and_fix_double_function_renaming, \
-    check_do_nothing, get_random_string, ptr_escape, prompt_parallel, prompt_dispatcher, handle_spawn_worker
+from rAIversing.utils import check_and_fix_bin_path, extract_function_name, generate_function_name, MaxTriesExceeded, \
+    check_and_fix_double_function_renaming, check_do_nothing, get_random_string, ptr_escape, prompt_parallel, \
+    prompt_dispatcher, handle_spawn_worker
 
 
 class rAIverseEngine:
@@ -85,7 +85,7 @@ class rAIverseEngine:
                         self.to_be_redone.append(lflList)
                         for name in lflList:
                             self.functions[name]["code_backup"] = self.functions[name]["code"]
-                    #print(lflList)
+                    # print(lflList)
                     self.logger.info(f"Locked functions: {self.locked_functions}")
         if len(lflList) == 0:
             missing = self.get_missing_functions()
@@ -252,9 +252,10 @@ class rAIverseEngine:
 
     def run_parallel_rev(self):
         function_layer = 0
-        overall_processed_functions = self.count_processed()
         skipped_remaining_functions = False
         self.skip_too_big()
+        self.skip_do_nothing()
+        overall_processed_functions = self.count_processed()
 
         while not self.check_all_improved():
             self.console.log(f"[bold yellow]Gathering functions for layer [/bold yellow]{function_layer}")
@@ -328,10 +329,9 @@ class rAIverseEngine:
         self.save_functions()
 
     def skip_too_big(self):
-        self.console.print(f"Skipping too big functions....")
+        self.console.print(f"Skipping too big functions...")
         for name in self.get_missing_functions():
-            current_cost = self.ai_module.calc_used_tokens(
-                self.ai_module.assemble_prompt(self.functions[name]["code"]))
+            current_cost = self.ai_module.calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"]))
             if current_cost > self.max_tokens:
                 self.console.print(f"Function [blue]{name}[/blue] is too big [red]{current_cost}[/red] Skipping")
                 self.skip_function(name)
@@ -339,8 +339,7 @@ class rAIverseEngine:
     def build_prompting_args(self, lfl, prompting_args, result_queue):
         for name in lfl:
 
-            current_cost = self.ai_module.calc_used_tokens(
-                self.ai_module.assemble_prompt(self.functions[name]["code"]))
+            current_cost = self.ai_module.calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"]))
             if current_cost > self.max_tokens:
                 self.console.print(f"Function [blue]{name}[/blue] is too big [red]{current_cost}[/red] Skipping")
                 self.skip_function(name)
@@ -369,6 +368,8 @@ class rAIverseEngine:
         self.rename_for_all_functions(renaming_dict)
 
     def run_recursive_rev(self):
+        # Deprecated
+        # Still in use but parallel version is better
 
         function_layer = 0
         overall_processed_functions = self.count_processed()
@@ -498,3 +499,18 @@ class rAIverseEngine:
             if not tokens > self.max_tokens:
                 number_of_tokens += tokens
         self.console.log(f"Number of tokens: {number_of_tokens} for {len(self.functions)} functions")
+
+    def skip_do_nothing(self):
+        renaming_dict = {}
+        self.console.print(f"Skipping do_nothing functions...")
+        for name, data in self.functions.items():
+            if check_do_nothing(data["code"]) and not data["improved"] and not data["skipped"]:
+                new_name = f"{name.replace('FUN_', 'do_nothing_')}"
+                renaming_dict[name] = new_name
+                improved_code = self.functions[name]["code"].replace(name, new_name)
+                self.functions[name]["improved"] = True
+                self.functions[name]["code"] = improved_code
+                self.functions[name]["current_name"] = new_name
+                self.functions[name]["renaming"] = {name: new_name}
+                self.console.print(f"Function [blue]{name}[/blue] skipped")
+        self.rename_for_all_functions(renaming_dict)
