@@ -24,7 +24,11 @@ except:
 
 fpapi = FlatProgramAPI(getState().getCurrentProgram())
 fdapi = FlatDecompilerAPI(fpapi)
-
+options = DecompileOptions()
+monitor = ConsoleTaskMonitor()
+ifc = DecompInterface()
+ifc.setOptions(options)
+ifc.openProgram(getState().getCurrentProgram())
 
 def main(json_file_path=None):
     state = getState()
@@ -74,7 +78,7 @@ def main(json_file_path=None):
                 continue
 
             func.setName(new_name, IMPORTED)
-
+            print("Renaming " + func_name + " to " + new_name)
             # print("Symbols:")
 
             # Getting symbols and HighFunction
@@ -110,7 +114,7 @@ def main(json_file_path=None):
                         print("Error while renaming " + symname + " in function " + func_name)
                         print(e)
                         continue
-                    print("Symbol Renaming " + symname + " to " + new_name + " in function " + func_name)
+                    #print("Symbol Renaming " + symname + " to " + new_name + " in function " + func_name)
 
             # Committing changes to the database
             HighFunctionDBUtil.commitLocalNamesToDatabase(hf, IMPORTED)
@@ -141,7 +145,7 @@ def main(json_file_path=None):
                             continue
 
                     #print(str(type(var)) + " Renaming " + var_name + " to " + new_name + " in function " + func_name)
-                    print("Var Renaming " + var_name + " to " + new_name + " in function " + func_name)
+                    #print("Var Renaming " + var_name + " to " + new_name + " in function " + func_name)
             functions_dict[func_name]["imported"] = True
 
     with open(json_file_path, "w") as f:
@@ -149,11 +153,6 @@ def main(json_file_path=None):
 
 
 def get_high_function(func):
-    options = DecompileOptions()
-    monitor = ConsoleTaskMonitor()
-    ifc = DecompInterface()
-    ifc.setOptions(options)
-    ifc.openProgram(getState().getCurrentProgram())
     res = ifc.decompileFunction(func, 60, monitor)
     high = res.getHighFunction()
     return high
