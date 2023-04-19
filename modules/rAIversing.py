@@ -81,7 +81,7 @@ def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=N
         existing_project_to_c_code(import_path, binary_name, project_name,
                                    custom_headless_binary=custom_headless_binary)
     raie = rAIverseEngine(ai_module, json_path=f"{os.path.join(import_path, binary_name)}.json", max_tokens=max_tokens)
-    raie.load_functions()
+    raie.load_save_file()
     if dry_run:
         raie.dry_run()
         return
@@ -109,7 +109,7 @@ def run_on_new_binary(binary_path, arch, ai_module=None, custom_headless_binary=
     else:
         json_path = ""
     raie = rAIverseEngine(ai_module, json_path=json_path, binary_path=import_path, max_tokens=max_tokens)
-    raie.load_functions()
+    raie.load_save_file()
     if dry_run:
         raie.dry_run()
         return

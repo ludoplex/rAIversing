@@ -22,6 +22,7 @@ class rAIverseEngine:
         self.ai_module = ai_module  # type: chatGPT
         self.functions = {}
         self.used_tokens = 0
+        self.layers = []
         self.current_fn_lookup = {}
         self.original_fn_lookup = {}
         self.locked_functions = []
@@ -29,24 +30,32 @@ class rAIverseEngine:
         self.logger = logging.getLogger("rAIverseEngine")
         self.logger.setLevel(logging.DEBUG)
         self.binary_name = os.path.basename(binary_path).replace(".", "_")
-        self.path_to_functions_file = json_path if json_path != "" else f"{PROJECTS_ROOT}/{self.binary_name}/{self.binary_name}.json"
+        self.path_to_save_file = json_path if json_path != "" else f"{PROJECTS_ROOT}/{self.binary_name}/{self.binary_name}.json"
         self.skip_failed_functions = True  # TODO make this a parameter
         self.retries = 5  # TODO make this a parameter
         logging.basicConfig()
         self.console = Console(soft_wrap=True)
 
-    def load_functions(self):
-        self.logger.info(f"Loading functions from {self.path_to_functions_file}")
-        if os.path.isfile(self.path_to_functions_file):
-            with open(self.path_to_functions_file) as f:
-                self.functions = json.load(f)
-        elif os.path.isfile(os.path.join(f"{PROJECTS_ROOT}", self.path_to_functions_file)):
-            self.path_to_functions_file = os.path.join(f"{PROJECTS_ROOT}", self.path_to_functions_file)
-            with open(self.path_to_functions_file) as f:
-                self.functions = json.load(f)
+    def load_save_file(self):
+        self.logger.info(f"Loading Data from {self.path_to_save_file}")
+        if os.path.isfile(self.path_to_save_file):
+            with open(self.path_to_save_file) as f:
+                save_file = json.load(f)
+        elif os.path.isfile(os.path.join(f"{PROJECTS_ROOT}", self.path_to_save_file)):
+            self.path_to_save_file = os.path.join(f"{PROJECTS_ROOT}", self.path_to_save_file)
+            with open(self.path_to_save_file) as f:
+                save_file = json.load(f)
         else:
             self.logger.error("No functions.json found")
-            raise Exception(f"Path to functions.json not found: {self.path_to_functions_file}")
+            raise Exception(f"Path to functions.json not found: {self.path_to_save_file}")
+
+        if "functions" in save_file.keys():
+            self.functions = save_file["functions"]
+            self.used_tokens = save_file["used_tokens"]
+            self.layers = save_file["layers"]
+            self.locked_functions = save_file["locked_functions"]
+        else:
+            self.functions = save_file
 
         for name, data in self.functions.items():
             current_name = data["current_name"] if "current_name" in data.keys() else name
@@ -55,8 +64,14 @@ class rAIverseEngine:
             self.original_fn_lookup[current_name] = name
 
     def save_functions(self):
-        with open(self.path_to_functions_file, "w") as f:
-            json.dump(self.functions, f, indent=4)
+        with open(self.path_to_save_file, "w") as f:
+            save_file = {
+                "functions": self.functions,
+                "used_tokens": self.used_tokens,
+                "layers": self.layers,
+                "locked_functions": self.locked_functions
+            }
+            json.dump(save_file, f, indent=4)
 
     def get_lowest_function_layer(self):
         lflList = []
@@ -256,10 +271,16 @@ class rAIverseEngine:
         self.skip_too_big()
         self.skip_do_nothing()
         overall_processed_functions = self.count_processed()
+        lfl = []
 
         while not self.check_all_improved():
             self.console.log(f"[bold yellow]Gathering functions for layer [/bold yellow]{function_layer}")
             self.handle_unlocking()
+
+            # This only happens when we are done with the first layer guaranteeing that we dont duplicate layers in the save file
+            if len(lfl) != 0:
+                self.layers.append(lfl)
+
             lfl = self.get_lowest_function_layer()
             if len(lfl) == 0:
                 self.logger.warning(f"No functions found in layer {function_layer}")
@@ -356,12 +377,11 @@ class rAIverseEngine:
             improved_code = check_and_fix_double_function_renaming(improved_code, renaming_dict, name)
             improved_code, new_name = generate_function_name(improved_code, name)
             renaming_dict[name] = new_name
-            self.functions[name]["improved"] = True
-
 
         except Exception as e:
             self.logger.warning(f"Error while improving {name} {e}")
             exit(0)
+        self.functions[name]["improved"] = True
         self.functions[name]["code"] = improved_code
         self.functions[name]["current_name"] = new_name
         self.functions[name]["renaming"] = renaming_dict
@@ -443,7 +463,7 @@ class rAIverseEngine:
 
     def export_processed(self, all_functions=False, output_file=""):
         if output_file == "":
-            output_file = self.path_to_functions_file.rsplit(".", 1)[0] + "_processed.c"
+            output_file = self.path_to_save_file.rsplit(".", 1)[0] + "_processed.c"
         with open(output_file, 'w') as f:
             for name, data in self.functions.items():
                 if data["improved"] or all_functions:
@@ -466,7 +486,7 @@ class rAIverseEngine:
         del self.original_fn_lookup[old_current_name]
 
     def cleanup(self):
-        self.load_functions()
+        self.load_save_file()
         for name, data in self.functions.items():
             data["code"] = data["code"].replace("\n\\n", "\n")
 

@@ -87,7 +87,7 @@ def eval_p2im_firmwares(ai_module,parallel=1):
         if True:
             binary_to_c_code(binary_path, "ARM:LE:32:Cortex")
             raie = rAIverseEngine(ai_module, binary_path=binary_path)
-            raie.load_functions()
+            raie.load_save_file()
             raie.max_parallel_functions = parallel
             raie.run_parallel_rev()
             raie.export_processed(all_functions=True)

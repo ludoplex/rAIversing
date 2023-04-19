@@ -43,8 +43,13 @@ def main(json_file_path=None):
     else:
         json_file_path = os.path.join(json_file_path, program_name + ".json")
 
+    save_file = {}
     with open(json_file_path, "r") as f:
-        functions_dict = json.load(f)
+        save_file = json.load(f)
+        if "functions" in save_file.keys():
+            functions_dict = save_file["functions"]
+        else:
+            functions_dict = save_file
 
     current_lookup = {}
     original_lookup = {}
@@ -151,7 +156,11 @@ def main(json_file_path=None):
             functions_dict[func_name]["imported"] = True
 
     with open(json_file_path, "w") as f:
-        f.write(json.dumps(functions_dict, indent=4))
+        if "functions" in save_file.keys():
+            save_file["functions"] = functions_dict
+        else:
+            save_file = functions_dict
+        f.write(json.dumps(save_file, indent=4))
 
 
 def get_high_function(func):

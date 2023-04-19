@@ -65,15 +65,16 @@ def main(export_path=None):
             code = fdapi.decompile(func)
 
         function_metadata[function_name] = {}
+        function_metadata[function_name]["entrypoint"] = entrypoint
         function_metadata[function_name]["current_name"] = function_name
+        function_metadata[function_name]["code"] = code
+        function_metadata[function_name]["renaming"] = {}
         function_metadata[function_name]["calling"] = []
         function_metadata[function_name]["called"] = []
-        function_metadata[function_name]["code"] = code
-        function_metadata[function_name]["entrypoint"] = entrypoint
         function_metadata[function_name]["improved"] = "FUN_" not in function_name
         function_metadata[function_name]["skipped"] = False
-        function_metadata[function_name]["renaming"] = {}
         function_metadata[function_name]["imported"] = False
+        function_metadata[function_name]["tags"] = []
 
 
         for calling in func.getCallingFunctions(getMonitor()):
@@ -96,8 +97,15 @@ def main(export_path=None):
     with open(os.path.join(export_path, program_name + ".c"), "w") as f:
         f.write(cCode)
         f.close()
+    save_file = {
+        "functions": function_metadata,
+        "layers": [],
+        "locked_functions": [],
+        "used_tokens": 0
+    }
+
     with open(os.path.join(export_path, program_name + ".json"), "w") as f:
-        f.write(json.dumps(function_metadata))
+        f.write(json.dumps(save_file, indent=4))
         f.close()
 
 
