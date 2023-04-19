@@ -13,7 +13,7 @@ from rAIversing.AI_modules import AiModuleInterface
 from rAIversing.pathing import *
 from rAIversing.utils import extract_function_name, NoResponseException, clear_extra_data, split_response, \
     check_valid_code, MaxTriesExceeded, InvalidResponseException, format_newlines_in_code, escape_failed_escapes, \
-    check_reverse_engineer_fail_happend
+    check_reverse_engineer_fail_happend, locator
 
 PROMPT_TEXT = \
     """
@@ -229,13 +229,13 @@ class ChatGPTModule(AiModuleInterface):
 
             except Exception as e:
                 if """Expecting ',' delimiter:""" in str(e):
-                    print(e)
-                    print("###### RESPONSE START 2######")
+                    self.logger.exception(e)
+                    print(f"###### RESPONSE START @ {locator()}######")
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                         f.write(response_string_orig)
 
                     print(response_string_orig)
-                    print("###### RESPONSE END 2######")
+                    print(f"###### RESPONSE END @ {locator()}######")
                 elif "Extra data" in str(e):
                     try:
                         response_dict = clear_extra_data(response_string, e)
@@ -312,6 +312,15 @@ class ChatGPTModule(AiModuleInterface):
                     raise MaxTriesExceeded("Max tries exceeded")
                 continue
 
+            except TypeError as e:
+                print(f"###### RESPONSE START @ {locator()} ######")
+                print(response_string)
+                print(f"###### RESPONSE END @ {locator()} ######")
+                self.logger.exception(e)
+                self.logger.error(locator())
+                self.logger.error(f"Critical error, aborting")
+                exit(-1)
+
             except Exception as e:
                 self.logger.warning(f"Type of error: {type(e)}")
                 if "The server is overloaded or not ready yet." in str(e):
@@ -321,7 +330,7 @@ class ChatGPTModule(AiModuleInterface):
                 if "max_tokens" in str(e):
                     raise Exception("Function too long, skipping!")
                 else:
-                    print(e)
+                    self.logger.exception(e)
                     print("###### RESPONSE START ######")
                     print(response_string)
                     print("###### RESPONSE END ######")

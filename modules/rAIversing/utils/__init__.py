@@ -4,6 +4,7 @@ import random
 import string
 import threading
 import time
+from inspect import getframeinfo, stack
 
 from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.pathing import *
@@ -66,7 +67,7 @@ def generate_function_name(code, name):
 def check_reverse_engineer_fail_happend(code):
     # returns true if the code contains reverse and engineer (in the case that the model called it reverse_engineered_function)
     code=extract_function_name(code)
-    if "reverse" in code.lower and "engineer" in code.lower():
+    if "reverse" in code.lower() and "engineer" in code.lower():
         return True
     else:
         return False
@@ -195,9 +196,15 @@ def prompt_parallel(ai_module,result_queue,name,code,retries):
 
 
     except Exception as e:
-        print(f"Error in {name}: {e}")
+        print(f"Error in {name}: {e}\n")
         result_queue.put((name, "SKIP"))
 
+def locator(context=False):
+    caller = getframeinfo(stack()[1][0])
+    if context:
+        return f"{caller.filename}:{caller.lineno} - {caller.code_context}"
+    else:
+        return f"{caller.filename}:{caller.lineno}"
 
 def prompt_dispatcher(args, total, self, result_queue):
     started = 0
