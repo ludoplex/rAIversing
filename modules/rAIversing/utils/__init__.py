@@ -60,8 +60,16 @@ def extract_function_name(code):
 
 
 def generate_function_name(code, name):
-    new_name = f"{extract_function_name(code)}_{name.replace('FUN_', '')}"
+    new_name = f"{extract_function_name(code).replace('FUN_', '')}_{name.replace('FUN_', '')}"
     return code.replace(extract_function_name(code), new_name), new_name
+
+def check_reverse_engineer_fail_happend(code):
+    # returns true if the code contains reverse and engineer (in the case that the model called it reverse_engineered_function)
+    code=extract_function_name(code)
+    if "reverse" in code.lower and "engineer" in code.lower():
+        return True
+    else:
+        return False
 
 
 def check_and_fix_double_function_renaming(code, renaming_dict, name):

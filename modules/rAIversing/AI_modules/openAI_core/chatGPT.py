@@ -12,7 +12,8 @@ from rich.console import Console
 from rAIversing.AI_modules import AiModuleInterface
 from rAIversing.pathing import *
 from rAIversing.utils import extract_function_name, NoResponseException, clear_extra_data, split_response, \
-    check_valid_code, MaxTriesExceeded, InvalidResponseException, format_newlines_in_code, escape_failed_escapes
+    check_valid_code, MaxTriesExceeded, InvalidResponseException, format_newlines_in_code, escape_failed_escapes, \
+    check_reverse_engineer_fail_happend
 
 PROMPT_TEXT = \
     """
@@ -263,6 +264,11 @@ class ChatGPTModule(AiModuleInterface):
                 #    response_string = f.read()
                 response_dict, response_string = self.process_response(response_string)
                 improved_code, renaming_dict = split_response(response_dict)
+
+                if check_reverse_engineer_fail_happend(improved_code):
+                    self.logger.warning(f"Got reverse engineer fail from model, retrying {i + 1}/{retries}")
+                    continue
+
                 if check_valid_code(improved_code):
                     improved_code = self.postprocess_code(improved_code)
                     if improved_code == input_code:
