@@ -104,9 +104,17 @@ def eval_p2im_firmwares(ai_module,parallel=1):
         evaluation_dict = {}
 
         with open(os.path.join(PROJECTS_ROOT, binary, f"{binary}.json"), "r") as f:
-            reversed_functions = json.load(f)["functions"]
+            save_file = json.load(f)
+            if "functions" in save_file.keys():
+                reversed_functions = save_file["functions"]
+            else:
+                reversed_functions = save_file
         with open(os.path.join(PROJECTS_ROOT, f"{binary}_original", f"{binary}_original.json"), "r") as f:
-            original_functions = json.load(f)["functions"]
+            save_file = json.load(f)
+            if "functions" in save_file.keys():
+                original_functions = save_file["functions"]
+            else:
+                original_functions = save_file
 
         overall_score = 0
         regarded_functions = len(original_functions.keys())
