@@ -52,13 +52,13 @@ def existing_project_to_c_code(project_location, binary_name=None, project_name=
 def import_changes_to_ghidra_project(binary_path,custom_headless_binary=None):
     import_path = check_and_fix_bin_path(binary_path)
     project_name = os.path.basename(binary_path).replace(".", "_")
-
+    binary_name = os.path.basename(binary_path)
     ah = HeadlessAnalyzerWrapper(custom_headless_binary)
     ah.project_location(f'{os.path.join(PROJECTS_ROOT,project_name)}') \
         .project_name(project_name) \
         .scriptPath(f'{GHIDRA_SCRIPTS}') \
         .postScript(f'ImportChanges.py') \
-        .process(project_name) \
+        .process(binary_name) \
         .noanalysis() \
         .scriptlog(f'{PROJECTS_ROOT}/scriptlog')
     ah.print()
