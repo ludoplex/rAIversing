@@ -77,8 +77,10 @@ def main(json_file_path=None):
             if not function_data["improved"]:
                 continue
 
-            func.setName(new_name, IMPORTED)
-            print("Renaming " + func_name + " to " + new_name)
+            # Renaming the function
+            if func.getName() != new_name:
+                func.setName(new_name, IMPORTED)
+                print("Renaming " + func_name + " to " + new_name)
             # print("Symbols:")
 
             # Getting symbols and HighFunction
