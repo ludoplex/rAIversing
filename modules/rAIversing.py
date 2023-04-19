@@ -52,8 +52,8 @@ do_nothing"""
     print(response_dict)
     print(response_dict["improved_code"])
 
-def evaluation(ai_module=None):
-    eval_p2im_firmwares(ai_module)
+def evaluation(ai_module=None, parallel=1):
+    eval_p2im_firmwares(ai_module, parallel=parallel)
 
 
 def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=None, custom_headless_binary=None,
@@ -174,7 +174,7 @@ if __name__ == "__main__":
     if args.testbench:
         testbench(ai_module)
     elif args.evaluation:
-        evaluation(ai_module)
+        evaluation(ai_module,args.threads)
     elif args.command == "ghidra":
         print(args)
         run_on_ghidra_project(args.path, args.project_name, args.binary_name, ai_module=ai_module,

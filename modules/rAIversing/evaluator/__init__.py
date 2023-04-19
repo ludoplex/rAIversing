@@ -79,7 +79,7 @@ similarity_indicator_groups = [
 
 
 
-def eval_p2im_firmwares(ai_module):
+def eval_p2im_firmwares(ai_module,parallel=1):
     usable_binaries = os.listdir(f"{BINARIES_ROOT}/p2im/stripped")# ["Heat_Press", "CNC", "Gateway"]
     for binary in usable_binaries:
         binary_path = f"{BINARIES_ROOT}/p2im/stripped/{binary}"
@@ -88,7 +88,8 @@ def eval_p2im_firmwares(ai_module):
             binary_to_c_code(binary_path, "ARM:LE:32:Cortex")
             raie = rAIverseEngine(ai_module, binary_path=binary_path)
             raie.load_functions()
-            raie.run_recursive_rev()
+            raie.max_parallel_functions = parallel
+            raie.run_parallel_rev()
             raie.export_processed(all_functions=True)
 
         import_changes_to_ghidra_project(binary_path)
