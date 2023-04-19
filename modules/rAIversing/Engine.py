@@ -331,8 +331,7 @@ class rAIverseEngine:
                     self.console.print(f"[bold red] \nKeyboard interrupt. Saving functions and exiting")
                     self.save_functions()
                     for p in processes:
-                        p.join()
-                        p.close()
+                        p.terminate()
                     exit(0)
                 except Exception as e:
                     self.console.print(f"Exception occured: {e}")
@@ -343,7 +342,6 @@ class rAIverseEngine:
 
             for p in processes:
                 p.join()
-                p.close()
             self.save_functions()
             self.console.log(f"Saved functions after {processed_functions}/{len(lfl)} functions")
             overall_processed_functions += processed_functions
