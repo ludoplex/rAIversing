@@ -266,7 +266,7 @@ class ChatGPTModule(AiModuleInterface):
                 improved_code, renaming_dict = split_response(response_dict)
 
                 if check_reverse_engineer_fail_happend(improved_code):
-                    self.logger.warning(f"Got reverse engineer fail from model, retrying {i + 1}/{retries}")
+                    self.console.print(f"[orange]Got reverse engineer fail from model, retrying {i + 1}/{retries}[/orange]")
                     continue
 
                 if check_valid_code(improved_code):
@@ -275,7 +275,7 @@ class ChatGPTModule(AiModuleInterface):
                         raise Exception("No change")
                     return improved_code, renaming_dict
                 else:
-                    self.logger.warning(f"Got invalid code from model, retrying {i + 1}/{retries}")
+                    self.console.print(f"[orange]Got invalid code from model, retrying {i + 1}/{retries}[/orange]")
                     continue
 
             except NoResponseException as e:
@@ -286,7 +286,7 @@ class ChatGPTModule(AiModuleInterface):
                     raise MaxTriesExceeded("Max tries exceeded")
                 if "Expecting value: line 1 column 1 (char 0)" in str(e) or "Unterminated string starting at:" in str(
                         e):
-                    self.logger.warning(f"Got incomplete response from model, retrying {i + 1}/{retries}")
+                    self.console.print(f"[orange]Got incomplete response from model, retrying {i + 1}/{retries}[/orange]")
                     if i > 1:
                         continue
 
@@ -300,7 +300,7 @@ class ChatGPTModule(AiModuleInterface):
                 if i >= retries - 1:
                     raise MaxTriesExceeded("Max tries exceeded")
                 if "Too Many Requests" in str(e):
-                    self.logger.warning(f"Got too many requests from model, will sleep now retrying {i + 1}/{retries}")
+                    self.console.print(f"[orange]Got too many requests from model, will sleep now retrying {i + 1}/{retries}[/orange]")
                     time.sleep(120)
                     continue
             except InvalidResponseException as e:

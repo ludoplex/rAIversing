@@ -104,9 +104,9 @@ def eval_p2im_firmwares(ai_module,parallel=1):
         evaluation_dict = {}
 
         with open(os.path.join(PROJECTS_ROOT, binary, f"{binary}.json"), "r") as f:
-            reversed_functions = json.load(f)
+            reversed_functions = json.load(f)["functions"]
         with open(os.path.join(PROJECTS_ROOT, f"{binary}_original", f"{binary}_original.json"), "r") as f:
-            original_functions = json.load(f)
+            original_functions = json.load(f)["functions"]
 
         overall_score = 0
         regarded_functions = len(original_functions.keys())

@@ -45,7 +45,7 @@ do_nothing"""
     with open(os.path.join(MODULES_ROOT, "rAIversing/AI_modules/openAI_core/temp/temp_response.json"), "r") as f:
         string = f.read()
 
-        string = format_newlines_in_code(string)
+        string = ai_module.add_missing_commas(string)
         print(string)
         response_dict = json.loads(string, strict=False)
 

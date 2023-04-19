@@ -283,11 +283,15 @@ class rAIverseEngine:
 
             lfl = self.get_lowest_function_layer()
             if len(lfl) == 0:
-                self.logger.warning(f"No functions found in layer {function_layer}")
-                self.console.print(f"These functions remain {self.get_missing_functions()}")
+                self.console.log(f"[bold orange]No functions found for layer {function_layer}[/bold orange]")
+                if len(self.get_missing_functions()) == 0:
+                    self.console.print("[bold green]All functions improved[/bold green]")
+                else:
+                    self.console.print(f"These functions remain {self.get_missing_functions()}")
                 break
 
-            self.console.log(
+
+            self.console.print(
                 f"Starting layer {function_layer} with {len(lfl)} of {len(self.functions)} functions. Overall processed functions: {overall_processed_functions}/{len(self.functions)} Used tokens: {self.used_tokens}")
 
             function_layer += 1
@@ -324,7 +328,7 @@ class rAIverseEngine:
 
                     if processed_functions % 5 == 0:
                         self.save_functions()
-                        self.console.print(f"Saved functions after {processed_functions}/{len(lfl)} functions")
+                        self.console.print(f"{processed_functions}/{total} | Saved functions!")
 
                     handle_spawn_worker(processes, prompting_args, started)
                 except KeyboardInterrupt:
@@ -337,18 +341,18 @@ class rAIverseEngine:
                     self.console.print(f"Exception occured: {e}")
                     self.console.print(f"Saving functions")
                     self.save_functions()
-                    self.console.print(f"Saved functions. Exiting")
+                    self.console.print(f"{processed_functions}/{total} | Saved functions! Exiting!")
                     exit(0)
 
             for p in processes:
                 p.join()
             self.save_functions()
-            self.console.log(f"Saved functions after {processed_functions}/{len(lfl)} functions")
+            self.console.print(f"{processed_functions}/{total} | Saved functions!")
             overall_processed_functions += processed_functions
         self.save_functions()
 
     def skip_too_big(self):
-        self.console.print(f"Skipping too big functions...")
+        missing = self.get_missing_functions()
         for name in self.get_missing_functions():
             current_cost = self.ai_module.calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"]))
             if current_cost > self.max_tokens:
@@ -377,7 +381,7 @@ class rAIverseEngine:
             renaming_dict[name] = new_name
 
         except Exception as e:
-            self.logger.warning(f"Error while improving {name} {e}")
+            self.console.print(f"[bold red]Error while improving {name} {e}[/bold red]")
             exit(0)
         self.functions[name]["improved"] = True
         self.functions[name]["code"] = improved_code
@@ -520,7 +524,6 @@ class rAIverseEngine:
 
     def skip_do_nothing(self):
         renaming_dict = {}
-        self.console.print(f"Skipping do_nothing functions...")
         for name, data in self.functions.items():
             if check_do_nothing(data["code"]) and not data["improved"] and not data["skipped"]:
                 new_name = f"{name.replace('FUN_', 'do_nothing_')}"
