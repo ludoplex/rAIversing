@@ -12,7 +12,7 @@ from rich.console import Console
 from rAIversing.AI_modules import AiModuleInterface
 from rAIversing.pathing import *
 from rAIversing.utils import extract_function_name, NoResponseException, clear_extra_data, split_response, \
-    check_valid_code, MaxTriesExceeded, InvalidResponseException, format_newlines_in_code
+    check_valid_code, MaxTriesExceeded, InvalidResponseException, format_newlines_in_code, escape_failed_escapes
 
 PROMPT_TEXT = \
     """
@@ -179,6 +179,15 @@ class ChatGPTModule(AiModuleInterface):
             return response_dict, response_string_orig
         except:
             pass
+
+
+        response_string = escape_failed_escapes(response_string)
+        try:
+            response_dict = json.loads(response_string, strict=False)
+            return response_dict, response_string_orig
+        except:
+            pass
+
 
         try:
             response_string = format_newlines_in_code(response_string)

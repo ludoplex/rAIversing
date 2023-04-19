@@ -170,6 +170,12 @@ def format_newlines_in_code(code):
 
     return front + 'improved_code": "' + main + '}\",' + back
 
+def escape_failed_escapes(response_string):
+    #original = response_string
+    response_string = response_string.replace("\'\\x", "\'\\\\x")
+
+    return response_string
+
 
 def prompt_parallel(ai_module,result_queue,name,code,retries):
     try:
