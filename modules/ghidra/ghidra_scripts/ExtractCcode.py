@@ -49,30 +49,41 @@ def main(export_path=None):
     function_metadata = {}
 
     cCode = ""
+    # If you want to export with stripped names, set this to True
+    export_with_stripped_names = False
 
     for i in range(len(funcs)):
         func = funcs[i]
-        function_name = func.getName()
+        entrypoint = func.getEntryPoint().toString("0x")
+        if export_with_stripped_names:
+            function_name = "FUN_" + entrypoint.replace("0x", "")
+        else:
+            function_name = func.getName()
+        if export_with_stripped_names:
+            code = fdapi.decompile(func).replace(func.getName(), function_name)
+        else:
+            code = fdapi.decompile(func)
+
         function_metadata[function_name] = {}
-        function_metadata[function_name]["current_name"] = func.getName()
+        function_metadata[function_name]["current_name"] = function_name
         function_metadata[function_name]["calling"] = []
         function_metadata[function_name]["called"] = []
-        function_metadata[function_name]["code"] = fdapi.decompile(func)
-        function_metadata[function_name]["entrypoint"] = func.getEntryPoint().toString("0x")
+        function_metadata[function_name]["code"] = code
+        function_metadata[function_name]["entrypoint"] = entrypoint
         function_metadata[function_name]["improved"] = "FUN_" not in function_name
         function_metadata[function_name]["skipped"] = False
         function_metadata[function_name]["renaming"] = {}
         function_metadata[function_name]["imported"] = False
-        function_code = fdapi.decompile(func)
+
 
         for calling in func.getCallingFunctions(getMonitor()):
-            function_metadata[func.getName()]["calling"].append(calling.getName())
+            function_metadata[function_name]["calling"].append(calling.getName())
 
         for called in func.getCalledFunctions(getMonitor()):
-            function_metadata[func.getName()]["called"].append(called.getName())
+            function_metadata[function_name]["called"].append(called.getName())
 
-        cCode += "\n////>>" + func.getEntryPoint().toString("0x") + ">>" + func.getName() + ">>////\n"
-        cCode += function_code
+        cCode += "\n////>>" + func.getEntryPoint().toString("0x") + ">>" + function_name + ">>////\n"
+        cCode += code
 
     program_name = str(fpapi.getCurrentProgram()).split(" ")[0].replace(".", "_")
 
