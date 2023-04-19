@@ -1,11 +1,8 @@
-import json,difflib,re
+import json, difflib, re
 
 from rAIversing.Engine import rAIverseEngine
 from rAIversing.Ghidra_Custom_API import binary_to_c_code, import_changes_to_ghidra_project
 from rAIversing.pathing import *
-
-
-
 
 # This is a list of mostly verbs that, if present, describe the intended functionality of a function.
 # If two functions share the same verb, they are highly likely to be similar.
@@ -31,6 +28,7 @@ similarity_indicators = [
     "combine"
     "execute",
     "calculate",
+    "calc",
     "encrypt",
     "decrypt",
     "parse",
@@ -50,6 +48,19 @@ similarity_indicators = [
     "seek",
     "loop",
     "execute",
+    "run",
+    "main",
+    "start",
+    "stop",
+    "exit",
+    "return",
+    "check",
+    "verify",
+    "update",
+    "convert",
+    "combine",
+    "clear",
+    "list",
     "char"
 ]
 
@@ -66,21 +77,39 @@ similarity_indicators = [
 # TODO receiveData -> read..Memory/... ???
 # TODO DeInit -> free???/deactivate...Memory/... ???
 # TODO memcpy -> copy...Memory/... ???
+# main -> run ... ???
+# validate -> check... ???
 similarity_indicator_groups = [
-    [r"^(.*(stop|disable|end).*)+$",r"^(.*(clear){1}.*(bit|flag|memory).*)+$"],
-    [r'^(?!.*deactivate).*(?:activate|enable|start).*$',r"^(?!.*deactivate).*((set){1}.*?(bit|flag|memory)|(?:activate|enable|start)).*$"],
+    [r"^(.*(stop|disable|end).*)+$", r"^(.*(clear){1}.*(bit|flag|memory).*)+$"],
+    [r'^(?!.*deactivate).*(?:activate|enable|start).*$',
+     r"^(?!.*deactivate).*((set){1}.*?(bit|flag|memory)|(?:activate|enable|start)).*$"]
 ]
 
 # As library functions usually use shorted names (strchr,strrchr), we need to map the common ones
 # to their full / natural language styled names (find_character_in_string, find_last_character_in_string).
+replacement_dict = {
+    "strchr": "find_character_in_string",
+    "strrchr": "find_last_character_in_string",
+    "memcpy": "copy_memory",
+    "memset": "set_memory",
+    "malloc": "allocate_memory",
+    "strcpy": "copy_string",
+    "strlen": "string_length",
+    "strcat": "concatenate_strings",
+    "strncat": "concatenate_strings",
+    "strcmp": "compare_strings",
+    "strncmp": "compare_strings",
+    "memchr": "find_character_in_memory",
+    "memset": "set_memory",
+    "memmove": "move_memory",
+    "div": "divide",
+    "toInt": "convert_to_integer"
 
 
+}
 
-
-
-
-def eval_p2im_firmwares(ai_module,parallel=1):
-    usable_binaries = os.listdir(f"{BINARIES_ROOT}/p2im/stripped")# ["Heat_Press", "CNC", "Gateway"]
+def eval_p2im_firmwares(ai_module, parallel=1):
+    usable_binaries = os.listdir(f"{BINARIES_ROOT}/p2im/stripped")  # ["Heat_Press", "CNC", "Gateway"]
     for binary in usable_binaries:
         binary_path = f"{BINARIES_ROOT}/p2im/stripped/{binary}"
         print(f"Processing {binary}")
@@ -127,7 +156,7 @@ def eval_p2im_firmwares(ai_module,parallel=1):
             elif reversed_key in reversed_functions.keys():
                 reversed_name = reversed_functions[reversed_key]["current_name"]
                 direct_comparison_dict[function] = reversed_name
-                score = compute_similarity_score(function, reversed_name,entrypoint)
+                score = compute_similarity_score(function, reversed_name, entrypoint)
                 evaluation_dict[entrypoint] = {
                     function: reversed_name,
                     "score": score
@@ -142,7 +171,7 @@ def eval_p2im_firmwares(ai_module,parallel=1):
                     if value["entrypoint"] == entrypoint:
                         reversed_name = value["current_name"]
                         direct_comparison_dict[function] = reversed_name
-                        score = compute_similarity_score(function, reversed_name,entrypoint)
+                        score = compute_similarity_score(function, reversed_name, entrypoint)
                         overall_score += score
                         evaluation_dict[entrypoint] = {
                             function: reversed_name,
@@ -160,14 +189,15 @@ def eval_p2im_firmwares(ai_module,parallel=1):
             json.dump(direct_comparison_dict, f, indent=4)
         with open(os.path.join(PROJECTS_ROOT, binary, f"{binary}_evaluation.json"), "w") as f:
             json.dump(evaluation_dict, f, indent=4)
-        print(f"Overall score for {binary}: {overall_score/regarded_functions} ({regarded_functions} functions regarded out of {len(original_functions.keys())} total)")
+        print(
+            f"Overall score for {binary}: {overall_score / regarded_functions} ({regarded_functions} functions regarded out of {len(original_functions.keys())} total)")
 
 
-def compute_similarity_score(original_function_name, reversed_function_name,entrypoint):
-    original_function_name = original_function_name.lower().replace(f"_{entrypoint.replace('0x','')}", "")
-    reversed_function_name = reversed_function_name.lower().replace(f"_{entrypoint.replace('0x','')}", "")
+def compute_similarity_score(original_function_name, reversed_function_name, entrypoint):
+    original_function_name = original_function_name.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
+    reversed_function_name = reversed_function_name.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
     score = 0.0
-    #remove duplicates from similarity_indicators
+    # remove duplicates from similarity_indicators
     similarity_indicators_local = list(set(similarity_indicators))
 
     for indicator in similarity_indicators:
@@ -178,9 +208,29 @@ def compute_similarity_score(original_function_name, reversed_function_name,entr
             break
     if score == 0.0:
         score = calc_group_similarity(original_function_name, reversed_function_name)
+
+    for old, new in replacement_dict.items():
+        if new not in original_function_name and old == original_function_name:
+            original_function_name = original_function_name.replace(old, new)
+            break
+
+    for indicator in similarity_indicators:
+        if indicator in original_function_name and indicator in reversed_function_name:
+            score += 1.0
+        elif "nothing" in reversed_function_name:
+            score += 1.0
+            break
+
+    if score == 0.0:
+        score = calc_group_similarity(original_function_name, reversed_function_name)
+
+
+
+
     if score == 0.0:
         score = difflib.SequenceMatcher(None, original_function_name, reversed_function_name).ratio()
     return score
+
 
 def calc_group_similarity(original_function_name, reversed_function_name):
     for group in similarity_indicator_groups:
