@@ -283,10 +283,10 @@ class rAIverseEngine:
 
             lfl = self.get_lowest_function_layer()
             if len(lfl) == 0:
-                self.console.log(f"[bold orange]No functions found for layer {function_layer}[/bold orange]")
                 if len(self.get_missing_functions()) == 0:
-                    self.console.print("[bold green]All functions improved[/bold green]")
+                    self.console.print("[bold blue]All functions improved[/bold blue]")
                 else:
+                    self.console.print(f"[bold orange3]No functions found for layer [/bold orange3]{function_layer}")
                     self.console.print(f"These functions remain {self.get_missing_functions()}")
                 break
 
