@@ -37,7 +37,7 @@ class rAIverseEngine:
         self.console = Console(soft_wrap=True)
 
     def load_save_file(self):
-        self.logger.info(f"Loading Data from {self.path_to_save_file}")
+        self.console.print(f"[bold green_yellow]Loading Data from {self.path_to_save_file}[/bold green_yellow]")
         if os.path.isfile(self.path_to_save_file):
             with open(self.path_to_save_file) as f:
                 save_file = json.load(f)
@@ -46,7 +46,7 @@ class rAIverseEngine:
             with open(self.path_to_save_file) as f:
                 save_file = json.load(f)
         else:
-            self.logger.error("No functions.json found")
+            self.console.print(f"[bold red]No functions.json found[/bold red]")
             raise Exception(f"Path to functions.json not found: {self.path_to_save_file}")
 
         if "functions" in save_file.keys():
