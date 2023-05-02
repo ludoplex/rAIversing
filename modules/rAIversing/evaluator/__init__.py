@@ -213,13 +213,13 @@ def compute_similarity_score(original_function_name, reversed_function_name, ent
         if new not in original_function_name and old == original_function_name:
             original_function_name = original_function_name.replace(old, new)
             break
-
-    for indicator in similarity_indicators:
-        if indicator in original_function_name and indicator in reversed_function_name:
-            score += 1.0
-        elif "nothing" in reversed_function_name:
-            score += 1.0
-            break
+    if score == 0.0:
+        for indicator in similarity_indicators:
+            if indicator in original_function_name and indicator in reversed_function_name:
+                score += 1.0
+            elif "nothing" in reversed_function_name:
+                score += 1.0
+                break
 
     if score == 0.0:
         score = calc_group_similarity(original_function_name, reversed_function_name)
