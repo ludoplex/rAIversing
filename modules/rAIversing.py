@@ -1,5 +1,7 @@
 import argparse
 import json
+import logging
+from inspect import getframeinfo, stack
 
 from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.Engine import rAIverseEngine
@@ -96,15 +98,15 @@ def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=N
 
 
 def run_on_new_binary(binary_path, arch, ai_module=None, custom_headless_binary=None, max_tokens=3000, dry_run=False,
-                      output_path="", parallel=1):
+                      output_path="", parallel=1, project_name=""):
     if ai_module is None:
         raise ValueError("No AI module was provided")
     import_path = check_and_fix_bin_path(binary_path)
-    binary_to_c_code(import_path, arch, custom_headless_binary=custom_headless_binary, project_path=output_path)
+    binary_to_c_code(import_path, arch, custom_headless_binary=custom_headless_binary, project_location=output_path,project_name=project_name)
     if output_path != "":
         binary_name = os.path.basename(binary_path).replace(".", "_")
         json_path = f"{os.path.join(output_path, binary_name)}.json"
-        project_name = binary_name
+        project_name = binary_name if project_name == "" else project_name
         project_location = os.path.join(output_path, project_name)
     else:
         json_path = ""
@@ -140,25 +142,24 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers(help='sub-command help', dest='command')
 
     ghidra_selection = subparsers.add_parser('ghidra', help='Run rAIversing on a ghidra project')
-    new_selection = subparsers.add_parser('new', help='Run rAIversing on a new binary')
-    continue_selection = subparsers.add_parser('continue',
-                                               help='Continue a previous rAIversing session that was started with the new command')
+    binary_selection = subparsers.add_parser('binary', help='Run rAIversing on a new binary')
 
     ghidra_selection.add_argument('-p', '--path',
                                   help='/path/to/directory/containing/project.rep/',
                                   required=True)
     ghidra_selection.add_argument('-b', '--binary_name', help='name of the used binary', default=None)
-    ghidra_selection.add_argument('-n', '--project_name', help='Project Name', default=None)
+    ghidra_selection.add_argument('-n', '--project_name', help='Project Name as entered in Ghidra', default=None)
 
-    new_selection.add_argument('-p', '--path',
-                               help=f'Location of the binary file either absolute or relative to {BINARIES_ROOT}',
-                               required=True)
-    new_selection.add_argument('-a', '--arch', help='Processor ID as defined in Ghidra (e.g.: x86:LE:64:default)',
-                               default="ARM:LE:32:Cortex")  # TODO: Check if required
-    new_selection.add_argument('-d', '--dry', help='Dry run to calculate how many tokens will be used',
-                               action='store_true')
-    new_selection.add_argument('-o', '--output_path', help='Output path for the project aka ~/projects/my_binary',
-                               default="")
+    binary_selection.add_argument('-p', '--path',
+                                  help=f'Location of the binary file either absolute or relative to {BINARIES_ROOT}',
+                                  required=True)
+    binary_selection.add_argument('-a', '--arch', help='Processor ID as defined in Ghidra (e.g.: x86:LE:64:default)',
+                                  default="ARM:LE:32:Cortex")  # TODO: Check if required
+    binary_selection.add_argument('-d', '--dry', help='Dry run to calculate how many tokens will be used',
+                                  action='store_true')
+    binary_selection.add_argument('-n', '--project_name', help='Project Name for the Ghidra Project (defaults to the binary name)', default=None)
+    binary_selection.add_argument('-o', '--output_path', help='Output path for the project aka ~/projects/{my_binary|project_name (if specified)} ',
+                                  default="")
 
 
 

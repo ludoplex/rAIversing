@@ -32,27 +32,27 @@
  
   
  * **Start a new project from a binary after you followed the installation guide (api_key and ghidra):**  
-   ``python3 rAIversing.py new -p ~/binary_i_found_on_the_internet`` (being `ARM:LE:32:Cortex`)  
+   ``python3 rAIversing.py binary -p ~/binary_i_found_on_the_internet`` (being `ARM:LE:32:Cortex`)  
  
  
  * **The previous example but with a [custom processor ID](https://static.grumpycoder.net/pixel/support/analyzeHeadlessREADME.html#processor):**  
-   ``python3 rAIversing.py new -p ~/binary_i_found_in_the_mail -a x86:LE:64:default``
+   ``python3 rAIversing.py binary -p ~/binary_i_found_in_the_mail -a x86:LE:64:default``
  
  
- * **The previous example but with a custom output directory:**  
-   ``python3 rAIversing.py new -p ~/binary_i_found_in_the_mail -a x86:LE:64:default -o ~/projects/binary_i_found_in_the_mail``
+ * **The previous example but the results should go into an already existing Ghidra Project :**  
+   ``python3 rAIversing.py binary -p ~/binary_i_found_in_the_mail -a x86:LE:64:default -o ~/projects/ghidra_projects -n WildBinariesInTallGrass``
 
   
  * **Start a binary in /testing/binaries/p2im after you run the setup.py and followed the installation guide:**    
-   ``python3 rAIversing.py new -p p2im/Heat_Press``  (they are all ``ARM:LE:32:Cortex``)  
+   ``python3 rAIversing.py binary -p p2im/Heat_Press``  (they are all ``ARM:LE:32:Cortex``)  
 
  
  * **Continue a session started with the previous command:**  
-   ``python3 rAIversing.py new -p p2im/Heat_Press``
+   ``python3 rAIversing.py binary -p p2im/Heat_Press``
 
 
  * **Do a Dry-Run to check how many tokens the model would use approximately:**  
-   ``python3 rAIversing.py new -p ~/binary_i_found_in_the_mail -d``
+   ``python3 rAIversing.py binary -p ~/binary_i_found_in_the_mail -d``
 
 # **Unsure if the tokens are worth it?**
 There are examples in [examples](/examples) of 3 binaries used for testing containing:
@@ -102,7 +102,7 @@ You can just use the archived ghidra project to see the results of rAIversing to
 >   {ghidra,new}
 >sub-command                 help
 >   ghidra                    Run rAIversing on a ghidra project
->   new                       Run rAIversing on a new binary or continue a previous session
+>   binary                       Run rAIversing on a new binary or continue a previous session
 >
 >optional arguments:
 >   -h, --help                show this help message and exit
@@ -122,12 +122,12 @@ You can just use the archived ghidra project to see the results of rAIversing to
 >   -h, --help            show this help message and exit
 >   -p, --path            /path/to/directory/containing/project.rep/
 >   -b, --binary_name     name of the used binary
->   -n, --project_name    Project Name (usually the same as the binary name)
+>   -n, --project_name    Project Name as entered in Ghidra
 >```
 >
 >#### Starting from a binary
 >``` 
->usage: rAIversing.py new [-h] -p PATH [-a ARCH] [-d ] [-o OUTPUT_PATH]
+>usage: rAIversing.py binary [-h] -p PATH [-a ARCH] [-d ] [-o OUTPUT_PATH]
 >
 >optional arguments:
 >   -h, --help            show this help message and exit
@@ -135,6 +135,7 @@ You can just use the archived ghidra project to see the results of rAIversing to
 >   -a ARCH, --arch ARCH  Processor ID as defined in Ghidra (e.g. x86:LE:64:default)
 >   -d, --dry             Dry run to calculate how many tokens will be used
 >   -o, --output_path     Output path for the project aka ~/projects/my_binary
+>   -n, --project_name    Project Name for the Ghidra Project (defaults to the binary name)
 >```
 
 TODO: stop saving if timeout or other "invalid" errors occur  

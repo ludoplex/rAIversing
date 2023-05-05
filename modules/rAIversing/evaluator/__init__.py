@@ -1,7 +1,8 @@
 import json, difflib, re
 
 from rAIversing.Engine import rAIverseEngine
-from rAIversing.Ghidra_Custom_API import binary_to_c_code, import_changes_to_ghidra_project
+from rAIversing.Ghidra_Custom_API import binary_to_c_code, import_changes_to_ghidra_project, \
+    import_changes_to_existing_project
 from rAIversing.pathing import *
 
 # This is a list of mostly verbs that, if present, describe the intended functionality of a function.
@@ -114,31 +115,32 @@ def eval_p2im_firmwares(ai_module, parallel=1):
         binary_path = f"{BINARIES_ROOT}/p2im/stripped/{binary}"
         print(f"Processing {binary}")
         if True:
-            binary_to_c_code(binary_path, "ARM:LE:32:Cortex")
-            raie = rAIverseEngine(ai_module, binary_path=binary_path)
+            binary_to_c_code(binary_path,processor_id= "ARM:LE:32:Cortex",project_name="Evaluation")
+            raie = rAIverseEngine(ai_module, binary_path=binary_path,json_path=f"{PROJECTS_ROOT}/Evaluation/{binary}.json")
             raie.load_save_file()
             raie.max_parallel_functions = parallel
             raie.run_parallel_rev()
             raie.export_processed(all_functions=True)
 
-        import_changes_to_ghidra_project(binary_path)
+        import_changes_to_existing_project(project_location=f"{PROJECTS_ROOT}/Evaluation",project_name="Evaluation",binary_name=binary)
 
     for binary in usable_binaries:
         binary_path = f"{BINARIES_ROOT}/p2im/original/{binary}_original"
-        binary_to_c_code(binary_path, "ARM:LE:32:Cortex")
+        binary_to_c_code(binary_path,processor_id="ARM:LE:32:Cortex",project_name="Evaluation")
+
 
     include_all = False
     for binary in usable_binaries:
         direct_comparison_dict = {}
         evaluation_dict = {}
 
-        with open(os.path.join(PROJECTS_ROOT, binary, f"{binary}.json"), "r") as f:
+        with open(os.path.join(PROJECTS_ROOT, "Evaluation", f"{binary}.json"), "r") as f:
             save_file = json.load(f)
             if "functions" in save_file.keys():
                 reversed_functions = save_file["functions"]
             else:
                 reversed_functions = save_file
-        with open(os.path.join(PROJECTS_ROOT, f"{binary}_original", f"{binary}_original.json"), "r") as f:
+        with open(os.path.join(PROJECTS_ROOT, f"Evaluation", f"{binary}_original.json"), "r") as f:
             save_file = json.load(f)
             if "functions" in save_file.keys():
                 original_functions = save_file["functions"]
@@ -185,9 +187,9 @@ def eval_p2im_firmwares(ai_module, parallel=1):
                         regarded_functions -= 1
                     continue
 
-        with open(os.path.join(PROJECTS_ROOT, binary, f"{binary}_comparison.json"), "w") as f:
+        with open(os.path.join(PROJECTS_ROOT, "Evaluation", f"{binary}_comparison.json"), "w") as f:
             json.dump(direct_comparison_dict, f, indent=4)
-        with open(os.path.join(PROJECTS_ROOT, binary, f"{binary}_evaluation.json"), "w") as f:
+        with open(os.path.join(PROJECTS_ROOT,"Evaluation", f"{binary}_evaluation.json"), "w") as f:
             json.dump(evaluation_dict, f, indent=4)
         print(
             f"Overall score for {binary}: {overall_score / regarded_functions} ({regarded_functions} functions regarded out of {len(original_functions.keys())} total)")
