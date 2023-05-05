@@ -181,10 +181,10 @@ if __name__ == "__main__":
         run_on_ghidra_project(args.path, args.project_name, args.binary_name, ai_module=ai_module,
                               custom_headless_binary=args.ghidra_path, max_tokens=args.max_token,parallel=args.threads)
 
-    elif args.command == "new":
+    elif args.command == "binary":
         print(args)
         run_on_new_binary(args.path, args.arch, ai_module, custom_headless_binary=args.ghidra_path,
-                          max_tokens=args.max_token, dry_run=args.dry, output_path=args.output_path,parallel=args.threads)
+                          max_tokens=args.max_token, dry_run=args.dry, output_path=args.output_path,parallel=args.threads,project_name=args.project_name)
 
     else:
         parser.print_help()

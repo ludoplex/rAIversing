@@ -1,4 +1,6 @@
 import os, sys
+import subprocess
+
 from rAIversing.pathing import *
 
 
@@ -162,6 +164,8 @@ class HeadlessAnalyzerWrapper:
         self.__build__()
         print(self.__command__)
 
-    def run(self):
+    def run(self,debug=False):
         self.__build__()
-        os.system(self.__command__)
+        output = subprocess.check_output(self.__command__, shell=True,stderr= subprocess.STDOUT)
+        if debug:
+            print(output)

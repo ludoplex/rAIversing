@@ -5,11 +5,11 @@ from rAIversing.pathing import PROJECTS_ROOT, GHIDRA_SCRIPTS, BINARIES_ROOT
 from rAIversing.utils import check_and_fix_bin_path, check_and_create_project_path, is_already_exported
 
 
-def binary_to_c_code(binary_path, processor_id="", custom_headless_binary=None, project_location="", project_name=""):
+def binary_to_c_code(binary_path, processor_id="", custom_headless_binary=None, project_location="", project_name="",debug=False):
     import_path = check_and_fix_bin_path(binary_path)
     project_name = os.path.basename(binary_path).replace(".", "_") if project_name == "" else project_name
     project_location = f'{os.path.join(PROJECTS_ROOT, project_name)}' if project_location == "" else project_location
-    if is_already_exported(project_location, project_name):
+    if is_already_exported(project_location, os.path.basename(binary_path)):
         return
     check_and_create_project_path(project_location)
     ah = HeadlessAnalyzerWrapper(custom_headless_binary)
@@ -23,33 +23,41 @@ def binary_to_c_code(binary_path, processor_id="", custom_headless_binary=None, 
 
     if processor_id != "":
         ah.processor(processor_id)
-    ah.print()
-    ah.run()
+    if debug:
+        ah.print()
+    ah.run(debug)
 
-def existing_project_to_c_code(project_location, binary_name=None, project_name=None,custom_headless_binary=None):
+def existing_project_to_c_code(project_location, binary_name=None, project_name=None,custom_headless_binary=None, export_with_stripped_names=False,debug=False):
     if project_name is None:
         project_name = os.path.basename(project_location)
     if binary_name is None:
         binary_name=project_name
 
+    if is_already_exported(project_location, binary_name+"_stripped" if export_with_stripped_names else binary_name):
+        return
+
+    if export_with_stripped_names:
+        export_with_stripped_names = "True"
+    else:
+        export_with_stripped_names = ""
     ah = HeadlessAnalyzerWrapper(custom_headless_binary)
     ah.project_location(f'{project_location}') \
         .project_name(project_name) \
-        .postScript(f'ExtractCcode.py {project_location}') \
+        .postScript(f'ExtractCcode.py {project_location} {export_with_stripped_names}') \
         .process(binary_name) \
         .noanalysis()\
         .scriptPath(f'{GHIDRA_SCRIPTS}') \
         .log(f'{PROJECTS_ROOT}/log') \
         .scriptlog(f'{PROJECTS_ROOT}/scriptlog')
-
-    ah.print()
-    ah.run()
-
-
+    if debug:
+        ah.print()
+    ah.run(debug)
 
 
 
-def import_changes_to_ghidra_project(binary_path,custom_headless_binary=None):
+
+
+def import_changes_to_ghidra_project(binary_path,custom_headless_binary=None, debug=False):
     import_path = check_and_fix_bin_path(binary_path)
     project_name = os.path.basename(binary_path).replace(".", "_")
     binary_name = os.path.basename(binary_path)
@@ -61,10 +69,11 @@ def import_changes_to_ghidra_project(binary_path,custom_headless_binary=None):
         .process(binary_name) \
         .noanalysis() \
         .scriptlog(f'{PROJECTS_ROOT}/scriptlog')
-    ah.print()
-    ah.run()
+    if debug:
+        ah.print()
+    ah.run(debug)
 
-def import_changes_to_existing_project(project_location,binary_name=None,project_name=None,custom_headless_binary=None):
+def import_changes_to_existing_project(project_location,binary_name=None,project_name=None,custom_headless_binary=None, debug=False):
     if project_name is None:
         project_name = os.path.basename(project_location)
     if binary_name is None:
@@ -79,19 +88,6 @@ def import_changes_to_existing_project(project_location,binary_name=None,project
         .noanalysis() \
         .scriptlog(f'{PROJECTS_ROOT}/scriptlog')
 
-    ah.print()
-    ah.run()
-
-
-def run20819():
-    ah = HeadlessAnalyzerWrapper()
-    ah.import_file(f'{BINARIES_ROOT}/20819_firmware')
-    ah.project_location(f'{PROJECTS_ROOT}') \
-        .project_name('20819_firmware') \
-        .postScript(f'ExtractCcode.py') \
-        .scriptPath(f'{GHIDRA_SCRIPTS}') \
-        .deleteProject() \
-        .log(f'{PROJECTS_ROOT}/log') \
-        .processor("ARM:LE:32:Cortex") \
-        .scriptlog(f'{PROJECTS_ROOT}/scriptlog') \
-        .run()
+    if debug:
+        ah.print()
+    ah.run(debug)

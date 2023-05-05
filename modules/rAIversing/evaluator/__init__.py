@@ -1,8 +1,10 @@
 import json, difflib, re
+from rich.console import Console
+from rich.table import Table, Column
 
 from rAIversing.Engine import rAIverseEngine
 from rAIversing.Ghidra_Custom_API import binary_to_c_code, import_changes_to_ghidra_project, \
-    import_changes_to_existing_project
+    import_changes_to_existing_project, existing_project_to_c_code
 from rAIversing.pathing import *
 
 # This is a list of mostly verbs that, if present, describe the intended functionality of a function.
@@ -111,9 +113,11 @@ replacement_dict = {
 
 def eval_p2im_firmwares(ai_module, parallel=1):
     usable_binaries = os.listdir(f"{BINARIES_ROOT}/p2im/stripped")  # ["Heat_Press", "CNC", "Gateway"]
+    #usable_binaries = ["Heat_Press", "CNC", "Gateway"]
+    console = Console(soft_wrap=True)
     for binary in usable_binaries:
         binary_path = f"{BINARIES_ROOT}/p2im/stripped/{binary}"
-        print(f"Processing {binary}")
+        console.log(f"[bold bright_green]Evaluating {binary}[/bold bright_green]")
         if True:
             binary_to_c_code(binary_path,processor_id= "ARM:LE:32:Cortex",project_name="Evaluation")
             raie = rAIverseEngine(ai_module, binary_path=binary_path,json_path=f"{PROJECTS_ROOT}/Evaluation/{binary}.json")
@@ -127,12 +131,43 @@ def eval_p2im_firmwares(ai_module, parallel=1):
     for binary in usable_binaries:
         binary_path = f"{BINARIES_ROOT}/p2im/original/{binary}_original"
         binary_to_c_code(binary_path,processor_id="ARM:LE:32:Cortex",project_name="Evaluation")
+        existing_project_to_c_code(project_location=f"{PROJECTS_ROOT}/Evaluation",binary_name=f"{binary}_original",project_name="Evaluation",export_with_stripped_names=True)
+
+    for binary in usable_binaries:
+        binary_path = f"{BINARIES_ROOT}/p2im/original/{binary}_original"
+        console.print(f"[bold green]Processing Ground Truth for {binary}[/bold green]")
+        if True:
+            raie = rAIverseEngine(ai_module, binary_path=binary_path,json_path=f"{PROJECTS_ROOT}/Evaluation/{binary}_original_stripped.json")
+            raie.load_save_file()
+            raie.max_parallel_functions = parallel
+            raie.run_parallel_rev()
+
+
+
 
 
     include_all = False
+
+    result_table = Table(
+        Column(header="Binary", style="bold bright_yellow"),
+        Column(header="Model vs Orig", style="bold cyan1"),
+        Column(header="GTruth vs Orig", style="bold cyan2"),
+        Column(header="Model vs GTruth", style="bold green1"),
+        Column(header="Regarded Orig", style="blue"),
+        Column(header="Regarded GTruth", style="magenta"),
+        title="Evaluation Results",title_style="bold dark_red")
+
+
+
+
     for binary in usable_binaries:
         direct_comparison_dict = {}
         evaluation_dict = {}
+        reversed_functions = {}
+        original_functions = {}
+        ground_truth_functions = {}
+        direct_comparison_dict_GT = {}
+        evaluation_dict_GT = {}
 
         with open(os.path.join(PROJECTS_ROOT, "Evaluation", f"{binary}.json"), "r") as f:
             save_file = json.load(f)
@@ -146,53 +181,74 @@ def eval_p2im_firmwares(ai_module, parallel=1):
                 original_functions = save_file["functions"]
             else:
                 original_functions = save_file
-
-        overall_score = 0
-        regarded_functions = len(original_functions.keys())
-        for function, data in original_functions.items():
-            function = data["current_name"]
-            entrypoint = data["entrypoint"]
-            reversed_key = entrypoint.replace("0x", "FUN_")
-            if f"thunk_{reversed_key}" in reversed_functions.keys():
-                reversed_name = reversed_functions[f"thunk_{reversed_key}"]["current_name"]
-            elif reversed_key in reversed_functions.keys():
-                reversed_name = reversed_functions[reversed_key]["current_name"]
-                direct_comparison_dict[function] = reversed_name
-                score = compute_similarity_score(function, reversed_name, entrypoint)
-                evaluation_dict[entrypoint] = {
-                    function: reversed_name,
-                    "score": score
-                }
-                if "nothing" in reversed_name.lower() or "FUNC_" in reversed_name:
-                    regarded_functions -= 1
-                    continue
-                overall_score += score
+        with open(os.path.join(PROJECTS_ROOT, f"Evaluation", f"{binary}_original_stripped.json"), "r") as f:
+            save_file = json.load(f)
+            if "functions" in save_file.keys():
+                ground_truth_functions = save_file["functions"]
             else:
-                found = False
-                for key, value in reversed_functions.items():
-                    if value["entrypoint"] == entrypoint:
-                        reversed_name = value["current_name"]
-                        direct_comparison_dict[function] = reversed_name
-                        score = compute_similarity_score(function, reversed_name, entrypoint)
-                        overall_score += score
-                        evaluation_dict[entrypoint] = {
-                            function: reversed_name,
-                            "score": score
-                        }
-                        found = True
-                        break
-                if not found:
-                    if include_all:
-                        direct_comparison_dict[function] = "NOT FOUND"
-                        regarded_functions -= 1
-                    continue
+                ground_truth_functions = save_file
+
+        overall_score_original, regarded_functions_original = run_comparison(include_all, original_functions, reversed_functions, direct_comparison_dict, evaluation_dict)
+        overall_score_ground_truth, regarded_functions_ground_truth = run_comparison(include_all, ground_truth_functions, reversed_functions, direct_comparison_dict_GT, evaluation_dict_GT)
 
         with open(os.path.join(PROJECTS_ROOT, "Evaluation", f"{binary}_comparison.json"), "w") as f:
             json.dump(direct_comparison_dict, f, indent=4)
         with open(os.path.join(PROJECTS_ROOT,"Evaluation", f"{binary}_evaluation.json"), "w") as f:
             json.dump(evaluation_dict, f, indent=4)
-        print(
-            f"Overall score for {binary}: {overall_score / regarded_functions} ({regarded_functions} functions regarded out of {len(original_functions.keys())} total)")
+
+        with open(os.path.join(PROJECTS_ROOT, "Evaluation", f"{binary}_GT_comparison.json"), "w") as f:
+            json.dump(direct_comparison_dict_GT, f, indent=4)
+        with open(os.path.join(PROJECTS_ROOT,"Evaluation", f"{binary}_GT_evaluation.json"), "w") as f:
+            json.dump(evaluation_dict_GT, f, indent=4)
+
+        score_original = overall_score_original / regarded_functions_original
+        score_ground_truth = overall_score_ground_truth / regarded_functions_ground_truth
+        score_gt_vs_original = score_original/score_ground_truth
+        result_table.add_row(binary, f"{score_original:.2f}", f"{score_ground_truth:.2f}", f"{score_gt_vs_original:.2f}", f"{regarded_functions_original}/{len(original_functions.keys())}", f"{regarded_functions_ground_truth}/{len(ground_truth_functions.keys())}")
+
+    console.print(result_table)
+
+def run_comparison(include_all, original_functions, reversed_functions, direct_comparison_dict, evaluation_dict):
+    overall_score = 0
+    regarded_functions = len(original_functions.keys())
+    for function, data in original_functions.items():
+        function = data["current_name"]
+        entrypoint = data["entrypoint"]
+        reversed_key = entrypoint.replace("0x", "FUN_")
+        if f"thunk_{reversed_key}" in reversed_functions.keys():
+            reversed_name = reversed_functions[f"thunk_{reversed_key}"]["current_name"]
+        elif reversed_key in reversed_functions.keys():
+            reversed_name = reversed_functions[reversed_key]["current_name"]
+            direct_comparison_dict[function] = reversed_name
+            score = compute_similarity_score(function, reversed_name, entrypoint)
+            evaluation_dict[entrypoint] = {
+                function: reversed_name,
+                "score": score
+            }
+            if "nothing" in reversed_name.lower() or "FUNC_" in reversed_name:
+                regarded_functions -= 1
+                continue
+            overall_score += score
+        else:
+            found = False
+            for key, value in reversed_functions.items():
+                if value["entrypoint"] == entrypoint:
+                    reversed_name = value["current_name"]
+                    direct_comparison_dict[function] = reversed_name
+                    score = compute_similarity_score(function, reversed_name, entrypoint)
+                    overall_score += score
+                    evaluation_dict[entrypoint] = {
+                        function: reversed_name,
+                        "score": score
+                    }
+                    found = True
+                    break
+            if not found:
+                if include_all:
+                    direct_comparison_dict[function] = "NOT FOUND"
+                    regarded_functions -= 1
+                continue
+    return overall_score, regarded_functions
 
 
 def compute_similarity_score(original_function_name, reversed_function_name, entrypoint):
@@ -204,9 +260,10 @@ def compute_similarity_score(original_function_name, reversed_function_name, ent
 
     for indicator in similarity_indicators:
         if indicator in original_function_name and indicator in reversed_function_name:
-            score += 1.0
+            score = 1.0
+            break
         elif "nothing" in reversed_function_name:
-            score += 1.0
+            score = 1.0
             break
     if score == 0.0:
         score = calc_group_similarity(original_function_name, reversed_function_name)
@@ -218,9 +275,10 @@ def compute_similarity_score(original_function_name, reversed_function_name, ent
     if score == 0.0:
         for indicator in similarity_indicators:
             if indicator in original_function_name and indicator in reversed_function_name:
-                score += 1.0
+                score = 1.0
+                break
             elif "nothing" in reversed_function_name:
-                score += 1.0
+                score = 1.0
                 break
 
     if score == 0.0:

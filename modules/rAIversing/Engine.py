@@ -37,7 +37,7 @@ class rAIverseEngine:
         self.console = Console(soft_wrap=True)
 
     def load_save_file(self):
-        self.console.print(f"[bold green_yellow]Loading Data from {self.path_to_save_file}[/bold green_yellow]")
+        self.console.log(f"[bold green_yellow]Loading Data from {self.path_to_save_file}[/bold green_yellow]")
         if os.path.isfile(self.path_to_save_file):
             with open(self.path_to_save_file) as f:
                 save_file = json.load(f)
@@ -284,7 +284,7 @@ class rAIverseEngine:
             lfl = self.get_lowest_function_layer()
             if len(lfl) == 0:
                 if len(self.get_missing_functions()) == 0:
-                    self.console.print("[bold blue]All functions improved[/bold blue]")
+                    self.console.log("[bold blue]All functions improved[/bold blue]")
                 else:
                     self.console.print(f"[bold orange3]No functions found for layer [/bold orange3]{function_layer}")
                     self.console.print(f"These functions remain {self.get_missing_functions()}")

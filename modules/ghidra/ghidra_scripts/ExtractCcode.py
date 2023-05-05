@@ -37,7 +37,7 @@ def renameForAllFunctions(functions, renaming_dict):
             data["code"] = data["code"].replace(old, new)
 
 
-def main(export_path=None):
+def main(export_path=None, export_with_stripped_names=False):
     state = getState()
     project = state.getProject()
     locator = project.getProjectData().getProjectLocator()
@@ -50,7 +50,7 @@ def main(export_path=None):
 
     cCode = ""
     # If you want to export with stripped names, set this to True
-    export_with_stripped_names = False
+
 
     for i in range(len(funcs)):
         func = funcs[i]
@@ -88,21 +88,25 @@ def main(export_path=None):
 
     program_name = str(fpapi.getCurrentProgram()).split(" ")[0].replace(".", "_")
 
+
     if export_path is None:
         export_path = os.path.join(PROJECTS_ROOT, program_name)
 
     if not os.path.exists(export_path):
         os.mkdir(export_path)
 
-    with open(os.path.join(export_path, program_name + ".c"), "w") as f:
-        f.write(cCode)
-        f.close()
+    if not export_with_stripped_names:
+        with open(os.path.join(export_path, program_name + ".c"), "w") as f:
+            f.write(cCode)
+            f.close()
     save_file = {
         "functions": function_metadata,
         "layers": [],
         "locked_functions": [],
         "used_tokens": 0
     }
+    if export_with_stripped_names:
+        program_name += "_stripped"
 
     with open(os.path.join(export_path, program_name + ".json"), "w") as f:
         f.write(json.dumps(save_file, indent=4))
@@ -111,7 +115,9 @@ def main(export_path=None):
 
 if __name__ == "__main__":
     args = list(getScriptArgs())
-    if len(args) > 0:
+    if len(args) > 1:
+        main(str(args[0]), str(args[1]) == "True")
+    elif len(args) > 0:
         main(str(args[0]))
     else:
         main()
