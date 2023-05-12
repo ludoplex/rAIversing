@@ -8,7 +8,39 @@
 
 
 # **rAIversing**
-## *Small but powerful reverse engineering tool using AI*
+
+### *Small but powerful reverse engineering tool using AI*
+
+Table of contents
+=================
+<!-- TOC -->
+
+* [How it works](#how-it-works)
+* [Examples](#examples)
+* [Installation](#installation)
+  * [Repo](#repo)
+  * [Ghidra](#ghidra)
+  * [OpenAI](#openai)
+* [Usage](#usage)
+  * [General](#general)
+  * [Existing Ghidra Project](#using-an-existing-ghidra-project)
+  * [New Binary](#starting-from-a-binary)
+* [Performance and Evaluation](#performance-and-evaluation)
+* [**Unsure if the tokens are worth it?**](#unsure-if-the-tokens-are-worth-it)
+
+<!-- TOC -->
+
+
+
+
+<details>
+
+<summary>
+
+## How it works
+
+</summary>
+
  * This tool uses ghidra scripts to extract the decompiled C code from either an existing project or a new binary.  
  The extracted code is then used as input for an AI model to improve the code AKA reverse engineering.  
  >Currently GPT3.5-turbo is used but other models can be used by implementing `AiModuleInterface`and supplying it in rAIversing.py   
@@ -22,7 +54,16 @@
  * As our prompt not only returns the improved Code but also a dictionary of renamings we use this to import the gained insights back into the ghidra project. 
  This includes function, variable and parameter names.  
 
- ## Examples
+</details>
+
+<details>
+
+<summary>
+
+## Examples
+
+</summary>
+
  * **Use your own ghidra installation, a custom key file location and an already existing project:**  
    ``python3 rAIversing.py -a ~/api.txt -g ~/ghidra_10.2.2_PUBLIC/support/analyzeHeadless ghidra -p ~/ghidra_project_directory -b my_binary -n ghidra_project_name``
  
@@ -54,22 +95,19 @@
  * **Do a Dry-Run to check how many tokens the model would use approximately:**  
    ``python3 rAIversing.py binary -p ~/binary_i_found_in_the_mail -d``
 
-# **Unsure if the tokens are worth it?**
-There are examples in [examples](/examples) of 3 binaries used for testing containing:
-* An archived ghidra project of the binary after rAIversing.
-* Json file containing the internal project storage of this tool.
-* Json file containing a comparison of the actual and the reversed function names.
-* C files containing the decompiled code of the binary before and after rAIversing.
+</details>
 
-You can just use the archived ghidra project to see the results of rAIversing to get a feeling for how much it can improve the code.
+<details>
 
-#### **Note:** if you have any idea on how to measure the quality of the code please let me know.
-
+<summary>
 
 ## Installation
+
+</summary>
+
 ### Repo
 * clone the repo
-### Ghidra 
+### Ghidra
 ##### (or use the --ghidra_path flag to specify a custom path to the analyzeHeadless binary)
 * download the latest version of ghidra
  
@@ -91,7 +129,17 @@ You can just use the archived ghidra project to see the results of rAIversing to
  
  * add your openAI access token to the file [chat.openai.com/api/auth/session](https://chat.openai.com/api/auth/session)
 
+</details>
+
+
+<details>
+
+<summary>
+
 ## Usage
+
+</summary>
+
 >#### General
 >``` 
 >usage: rAIversing [-h] [--testbench] [--evaluation] [-a API_KEY_PATH] [-t ACCESS_TOKEN_PATH] [-g GHIDRA_PATH] [-m MAX_TOKEN] {ghidra,new} ...
@@ -137,6 +185,40 @@ You can just use the archived ghidra project to see the results of rAIversing to
 >   -o, --output_path         Output path for the project aka ~/projects/my_binary
 >   -n, --project_name        Project Name for the Ghidra Project (defaults to the binary name)
 >```
+
+</details>
+
+
+<details>
+
+<summary>
+
+## Performance and Evaluation
+    
+</summary>
+
+</details>
+
+
+<details>
+
+<summary>
+
+## **Unsure if the tokens are worth it?**
+
+</summary>
+
+There are examples in [examples](/examples) of 3 binaries used for testing containing:
+* An archived ghidra project of the binary after rAIversing.
+* Json file containing the internal project storage of this tool.
+* Json file containing a comparison of the actual and the reversed function names.
+* C files containing the decompiled code of the binary before and after rAIversing.
+
+You can just use the archived ghidra project to see the results of rAIversing to get a feeling for how much it can improve the code.
+</details>
+
+#### **Note:** if you have any idea on how to measure the quality of the code please let me know.
+
 
 TODO: stop saving if timeout or other "invalid" errors occur  
 TODO: reprompt if new name is already in use ???  
