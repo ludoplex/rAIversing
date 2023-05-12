@@ -135,7 +135,7 @@ rAIversing.py
 ## Usage
 
 > #### General
->``` 
+>```
 >usage: rAIversing [-h] [--testbench] [--evaluation] [-a API_KEY_PATH] [-t ACCESS_TOKEN_PATH] [-g GHIDRA_PATH] [-m MAX_TOKEN] {ghidra,new} ...
 >
 >Reverse engineering tool using AI
@@ -181,6 +181,8 @@ rAIversing.py
 >```
 
 ## Performance and Evaluation
+
+![](/evaluation_results.svg)
 
 
 ## **Unsure if the tokens are worth it?**

@@ -1,11 +1,17 @@
 import json, difflib, re
-from rich.console import Console
+from rich.console import Console,CONSOLE_SVG_FORMAT
 from rich.table import Table, Column
+
 
 from rAIversing.Engine import rAIverseEngine
 from rAIversing.Ghidra_Custom_API import binary_to_c_code, import_changes_to_ghidra_project, \
     import_changes_to_existing_project, existing_project_to_c_code
 from rAIversing.pathing import *
+
+
+
+
+
 
 # This is a list of mostly verbs that, if present, describe the intended functionality of a function.
 # If two functions share the same verb, they are highly likely to be similar.
@@ -149,13 +155,16 @@ def eval_p2im_firmwares(ai_module, parallel=1):
     include_all = False
 
     result_table = Table(
-        Column(header="Binary", style="bold bright_yellow"),
-        Column(header="Model vs Orig", style="bold cyan1"),
-        Column(header="GTruth vs Orig", style="bold cyan2"),
-        Column(header="Model vs GTruth", style="bold green1"),
-        Column(header="Regarded Orig", style="blue"),
-        Column(header="Regarded GTruth", style="magenta"),
-        title="Evaluation Results",title_style="bold dark_red")
+        Column(header="Binary", style="bold bright_yellow on grey23"),
+        Column(header="Model vs Orig", style="bold cyan1 on grey23"),
+        Column(header="GTruth vs Orig", style="bold cyan2 on grey23"),
+        Column(header="Model vs GTruth", style="bold green1 on grey23"),
+        Column(header="Regarded Orig", style="blue on grey23"),
+        Column(header="Regarded GTruth", style="magenta on grey23"),
+        title="Evaluation Results",title_style="bold dark_red on grey23 ",
+        style="on grey23",
+        header_style="bold bright_yellow on grey23",
+        )
 
 
 
@@ -206,7 +215,12 @@ def eval_p2im_firmwares(ai_module, parallel=1):
         score_gt_vs_original = score_original/score_ground_truth
         result_table.add_row(binary, f"{score_original:.2f}", f"{score_ground_truth:.2f}", f"{score_gt_vs_original:.2f}", f"{regarded_functions_original}/{len(original_functions.keys())}", f"{regarded_functions_ground_truth}/{len(ground_truth_functions.keys())}")
 
-    console.print(result_table)
+    export_console= Console(record=True,width=120)
+    export_console.print(result_table)
+    export_console.save_svg(os.path.join(REPO_ROOT, f"evaluation_results.svg"),clear=False,title="",code_format=CONSOLE_SVG_FORMAT.replace("{chrome}",""))
+
+
+
 
 def run_comparison(include_all, original_functions, reversed_functions, direct_comparison_dict, evaluation_dict):
     overall_score = 0
