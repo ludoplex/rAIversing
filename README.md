@@ -99,10 +99,10 @@ You can just use the archived ghidra project to see the results of rAIversing to
 >Reverse engineering tool using AI
 >
 >positional arguments:
->   {ghidra,new}
->sub-command                 help
+>   {ghidra,binary}
+>sub-command                  help
 >   ghidra                    Run rAIversing on a ghidra project
->   binary                       Run rAIversing on a new binary or continue a previous session
+>   binary                    Run rAIversing on a new binary or continue a previous session
 >
 >optional arguments:
 >   -h, --help                show this help message and exit
@@ -112,30 +112,30 @@ You can just use the archived ghidra project to see the results of rAIversing to
 >   -a, --api_key_path        Custom OpenAI API key path (preferred)
 >   -g, --ghidra_path         /path/to/custom/ghidra/support/analyzeHeadless
 >   -m, --max_token           Maximum number of tokens before function is skipped (size of function)
->   -t, --threads         Number of parallel requests to the AI (default: 1)
+>   -t, --threads             Number of parallel requests to the AI (default: 1)
+>   -d, --dry                 Dry run to calculate how many tokens will be used
 >```
 >#### Using an existing ghidra project
 >```
 >usage: rAIversing.py ghidra [-h] -p PATH [-b BINARY_NAME] [-n PROJECT_NAME]
 >
 >optional arguments:
->   -h, --help            show this help message and exit
->   -p, --path            /path/to/directory/containing/project.rep/
->   -b, --binary_name     name of the used binary
->   -n, --project_name    Project Name as entered in Ghidra
+>   -h, --help                show this help message and exit
+>   -p, --path                /path/to/directory/containing/project.rep/
+>   -b, --binary_name         name of the used binary
+>   -n, --project_name        Project Name as entered in Ghidra
 >```
 >
 >#### Starting from a binary
 >``` 
->usage: rAIversing.py binary [-h] -p PATH [-a ARCH] [-d ] [-o OUTPUT_PATH]
+>usage: rAIversing binary [-h] -p PATH [-a ARCH] [-n PROJECT_NAME] [-o OUTPUT_PATH]
 >
 >optional arguments:
->   -h, --help            show this help message and exit
->   -p PATH, --path PATH  Location of the binary file either absolute or relative to ~/rAIversing/testing/samples/binaries
->   -a ARCH, --arch ARCH  Processor ID as defined in Ghidra (e.g. x86:LE:64:default)
->   -d, --dry             Dry run to calculate how many tokens will be used
->   -o, --output_path     Output path for the project aka ~/projects/my_binary
->   -n, --project_name    Project Name for the Ghidra Project (defaults to the binary name)
+>   -h, --help                show this help message and exit
+>   -p, --path                Location of the binary file either absolute or relative to ~/rAIversing/testing/samples/binaries
+>   -a, --arch                Processor ID as defined in Ghidra (e.g. x86:LE:64:default)
+>   -o, --output_path         Output path for the project aka ~/projects/my_binary
+>   -n, --project_name        Project Name for the Ghidra Project (defaults to the binary name)
 >```
 
 TODO: stop saving if timeout or other "invalid" errors occur  

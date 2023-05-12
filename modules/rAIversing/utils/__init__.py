@@ -88,7 +88,7 @@ def is_already_exported(project_location, binary_name):
     if os.path.isfile(os.path.join(project_location, f"{binary_name.replace('.', '_')}.json")):
         return True
     else:
-        print(f"""File {os.path.join(project_location, f'{binary_name.replace(".", "_")}.json')} not found""")
+        #print(f"""File {os.path.join(project_location, f'{binary_name.replace(".", "_")}.json')} not found""")
         return False
 
 

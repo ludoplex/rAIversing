@@ -139,6 +139,8 @@ if __name__ == "__main__":
     parser.add_argument('-g', '--ghidra_path', help='/path/to/custom/ghidra/support/analyzeHeadless', default=None)
     parser.add_argument('-m', '--max_token', help='Max Tokens before Skipping Functions', default=3000, type=int)
     parser.add_argument('-t', '--threads', help='Number of parallel requests', default=1, type=int)
+    parser.add_argument('-d', '--dry', help='Dry run to calculate how many tokens will be used',
+                        action='store_true')
     subparsers = parser.add_subparsers(help='sub-command help', dest='command')
 
     ghidra_selection = subparsers.add_parser('ghidra', help='Run rAIversing on a ghidra project')
@@ -155,8 +157,6 @@ if __name__ == "__main__":
                                   required=True)
     binary_selection.add_argument('-a', '--arch', help='Processor ID as defined in Ghidra (e.g.: x86:LE:64:default)',
                                   default="ARM:LE:32:Cortex")  # TODO: Check if required
-    binary_selection.add_argument('-d', '--dry', help='Dry run to calculate how many tokens will be used',
-                                  action='store_true')
     binary_selection.add_argument('-n', '--project_name', help='Project Name for the Ghidra Project (defaults to the binary name)', default=None)
     binary_selection.add_argument('-o', '--output_path', help='Output path for the project aka ~/projects/{my_binary|project_name (if specified)} ',
                                   default="")
@@ -179,7 +179,7 @@ if __name__ == "__main__":
     elif args.command == "ghidra":
         print(args)
         run_on_ghidra_project(args.path, args.project_name, args.binary_name, ai_module=ai_module,
-                              custom_headless_binary=args.ghidra_path, max_tokens=args.max_token,parallel=args.threads)
+                              custom_headless_binary=args.ghidra_path, max_tokens=args.max_token,parallel=args.threads, dry_run=args.dry)
 
     elif args.command == "binary":
         print(args)
