@@ -182,8 +182,19 @@ rAIversing.py
 
 ## Performance and Evaluation
 
-![](/evaluation_results.svg)
+>![Current Performance](/evaluation_results.svg)
+>This Chart will get updated when things change
 
+### **How to read the chart**
+* The scoring algorithm is described here: [Scoring algorithm](#scoring-algorithm)
+* **Model vs. Original**:
+  * This is a measure of how many functions the model was able to reverse engineer compared to the original
+    function names of the un-stripped binary.
+  * 1.0 means the model was able to reverse engineer all function names.
+
+
+### **Scoring Algorithm**
+  TODO
 
 ## **Unsure if the tokens are worth it?**
 

@@ -112,7 +112,7 @@ class rAIverseEngine:
                         self.to_be_redone.append(lflList)
                         for name in lflList:
                             self.functions[name]["code_backup"] = \
-                            self.functions[name]["code"]
+                                self.functions[name]["code"]
                     # print(lflList)
                     self.logger.info(
                         f"Locked functions: {self.locked_functions}")
@@ -305,7 +305,7 @@ class rAIverseEngine:
             if len(lfl) != 0:
                 self.layers.append(lfl)
 
-            lfl = self.get_lowest_function_layer()
+            lfl = self.get_lowest_function_layer() if not no_propagation else self.get_missing_functions()
             if len(lfl) == 0:
                 if len(self.get_missing_functions()) == 0:
                     self.console.log(
@@ -338,6 +338,7 @@ class rAIverseEngine:
                 p.start()
                 processes.append(p)
                 started += 1
+
             while processed_functions < total:
                 try:
                     name, result = result_queue.get()
@@ -346,7 +347,7 @@ class rAIverseEngine:
                         self.skip_function(name)
                         continue
                     else:
-                        self.handle_result_processing(name, result)
+                        self.handle_result_processing(name, result,no_propagation=no_propagation)
                     current_cost = self.ai_module.calc_used_tokens(
                         self.ai_module.assemble_prompt(
                             self.functions[name]["code"]))
@@ -407,7 +408,7 @@ class rAIverseEngine:
                     (self.ai_module, result_queue, name,
                      str(self.functions[name]["code"]), self.retries))
 
-    def handle_result_processing(self, name, result):
+    def handle_result_processing(self, name, result,no_propagation=False):
         try:
             improved_code = result[0]
             renaming_dict = result[1]
@@ -430,7 +431,8 @@ class rAIverseEngine:
         self.functions[name]["code"] = improved_code
         self.functions[name]["current_name"] = new_name
         self.functions[name]["renaming"] = renaming_dict
-        self.rename_for_all_functions(renaming_dict)
+        if not no_propagation:
+            self.rename_for_all_functions(renaming_dict)
 
     def run_recursive_rev(self):
         # Deprecated
@@ -596,8 +598,8 @@ class rAIverseEngine:
         renaming_dict = {}
         for name, data in self.functions.items():
             if check_do_nothing(data["code"]) and not data["improved"] and not \
-            data[
-                "skipped"]:
+                data[
+                    "skipped"]:
                 new_name = f"{name.replace('FUN_', 'do_nothing_')}"
                 renaming_dict[name] = new_name
                 improved_code = self.functions[name]["code"].replace(name,

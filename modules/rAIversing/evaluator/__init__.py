@@ -1,17 +1,14 @@
-import json, difflib, re
-from rich.console import Console,CONSOLE_SVG_FORMAT
+import json, difflib, re, shutil
+
+from rich.console import Console, CONSOLE_SVG_FORMAT
 from rich.table import Table, Column
 
-
 from rAIversing.Engine import rAIverseEngine
-from rAIversing.Ghidra_Custom_API import binary_to_c_code, import_changes_to_ghidra_project, \
+from rAIversing.Ghidra_Custom_API import binary_to_c_code, \
+    import_changes_to_ghidra_project, \
     import_changes_to_existing_project, existing_project_to_c_code
 from rAIversing.pathing import *
-
-
-
-
-
+from rAIversing.utils import load_funcs_from_json, save_to_json
 
 # This is a list of mostly verbs that, if present, describe the intended functionality of a function.
 # If two functions share the same verb, they are highly likely to be similar.
@@ -114,8 +111,8 @@ replacement_dict = {
     "div": "divide",
     "toInt": "convert_to_integer"
 
-
 }
+
 
 def eval_p2im_firmwares(ai_module, parallel=1):
     usable_binaries = os.listdir(f"{BINARIES_ROOT}/p2im/stripped")  # ["Heat_Press", "CNC", "Gateway"]
@@ -123,106 +120,145 @@ def eval_p2im_firmwares(ai_module, parallel=1):
     console = Console(soft_wrap=True)
     for binary in usable_binaries:
         binary_path = f"{BINARIES_ROOT}/p2im/stripped/{binary}"
-        console.log(f"[bold bright_green]Evaluating {binary}[/bold bright_green]")
-        if True:
-            binary_to_c_code(binary_path,processor_id= "ARM:LE:32:Cortex",project_name="Evaluation")
-            raie = rAIverseEngine(ai_module, binary_path=binary_path,json_path=f"{PROJECTS_ROOT}/Evaluation/{binary}.json")
-            raie.load_save_file()
-            raie.max_parallel_functions = parallel
-            raie.run_parallel_rev()
-            raie.export_processed(all_functions=True)
+        console.log(
+            f"[bold bright_green]Evaluating {binary}[/bold bright_green]")
+        binary_to_c_code(binary_path, processor_id="ARM:LE:32:Cortex",
+                         project_name="Evaluation")
+        raie = rAIverseEngine(ai_module, binary_path=binary_path,
+                              json_path=f"{PROJECTS_ROOT}/Evaluation/{binary}.json")
+        raie.load_save_file()
+        raie.max_parallel_functions = parallel
+        raie.run_parallel_rev()
+        raie.export_processed(all_functions=True)
 
-        import_changes_to_existing_project(project_location=f"{PROJECTS_ROOT}/Evaluation",project_name="Evaluation",binary_name=binary)
+        import_changes_to_existing_project(
+            project_location=f"{PROJECTS_ROOT}/Evaluation",
+            project_name="Evaluation", binary_name=binary)
 
     for binary in usable_binaries:
         binary_path = f"{BINARIES_ROOT}/p2im/original/{binary}_original"
-        binary_to_c_code(binary_path,processor_id="ARM:LE:32:Cortex",project_name="Evaluation")
-        existing_project_to_c_code(project_location=f"{PROJECTS_ROOT}/Evaluation",binary_name=f"{binary}_original",project_name="Evaluation",export_with_stripped_names=True)
+        binary_to_c_code(binary_path, processor_id="ARM:LE:32:Cortex",
+                         project_name="Evaluation")
+        existing_project_to_c_code(
+            project_location=f"{PROJECTS_ROOT}/Evaluation",
+            binary_name=f"{binary}_original", project_name="Evaluation",
+            export_with_stripped_names=True)
 
     for binary in usable_binaries:
         binary_path = f"{BINARIES_ROOT}/p2im/original/{binary}_original"
-        console.print(f"[bold green]Processing Ground Truth for {binary}[/bold green]")
-        if True:
-            raie = rAIverseEngine(ai_module, binary_path=binary_path,json_path=f"{PROJECTS_ROOT}/Evaluation/{binary}_original_stripped.json")
-            raie.load_save_file()
-            raie.max_parallel_functions = parallel
-            raie.run_parallel_rev()
+        console.log(
+            f"[bold green]Processing Ground Truth for {binary}[/bold green]")
+        raie = rAIverseEngine(ai_module, binary_path=binary_path,
+                              json_path=f"{PROJECTS_ROOT}/Evaluation/{binary}_original_stripped.json")
+        raie.load_save_file()
+        raie.max_parallel_functions = parallel
+        raie.run_parallel_rev()
 
-
-
-
+    for binary in usable_binaries:
+        binary_path = f"{BINARIES_ROOT}/p2im/no_propagation/{binary}_no_propagation"
+        console.log(
+            f"[bold green]No Propagation Results for {binary}[/bold green]")
+        binary_to_c_code(binary_path, processor_id="ARM:LE:32:Cortex",
+                         project_name="Evaluation")
+        existing_project_to_c_code(
+            project_location=f"{PROJECTS_ROOT}/Evaluation",
+            binary_name=f"{binary}_no_propagation", project_name="Evaluation")
+        raie = rAIverseEngine(ai_module, binary_path=binary_path,
+                              json_path=f"{PROJECTS_ROOT}/Evaluation/{binary}_no_propagation.json")
+        raie.load_save_file()
+        raie.max_parallel_functions = parallel
+        raie.run_parallel_rev(no_propagation=True)
+        import_changes_to_existing_project(
+            project_location=f"{PROJECTS_ROOT}/Evaluation",
+            project_name="Evaluation", binary_name=f"{binary}_no_propagation")
 
     include_all = False
 
     result_table = Table(
         Column(header="Binary", style="bold bright_yellow on grey23"),
-        Column(header="Model vs Orig", style="bold cyan1 on grey23"),
-        Column(header="GTruth vs Orig", style="bold cyan2 on grey23"),
-        Column(header="Model vs GTruth", style="bold green1 on grey23"),
+        Column(header="Actual", style="bold cyan1 on grey23"),
+        Column(header="Best Case\n(Ground Truth)",
+               style="bold cyan2 on grey23"),
+        Column(header="Worst Case\n(No Propagation)",
+               style="bold cyan3 on grey23"),
+        Column(header="Actual vs Best", style="bold green1 on grey23"),
+        Column(header="RPD\n(Relative Percentage Difference)",
+               style="bold spring_green2 on grey23"),
         Column(header="Regarded Orig", style="blue on grey23"),
         Column(header="Regarded GTruth", style="magenta on grey23"),
-        title="Evaluation Results",title_style="bold dark_red on grey23 ",
+        Column(header="Regarded No Prop", style="magenta3 on grey23"),
+        title="Evaluation Results", title_style="bold dark_red on grey23 ",
         style="on grey23",
         header_style="bold bright_yellow on grey23",
-        )
-
-
-
+    )
 
     for binary in usable_binaries:
         direct_comparison_dict = {}
         evaluation_dict = {}
-        reversed_functions = {}
-        original_functions = {}
+        functions_actual = {}
+        functions_original = {}
+        functions_no_propagation = {}
         ground_truth_functions = {}
         direct_comparison_dict_GT = {}
         evaluation_dict_GT = {}
+        direct_comparison_dict_no_prop = {}
+        evaluation_dict_no_prop = {}
 
-        with open(os.path.join(PROJECTS_ROOT, "Evaluation", f"{binary}.json"), "r") as f:
-            save_file = json.load(f)
-            if "functions" in save_file.keys():
-                reversed_functions = save_file["functions"]
-            else:
-                reversed_functions = save_file
-        with open(os.path.join(PROJECTS_ROOT, f"Evaluation", f"{binary}_original.json"), "r") as f:
-            save_file = json.load(f)
-            if "functions" in save_file.keys():
-                original_functions = save_file["functions"]
-            else:
-                original_functions = save_file
-        with open(os.path.join(PROJECTS_ROOT, f"Evaluation", f"{binary}_original_stripped.json"), "r") as f:
-            save_file = json.load(f)
-            if "functions" in save_file.keys():
-                ground_truth_functions = save_file["functions"]
-            else:
-                ground_truth_functions = save_file
+        functions_actual = load_funcs_from_json(f"Evaluation/{binary}.json")
+        functions_original = load_funcs_from_json(f"Evaluation/{binary}_original.json")
+        ground_truth_functions = load_funcs_from_json(f"Evaluation/{binary}_original_stripped.json")
+        functions_no_propagation = load_funcs_from_json(f"Evaluation/{binary}_no_propagation.json")
 
-        overall_score_original, regarded_functions_original = run_comparison(include_all, original_functions, reversed_functions, direct_comparison_dict, evaluation_dict)
-        overall_score_ground_truth, regarded_functions_ground_truth = run_comparison(include_all, ground_truth_functions, reversed_functions, direct_comparison_dict_GT, evaluation_dict_GT)
+        overall_score_original, regarded_functions_original = run_comparison(
+            include_all, functions_original, functions_actual,
+            direct_comparison_dict, evaluation_dict)
+        overall_score_ground_truth, regarded_functions_ground_truth = run_comparison(
+            include_all, functions_original, ground_truth_functions,
+            direct_comparison_dict_GT, evaluation_dict_GT,skip_lfl=True)
+        overall_score_no_propagation, regarded_functions_no_propagation = run_comparison(
+            include_all, functions_original, functions_no_propagation,
+            direct_comparison_dict_no_prop, evaluation_dict_no_prop, skip_lfl=True)
 
-        with open(os.path.join(PROJECTS_ROOT, "Evaluation", f"{binary}_comparison.json"), "w") as f:
-            json.dump(direct_comparison_dict, f, indent=4)
-        with open(os.path.join(PROJECTS_ROOT,"Evaluation", f"{binary}_evaluation.json"), "w") as f:
-            json.dump(evaluation_dict, f, indent=4)
+        save_to_json(direct_comparison_dict,
+                     f"Evaluation/{binary}_comparison.json")
+        save_to_json(evaluation_dict, f"Evaluation/{binary}_evaluation.json")
+        save_to_json(direct_comparison_dict_GT,
+                     f"Evaluation/{binary}_GT_comparison.json")
+        save_to_json(evaluation_dict_GT,
+                     f"Evaluation/{binary}_GT_evaluation.json")
+        save_to_json(direct_comparison_dict_no_prop,
+                     f"Evaluation/{binary}_no_prop_comparison.json")
+        save_to_json(evaluation_dict_no_prop,
+                     f"Evaluation/{binary}_no_prop_evaluation.json")
 
-        with open(os.path.join(PROJECTS_ROOT, "Evaluation", f"{binary}_GT_comparison.json"), "w") as f:
-            json.dump(direct_comparison_dict_GT, f, indent=4)
-        with open(os.path.join(PROJECTS_ROOT,"Evaluation", f"{binary}_GT_evaluation.json"), "w") as f:
-            json.dump(evaluation_dict_GT, f, indent=4)
-
-        score_original = overall_score_original / regarded_functions_original
+        score_actual = overall_score_original / regarded_functions_original
         score_ground_truth = overall_score_ground_truth / regarded_functions_ground_truth
-        score_gt_vs_original = score_original/score_ground_truth
-        result_table.add_row(binary, f"{score_original:.2f}", f"{score_ground_truth:.2f}", f"{score_gt_vs_original:.2f}", f"{regarded_functions_original}/{len(original_functions.keys())}", f"{regarded_functions_ground_truth}/{len(ground_truth_functions.keys())}")
+        score_no_propagation = overall_score_no_propagation / regarded_functions_no_propagation
+        score_gt_vs_actual = score_actual / score_ground_truth
+        score_rpd = calc_relative_percentage_difference(score_ground_truth,
+                                                        score_no_propagation,
+                                                        score_actual)
 
-    export_console= Console(record=True,width=120)
+        result_table.add_row(binary, f"{score_actual:.2f}",
+                             f"{score_ground_truth:.2f}",
+                             f"{score_no_propagation:.2f}",
+                             f"{score_gt_vs_actual:.2f}",
+                             f"{score_rpd:.2f}",
+                             f"{regarded_functions_original}/{len(functions_original.keys())}",
+                             f"{regarded_functions_ground_truth}/{len(ground_truth_functions.keys())}",
+                             f"{regarded_functions_no_propagation}/{len(functions_no_propagation.keys())}"
+                             )
+
+    export_console = Console(record=True, width=120)
     export_console.print(result_table)
-    export_console.save_svg(os.path.join(REPO_ROOT, f"evaluation_results.svg"),clear=False,title="",code_format=CONSOLE_SVG_FORMAT.replace("{chrome}",""))
+    export_console.save_svg(os.path.join(REPO_ROOT, f"evaluation_results.svg"),
+                            clear=False, title="",
+                            code_format=CONSOLE_SVG_FORMAT.replace("{chrome}",
+                                                                   ""))
 
 
-
-
-def run_comparison(include_all, original_functions, reversed_functions, direct_comparison_dict, evaluation_dict):
+def run_comparison(include_all, original_functions, reversed_functions,
+    direct_comparison_dict, evaluation_dict,skip_lfl=False):
     overall_score = 0
     regarded_functions = len(original_functions.keys())
     for function, data in original_functions.items():
@@ -230,15 +266,21 @@ def run_comparison(include_all, original_functions, reversed_functions, direct_c
         entrypoint = data["entrypoint"]
         reversed_key = entrypoint.replace("0x", "FUN_")
         if f"thunk_{reversed_key}" in reversed_functions.keys():
-            reversed_name = reversed_functions[f"thunk_{reversed_key}"]["current_name"]
+            reversed_name = reversed_functions[f"thunk_{reversed_key}"][
+                "current_name"]
         elif reversed_key in reversed_functions.keys():
             reversed_name = reversed_functions[reversed_key]["current_name"]
+            if skip_lfl and len(reversed_functions[reversed_key]["called"]) == 0:
+                regarded_functions -= 1
+                continue
             direct_comparison_dict[function] = reversed_name
-            score = compute_similarity_score(function, reversed_name, entrypoint)
+            score = compute_similarity_score(function, reversed_name,
+                                             entrypoint)
             evaluation_dict[entrypoint] = {
                 function: reversed_name,
                 "score": score
             }
+
             if "nothing" in reversed_name.lower() or "FUNC_" in reversed_name:
                 regarded_functions -= 1
                 continue
@@ -249,7 +291,8 @@ def run_comparison(include_all, original_functions, reversed_functions, direct_c
                 if value["entrypoint"] == entrypoint:
                     reversed_name = value["current_name"]
                     direct_comparison_dict[function] = reversed_name
-                    score = compute_similarity_score(function, reversed_name, entrypoint)
+                    score = compute_similarity_score(function, reversed_name,
+                                                     entrypoint)
                     overall_score += score
                     evaluation_dict[entrypoint] = {
                         function: reversed_name,
@@ -265,9 +308,12 @@ def run_comparison(include_all, original_functions, reversed_functions, direct_c
     return overall_score, regarded_functions
 
 
-def compute_similarity_score(original_function_name, reversed_function_name, entrypoint):
-    original_function_name = original_function_name.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
-    reversed_function_name = reversed_function_name.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
+def compute_similarity_score(original_function_name, reversed_function_name,
+    entrypoint):
+    original_function_name = original_function_name.lower().replace(
+        f"_{entrypoint.replace('0x', '')}", "")
+    reversed_function_name = reversed_function_name.lower().replace(
+        f"_{entrypoint.replace('0x', '')}", "")
     score = 0.0
     # remove duplicates from similarity_indicators
     similarity_indicators_local = list(set(similarity_indicators))
@@ -280,7 +326,8 @@ def compute_similarity_score(original_function_name, reversed_function_name, ent
             score = 1.0
             break
     if score == 0.0:
-        score = calc_group_similarity(original_function_name, reversed_function_name)
+        score = calc_group_similarity(original_function_name,
+                                      reversed_function_name)
 
     for old, new in replacement_dict.items():
         if new not in original_function_name and old == original_function_name:
@@ -296,18 +343,24 @@ def compute_similarity_score(original_function_name, reversed_function_name, ent
                 break
 
     if score == 0.0:
-        score = calc_group_similarity(original_function_name, reversed_function_name)
-
-
-
+        score = calc_group_similarity(original_function_name,
+                                      reversed_function_name)
 
     if score == 0.0:
-        score = difflib.SequenceMatcher(None, original_function_name, reversed_function_name).ratio()
+        score = difflib.SequenceMatcher(None, original_function_name,
+                                        reversed_function_name).ratio()
     return score
 
 
 def calc_group_similarity(original_function_name, reversed_function_name):
     for group in similarity_indicator_groups:
-        if re.match(group[0], original_function_name) and re.match(group[1], reversed_function_name):
+        if re.match(group[0], original_function_name) and re.match(group[1],
+                                                                   reversed_function_name):
             return 1.0
     return 0.0
+
+
+def calc_relative_percentage_difference(best, worst, actual):
+    range = best - worst
+    difference = actual - worst
+    return (difference / range) * 100
