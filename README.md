@@ -190,6 +190,8 @@ rAIversing.py
 * **Actual**:
   * This is a measure of how many functions the model was able to reverse engineer correctly compared to the original
     function names of the un-stripped binary.
+  * **Higher** only includes functions that have subroutines.
+  * **Lower** only includes functions that do not have subroutines.
   * **correctly** means as calculated by the scoring algorithm
 * **Best Case**:
   * This measures how many functions the model was able to reverse engineer correctly when given the original function body with debugging symbols.
@@ -197,11 +199,14 @@ rAIversing.py
 * **Worst Case**:
   * This measures how many functions the model was able to reverse engineer correctly when given the stripped function body.
   * Currently only functions with subroutines are used for this as only they differ here.
-* **Actual vs Best**
+* **Act/Best**
   * This is the actual score divided by the best case score.
-  * This is a measure of how much the model is affected by the lack of debugging symbols.
+* **Actual vs Best**
+  * This is scores the best case names against the actual names.
+  * This is a measure for the performance of the context propagation.
+  * **This is NOT the same as Act/Best**
 * **Relative Percentage Difference**
-  * This is the actual - worst divided by best - worst.
+  * This is the (actual - worst) divided by (best - worst).
   * This is a measure of the model's performance relative to the best and worst case.
 
 
