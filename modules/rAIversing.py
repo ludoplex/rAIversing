@@ -71,8 +71,8 @@ def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=N
     else:
         path = os.path.abspath(path)
 
-    if binary_name == None:
-        if project_name == None:
+    if binary_name is None:
+        if project_name is None:
             binary_name = os.path.basename(path)
         else:
             binary_name = project_name
@@ -98,15 +98,15 @@ def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=N
 
 
 def run_on_new_binary(binary_path, arch, ai_module=None, custom_headless_binary=None, max_tokens=3000, dry_run=False,
-                      output_path="", parallel=1, project_name=""):
+                      output_path=None, parallel=1, project_name=None):
     if ai_module is None:
         raise ValueError("No AI module was provided")
     import_path = check_and_fix_bin_path(binary_path)
     binary_to_c_code(import_path, arch, custom_headless_binary=custom_headless_binary, project_location=output_path,project_name=project_name)
-    if output_path != "":
+    if output_path is not None:
         binary_name = os.path.basename(binary_path).replace(".", "_")
         json_path = f"{os.path.join(output_path, binary_name)}.json"
-        project_name = binary_name if project_name == "" else project_name
+        project_name = binary_name if project_name is None else project_name
         project_location = os.path.join(output_path, project_name)
     else:
         json_path = ""
@@ -121,7 +121,7 @@ def run_on_new_binary(binary_path, arch, ai_module=None, custom_headless_binary=
     else:
         raie.run_recursive_rev()
     raie.export_processed(all_functions=True)
-    if output_path != "":
+    if output_path is not None:
         import_changes_to_existing_project(project_location, binary_name, project_name,
                                            custom_headless_binary=custom_headless_binary)
     else:
@@ -159,7 +159,7 @@ if __name__ == "__main__":
                                   default="ARM:LE:32:Cortex")  # TODO: Check if required
     binary_selection.add_argument('-n', '--project_name', help='Project Name for the Ghidra Project (defaults to the binary name)', default=None)
     binary_selection.add_argument('-o', '--output_path', help='Output path for the project aka ~/projects/{my_binary|project_name (if specified)} ',
-                                  default="")
+                                  default=None)
 
 
 
