@@ -193,9 +193,9 @@ def eval_p2im_firmwares(ai_module, parallel=1):
                style="bold red on grey23", justify="center"),
         Column(header="Act/Best", style="bold green1 on grey23",
                justify="center"),
-        Column(header="Actual vs Best\n(direct)", style="bold green1 on grey23",
+        Column(header="Actual vs Best (direct)\nAll|hfl", style="bold green1 on grey23",
                justify="center"),
-        Column(header="RPD", style="bold spring_green2 on grey23",
+        Column(header="RPD\nAll|Hfl", style="bold spring_green2 on grey23",
                justify="center"),
         Column(header="Total\nOrig|Act", style="magenta on grey23",
                justify="center"),
@@ -247,19 +247,33 @@ def eval_p2im_firmwares(ai_module, parallel=1):
             skip_hfl=True)
         score_lfl = sum_lfl / counted_lfl
 
-        sum_ground_truth, counted_ground_truth = run_comparison(
+        sum_ground_truth_hfl, counted_ground_truth = run_comparison(
             include_all, funcs_orig, funcs_gt,
             dc_dict_GT, eval_dict_GT, skip_lfl=True)
-        score_ground_truth = sum_ground_truth / counted_ground_truth
+        score_best_hfl = sum_ground_truth_hfl / counted_ground_truth
 
-        sum_no_prop, counted_no_prop = run_comparison(
+        sum_ground_truth_all, counted_ground_truth = run_comparison(
+            include_all, funcs_orig, funcs_gt)
+        score_best_all = sum_ground_truth_all / counted_ground_truth
+
+        sum_no_prop_hfl, counted_no_prop = run_comparison(
             include_all, funcs_orig, funcs_no_prop,
             dc_dict_no_prop, eval_dict_no_prop, skip_lfl=True)
-        score_no_prop = sum_no_prop / counted_no_prop
+        score_worst_hfl = sum_no_prop_hfl / counted_no_prop
 
-        sum_gt_vs_actual_direct, counted_gt_vs_actual = run_comparison(
+        sum_no_prop, counted_no_prop = run_comparison(
+            include_all, funcs_orig, funcs_no_prop)
+        score_worst_all = sum_no_prop/ counted_no_prop
+
+
+        sum_gt_vs_actual_direct_all, counted_gt_vs_actual = run_comparison(
             include_all, funcs_gt, funcs_actual)
-        score_gt_vs_actual_direct = sum_gt_vs_actual_direct / counted_gt_vs_actual
+        score_gt_vs_actual_dir_all = sum_gt_vs_actual_direct_all / counted_gt_vs_actual
+
+        sum_gt_vs_actual_direct_hfl, counted_gt_vs_actual = run_comparison(
+            include_all, funcs_gt, funcs_actual,skip_lfl=True)
+        score_gt_vs_actual_dir_hfl = sum_gt_vs_actual_direct_hfl / counted_gt_vs_actual
+
 
         save_to_json(dc_dict,
                      f"Evaluation/{binary}_comparison.json")
@@ -273,27 +287,32 @@ def eval_p2im_firmwares(ai_module, parallel=1):
         save_to_json(eval_dict_no_prop,
                      f"Evaluation/{binary}_no_prop_evaluation.json")
 
-        score_gt_vs_actual = score_actual / score_ground_truth
-        score_rpd = calc_relative_percentage_difference(score_ground_truth,
-                                                        score_no_prop,
+        score_gt_vs_actual = score_actual / score_best_hfl
+
+        score_rpd_hfl = calc_relative_percentage_difference(score_best_hfl,
+                                                        score_worst_hfl,
+                                                        score_hfl)
+
+        score_rpd_all = calc_relative_percentage_difference(score_best_all,
+                                                        score_worst_all,
                                                         score_actual)
 
         result_table.add_row(binary,
                              f"{score_actual * 100:.2f}%",
                              f"{score_hfl * 100:.2f}%",
                              f"{score_lfl * 100:.2f}%",
-                             f"{score_ground_truth * 100:.2f}%",
-                             f"{score_no_prop * 100:.2f}%",
+                             f"{score_best_hfl * 100:.2f}%",
+                             f"{score_worst_hfl * 100:.2f}%",
                              f"{score_gt_vs_actual * 100:.2f}%",
-                             f"{score_gt_vs_actual_direct * 100:.2f}%",
-                             f"{score_rpd :.2f}%",
+                             f"{score_gt_vs_actual_dir_all * 100:.2f}%|{score_gt_vs_actual_dir_hfl * 100:.2f}%",
+                             f"{score_rpd_all :.1f}%|{score_rpd_hfl :.1f}%",
                              f"{len(funcs_orig.keys())}[bold magenta1]|[/bold magenta1]{len(funcs_actual.keys())}",
                              f"{counted_actual}",
                              f"{counted_ground_truth}",
                              f"{counted_no_prop}"
                              )
 
-    export_console = Console(record=True, width=140)
+    export_console = Console(record=True, width=150)
     export_console.print(result_table)
     export_console.save_svg(os.path.join(REPO_ROOT, f"evaluation_results.svg"),
                             clear=False, title="",
