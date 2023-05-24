@@ -187,10 +187,22 @@ rAIversing.py
 
 ### **How to read the chart**
 * The scoring algorithm is described here: [Scoring algorithm](#scoring-algorithm)
-* **Model vs. Original**:
-  * This is a measure of how many functions the model was able to reverse engineer compared to the original
+* **Actual**:
+  * This is a measure of how many functions the model was able to reverse engineer correctly compared to the original
     function names of the un-stripped binary.
-  * 1.0 means the model was able to reverse engineer all function names.
+  * **correctly** means as calculated by the scoring algorithm
+* **Best Case**:
+  * This measures how many functions the model was able to reverse engineer correctly when given the original function body with debugging symbols.
+  * Currently only functions with subroutines are used for this as only they differ here.
+* **Worst Case**:
+  * This measures how many functions the model was able to reverse engineer correctly when given the stripped function body.
+  * Currently only functions with subroutines are used for this as only they differ here.
+* **Actual vs Best**
+  * This is the actual score divided by the best case score.
+  * This is a measure of how much the model is affected by the lack of debugging symbols.
+* **Relative Percentage Difference**
+  * This is the actual - worst divided by best - worst.
+  * This is a measure of the model's performance relative to the best and worst case.
 
 
 ### **Scoring Algorithm**

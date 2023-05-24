@@ -239,17 +239,17 @@ def eval_p2im_firmwares(ai_module, parallel=1):
                                                         score_no_propagation,
                                                         score_actual)
 
-        result_table.add_row(binary, f"{score_actual:.2f}",
-                             f"{score_ground_truth:.2f}",
-                             f"{score_no_propagation:.2f}",
-                             f"{score_gt_vs_actual:.2f}",
-                             f"{score_rpd:.2f}",
+        result_table.add_row(binary, f"{score_actual*100:.2f}%",
+                             f"{score_ground_truth*100:.2f}%",
+                             f"{score_no_propagation*100:.2f}%",
+                             f"{score_gt_vs_actual*100:.2f}%",
+                             f"{score_rpd :.2f}%",
                              f"{regarded_functions_original}/{len(functions_original.keys())}",
                              f"{regarded_functions_ground_truth}/{len(ground_truth_functions.keys())}",
                              f"{regarded_functions_no_propagation}/{len(functions_no_propagation.keys())}"
                              )
 
-    export_console = Console(record=True, width=120)
+    export_console = Console(record=True, width=140)
     export_console.print(result_table)
     export_console.save_svg(os.path.join(REPO_ROOT, f"evaluation_results.svg"),
                             clear=False, title="",
@@ -270,9 +270,6 @@ def run_comparison(include_all, original_functions, reversed_functions,
                 "current_name"]
         elif reversed_key in reversed_functions.keys():
             reversed_name = reversed_functions[reversed_key]["current_name"]
-            if skip_lfl and len(reversed_functions[reversed_key]["called"]) == 0:
-                regarded_functions -= 1
-                continue
             direct_comparison_dict[function] = reversed_name
             score = compute_similarity_score(function, reversed_name,
                                              entrypoint)
@@ -280,7 +277,9 @@ def run_comparison(include_all, original_functions, reversed_functions,
                 function: reversed_name,
                 "score": score
             }
-
+            if skip_lfl and len(reversed_functions[reversed_key]["called"]) == 0:
+                regarded_functions -= 1
+                continue
             if "nothing" in reversed_name.lower() or "FUNC_" in reversed_name:
                 regarded_functions -= 1
                 continue
