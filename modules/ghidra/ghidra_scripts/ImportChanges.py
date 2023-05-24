@@ -53,7 +53,6 @@ def main(json_file_path=None):
 
     current_lookup = {}
     original_lookup = {}
-
     # Lookup tables
     for function_name, data in functions_dict.items():
         current_lookup[function_name] = data["current_name"]
@@ -74,7 +73,6 @@ def main(json_file_path=None):
             new_name = function_data["current_name"]
 
             # We can skip functions that are Skipped in the json
-
             if function_data["skipped"] or "imported" in function_data.keys() and function_data["imported"]:
                 continue
 
@@ -153,6 +151,10 @@ def main(json_file_path=None):
 
                     #print(str(type(var)) + " Renaming " + var_name + " to " + new_name + " in function " + func_name)
                     #print("Var Renaming " + var_name + " to " + new_name + " in function " + func_name)
+            functions_dict[func_name]["imported"] = True
+
+    for func_name, data in functions_dict.items():
+        if not data["imported"]:
             functions_dict[func_name]["imported"] = True
 
     with open(json_file_path, "w") as f:

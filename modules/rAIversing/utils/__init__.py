@@ -238,7 +238,7 @@ def handle_spawn_worker(processes, prompting_args, started):
         started += 1
 
 
-def load_funcs_from_json(file,return_lfl=False):
+def load_func_data_from_json(file):
     """
     if file is not a path to a file, it is assumed to be relative to PROJECTS_ROOT
     :param file:
@@ -247,13 +247,9 @@ def load_funcs_from_json(file,return_lfl=False):
         file = os.path.join(PROJECTS_ROOT,file)
     with open(file, "r") as f:
         save_file = json.load(f)
-        if "functions" in save_file.keys():
-            functions = save_file["functions"]
-            if return_lfl:
-                return functions, save_file["layers"][0]
-        else:
-            functions = save_file
-    return functions
+        functions = save_file["functions"]
+        layers = save_file["layers"]
+    return functions, layers
 
 def save_to_json(data, file):
     """

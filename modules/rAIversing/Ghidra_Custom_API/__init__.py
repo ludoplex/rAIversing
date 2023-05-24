@@ -5,10 +5,10 @@ from rAIversing.pathing import PROJECTS_ROOT, GHIDRA_SCRIPTS, BINARIES_ROOT
 from rAIversing.utils import check_and_fix_bin_path, check_and_create_project_path, is_already_exported
 
 
-def binary_to_c_code(binary_path, processor_id="", custom_headless_binary=None, project_location="", project_name="",debug=False):
+def binary_to_c_code(binary_path, processor_id="", custom_headless_binary=None, project_location=None, project_name=None,debug=False):
     import_path = check_and_fix_bin_path(binary_path)
-    project_name = os.path.basename(binary_path).replace(".", "_") if project_name == "" else project_name
-    project_location = f'{os.path.join(PROJECTS_ROOT, project_name)}' if project_location == "" else project_location
+    project_name = os.path.basename(binary_path).replace(".", "_") if project_name is None else project_name
+    project_location = f'{os.path.join(PROJECTS_ROOT, project_name)}' if project_location is None else project_location
     if is_already_exported(project_location, os.path.basename(binary_path)):
         return
     check_and_create_project_path(project_location)

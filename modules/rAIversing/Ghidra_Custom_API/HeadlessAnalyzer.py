@@ -168,4 +168,4 @@ class HeadlessAnalyzerWrapper:
         self.__build__()
         output = subprocess.check_output(self.__command__, shell=True,stderr= subprocess.STDOUT)
         if debug:
-            print(output)
+            print(output.decode('utf-8'))

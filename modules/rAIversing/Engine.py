@@ -81,6 +81,12 @@ class rAIverseEngine:
             }
             json.dump(save_file, f, indent=4)
 
+    def is_import_needed(self):
+        for name, data in self.functions.items():
+            if data["imported"] == False and not data["skipped"]:
+                return True
+        return False
+
     def get_lowest_function_layer(self):
         lflList = []
         for name, data in self.functions.items():
