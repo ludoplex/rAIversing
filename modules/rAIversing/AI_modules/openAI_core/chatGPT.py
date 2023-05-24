@@ -41,7 +41,7 @@ You have been given a piece of code which needs to be reverse engineered and imp
 """
 
 Your task is to create an improved and more readable version of the code without changing variables starting with "PTR_" or "DAT_".
-If possible give the function a more descriptive name, otherwise leave it as it is. (Functions start with "FUN_") 
+If possible give the function a more descriptive name in snake_case, otherwise leave it as it is. (Functions start with "FUN_") 
 
 Your response should include the following:
                 
