@@ -15,8 +15,7 @@ from rAIversing.utils import extract_function_name, NoResponseException, clear_e
     check_valid_code, MaxTriesExceeded, InvalidResponseException, format_newlines_in_code, escape_failed_escapes, \
     check_reverse_engineer_fail_happend, locator
 
-PROMPT_TEXT = \
-    """
+PROMPT_TEXT = """
     
     Respond with a single JSON object containing the following keys and values:
     improved_code : make the following code more readable without changing variables starting with PTR_ , DAT_ or FUN_
@@ -32,38 +31,36 @@ def assemble_prompt_v1(code):
 
 
 def assemble_prompt_v2(code):
-    pre = \
-        """
+    pre = """
 You have been given a piece of code which needs to be reverse engineered and improved. The original code is as follows:
         
 """
-    post = \
-"""
-
-Your task is to create an improved and more readable version of the code without changing variables starting with "PTR_" or "DAT_".
-If possible give the function a more descriptive name in snake_case, otherwise leave it as it is. (Functions start with "FUN_") 
-
-Your response should include the following:
-                
-1. The improved code, which should be more readable and easier to understand. Do not use single characters for variable names.
-2. A dictionary that maps the original names of the function, parameters and variables to their new names in the improved code.
-
-Respond in the following format:
-
-{
-"improved_code": "<your escaped and improved code here>",
-"renaming_operations": {
-"<original_function_name>": "<new_function_name>",
-"<original_parameter_name_1>": "<new_parameter_name_1>",
-"<original_parameter_name_2>": "<new_parameter_name_2>",
-...
-"<original_variable_name_1>": "<new_variable_name_1>",
-"<original_variable_name_2>": "<new_variable_name_2>",
-...
-}
-}
-Do not use single quotes. No Explanation is needed.
-"""
+    post = """
+        
+        Your task is to create an improved and more readable version of the code without changing variables starting with "PTR_" or "DAT_".
+        If possible give the function a more descriptive name in snake_case, otherwise leave it as it is. (Functions start with "FUN_") 
+        
+        Your response should include the following:
+                        
+        1. The improved code, which should be more readable and easier to understand. Do not use single characters for variable names.
+        2. A dictionary that maps the original names of the function, parameters and variables to their new names in the improved code.
+        
+        Respond in the following format:
+        
+        {
+        "improved_code": "<your escaped and improved code here>",
+        "renaming_operations": {
+        "<original_function_name>": "<new_function_name>",
+        "<original_parameter_name_1>": "<new_parameter_name_1>",
+        "<original_parameter_name_2>": "<new_parameter_name_2>",
+        ...
+        "<original_variable_name_1>": "<new_variable_name_1>",
+        "<original_variable_name_2>": "<new_variable_name_2>",
+        ...
+        }
+        }
+        Do not use single quotes. No Explanation is needed.
+        """
 
     return pre + code + post
 
@@ -74,9 +71,9 @@ def access_token(path_to_access_token=os.path.join(AI_MODULES_ROOT, "openAI_core
     return chat
 
 
-def api_key(path_to_api_key=os.path.join(AI_MODULES_ROOT, "openAI_core", "api_key.txt")):
+def api_key(path_to_api_key=os.path.join(AI_MODULES_ROOT, "openAI_core", "api_key.txt"), engine="gpt-3.5-turbo"):
     chat = ChatGPTModule()
-    chat.init_api(path_to_api_key)
+    chat.init_api(path_to_api_key, engine=engine)
     return chat
 
 
@@ -87,11 +84,16 @@ class ChatGPTModule(AiModuleInterface):
         self.access_token = None
         self.logger = logging.getLogger("ChatGPTModule")
         self.console = Console()
+        self.engine = "gpt-3.5-turbo"  # Model name for the openAI API
 
-    def init_api(self, path_to_api_key=None):
+    def get_model_name(self):
+        return self.engine
+
+    def init_api(self, path_to_api_key=None, engine="gpt-3.5-turbo"):
+        self.engine = engine
         with open(path_to_api_key) as f:
             self.api_key = f.read()
-        self.chat = revChatGPT.V3.Chatbot(api_key=self.api_key)
+        self.chat = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine)
 
     def init_access_token(self, path_to_access_token=None):
         with open(path_to_access_token) as f:
@@ -160,11 +162,11 @@ class ChatGPTModule(AiModuleInterface):
         except:
             pass
 
-        #response_string = self.format_string_correctly(response_string)
-        #try:
+        # response_string = self.format_string_correctly(response_string)
+        # try:
         #    response_dict = json.loads(response_string, strict=False)
         #    return response_dict, response_string_orig
-        #except:
+        # except:
         #    pass
 
         response_string = self.remove_trailing_commas(response_string)
@@ -181,7 +183,6 @@ class ChatGPTModule(AiModuleInterface):
         except:
             pass
 
-
         response_string = escape_failed_escapes(response_string)
         try:
             response_dict = json.loads(response_string, strict=False)
@@ -189,10 +190,9 @@ class ChatGPTModule(AiModuleInterface):
         except:
             pass
 
-
         try:
             response_string = format_newlines_in_code(response_string)
-            #For cases where the code is not escaped and contains double quotes
+            # For cases where the code is not escaped and contains double quotes
 
             response_dict = json.loads(response_string, strict=False)
             return response_dict, response_string_orig
@@ -258,15 +258,21 @@ class ChatGPTModule(AiModuleInterface):
             try:
                 response_string = self.prompt(full_prompt)
                 # print(response_string)
-                #with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                # with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                 #    f.write(response_string)
-                #with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "r") as f:
+                # with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "r") as f:
                 #    response_string = f.read()
                 response_dict, response_string = self.process_response(response_string)
                 improved_code, renaming_dict = split_response(response_dict)
+                new_func_name = extract_function_name(improved_code)
+                for key, value in renaming_dict.items():
+                    if value == new_func_name:
+                        func_name = key
+                        break
 
                 if check_reverse_engineer_fail_happend(improved_code):
-                    self.console.print(f"[orange3]Got reverse engineer fail from model, retrying {i + 1}/{retries}[/orange3]")
+                    self.console.print(
+                        f"[blue]{func_name}[/blue] [orange3] got reverse engineer fail from model, retrying {i + 1}/{retries}[/orange3]")
                     continue
 
                 if check_valid_code(improved_code):
@@ -275,7 +281,8 @@ class ChatGPTModule(AiModuleInterface):
                         raise Exception("No change")
                     return improved_code, renaming_dict
                 else:
-                    self.console.print(f"[orange3]Got invalid code from model, retrying {i + 1}/{retries}[/orange3]")
+                    self.console.print(
+                        f"[blue]{func_name}[/blue] [orange3]Got invalid code from model, retrying {i + 1}/{retries}[/orange3]")
                     continue
 
             except NoResponseException as e:
@@ -285,8 +292,9 @@ class ChatGPTModule(AiModuleInterface):
                 if i >= retries - 1:
                     raise MaxTriesExceeded("Max tries exceeded")
                 if "Expecting value: line 1 column 1 (char 0)" in str(e) or "Unterminated string starting at:" in str(
-                        e):
-                    self.console.print(f"[orange3]Got incomplete response from model, retrying {i + 1}/{retries}[/orange3]")
+                    e):
+                    self.console.print(
+                        f"[orange3]Got incomplete response from model, retrying {i + 1}/{retries}[/orange3]")
                     if i > 1:
                         continue
 
@@ -300,7 +308,8 @@ class ChatGPTModule(AiModuleInterface):
                 if i >= retries - 1:
                     raise MaxTriesExceeded("Max tries exceeded")
                 if "Too Many Requests" in str(e):
-                    self.console.print(f"[orange3]Got too many requests from model, will sleep now retrying {i + 1}/{retries}[/orange3]")
+                    self.console.print(
+                        f"[orange3]Got too many requests from model, will sleep now retrying {i + 1}/{retries}[/orange3]")
                     time.sleep(120)
                     continue
             except InvalidResponseException as e:
