@@ -10,6 +10,7 @@ from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.pathing import *
 import multiprocessing as mp
 
+
 class MaxTriesExceeded(Exception):
     """Raised when the max tries is exceeded"""
 
@@ -64,9 +65,10 @@ def generate_function_name(code, name):
     new_name = f"{extract_function_name(code).replace('FUN_', '')}_{name.replace('FUN_', '')}"
     return code.replace(extract_function_name(code), new_name), new_name
 
+
 def check_reverse_engineer_fail_happend(code):
     # returns true if the code contains reverse and engineer (in the case that the model called it reverse_engineered_function)
-    code=extract_function_name(code)
+    code = extract_function_name(code)
     if "reverse" in code.lower() and "engineer" in code.lower():
         return True
     else:
@@ -88,7 +90,7 @@ def is_already_exported(project_location, binary_name):
     if os.path.isfile(os.path.join(project_location, f"{binary_name.replace('.', '_')}.json")):
         return True
     else:
-        #print(f"""File {os.path.join(project_location, f'{binary_name.replace(".", "_")}.json')} not found""")
+        # print(f"""File {os.path.join(project_location, f'{binary_name.replace(".", "_")}.json')} not found""")
         return False
 
 
@@ -179,18 +181,19 @@ def format_newlines_in_code(code):
 
     return front + 'improved_code": "' + main + '}\",' + back
 
+
 def escape_failed_escapes(response_string):
-    #original = response_string
+    # original = response_string
     response_string = response_string.replace("\'\\x", "\'\\\\x")
 
     return response_string
 
 
-def prompt_parallel(ai_module,result_queue,name,code,retries):
+def prompt_parallel(ai_module, result_queue, name, code, retries):
     try:
-        #print(f"Starting {name}")
-        result= ai_module.prompt_with_renaming(code, retries)
-        result_queue.put((name,result))
+        # print(f"Starting {name}")
+        result = ai_module.prompt_with_renaming(code, retries)
+        result_queue.put((name, result))
     except KeyboardInterrupt:
         return
 
@@ -199,12 +202,14 @@ def prompt_parallel(ai_module,result_queue,name,code,retries):
         print(f"Error in {name}: {e}\n")
         result_queue.put((name, "SKIP"))
 
+
 def locator(context=False):
     caller = getframeinfo(stack()[1][0])
     if context:
         return f"{caller.filename}:{caller.lineno} - {caller.code_context}"
     else:
         return f"{caller.filename}:{caller.lineno}"
+
 
 def prompt_dispatcher(args, total, self, result_queue):
     started = 0
@@ -238,18 +243,19 @@ def handle_spawn_worker(processes, prompting_args, started):
         started += 1
 
 
-def load_func_data_from_json(file):
+def load_func_data(file):
     """
     if file is not a path to a file, it is assumed to be relative to PROJECTS_ROOT
     :param file:
     """
     if not os.path.exists(file):
-        file = os.path.join(PROJECTS_ROOT,file)
+        file = os.path.join(PROJECTS_ROOT, file)
     with open(file, "r") as f:
         save_file = json.load(f)
         functions = save_file["functions"]
         layers = save_file["layers"]
     return functions, layers
+
 
 def save_to_json(data, file):
     """
@@ -258,6 +264,10 @@ def save_to_json(data, file):
     :param file:
     """
     if not os.path.exists(file):
-        file = os.path.join(PROJECTS_ROOT,file)
+        file = os.path.join(PROJECTS_ROOT, file)
     with open(file, "w") as f:
         json.dump(data, f, indent=4)
+
+
+def filename(path):
+    return os.path.basename(path).split(".")[0]
