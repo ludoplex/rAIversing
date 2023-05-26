@@ -5,18 +5,19 @@ from rAIversing.pathing import PROJECTS_ROOT, GHIDRA_SCRIPTS, BINARIES_ROOT
 from rAIversing.utils import check_and_fix_bin_path, check_and_create_project_path, is_already_exported
 
 
-def binary_to_c_code(binary_path, processor_id="", custom_headless_binary=None, project_location=None, project_name=None,debug=False):
+def binary_to_c_code(binary_path, processor_id="", custom_headless_binary=None, project_location=None, project_name=None,debug=False,export_path=None):
     import_path = check_and_fix_bin_path(binary_path)
     project_name = os.path.basename(binary_path).replace(".", "_") if project_name is None else project_name
     project_location = f'{os.path.join(PROJECTS_ROOT, project_name)}' if project_location is None else project_location
-    if is_already_exported(project_location, os.path.basename(binary_path)):
+    export_path = export_path if export_path is not None else project_location
+    if is_already_exported(export_path, os.path.basename(binary_path)):
         return
     check_and_create_project_path(project_location)
     ah = HeadlessAnalyzerWrapper(custom_headless_binary)
     ah.import_file(import_path)
     ah.project_location(project_location) \
         .project_name(project_name) \
-        .postScript(f'ExtractCcode.py "{project_location}"') \
+        .postScript(f'ExtractCcode.py "{export_path}"') \
         .scriptPath(f'{GHIDRA_SCRIPTS}') \
         .log(f'{PROJECTS_ROOT}/log') \
         .scriptlog(f'{PROJECTS_ROOT}/scriptlog')
@@ -27,13 +28,14 @@ def binary_to_c_code(binary_path, processor_id="", custom_headless_binary=None, 
         ah.print()
     ah.run(debug)
 
-def existing_project_to_c_code(project_location, binary_name=None, project_name=None,custom_headless_binary=None, export_with_stripped_names=False,debug=False):
+def existing_project_to_c_code(project_location, binary_name=None, project_name=None,custom_headless_binary=None, export_with_stripped_names=False,debug=False,export_path=None):
     if project_name is None:
         project_name = os.path.basename(project_location)
     if binary_name is None:
         binary_name=project_name
 
-    if is_already_exported(project_location, binary_name+"_stripped" if export_with_stripped_names else binary_name):
+    export_path = export_path if export_path is not None else project_location
+    if is_already_exported(export_path, binary_name+"_stripped" if export_with_stripped_names else binary_name):
         return
 
     if export_with_stripped_names:
@@ -43,7 +45,7 @@ def existing_project_to_c_code(project_location, binary_name=None, project_name=
     ah = HeadlessAnalyzerWrapper(custom_headless_binary)
     ah.project_location(f'{project_location}') \
         .project_name(project_name) \
-        .postScript(f'ExtractCcode.py {project_location} {export_with_stripped_names}') \
+        .postScript(f'ExtractCcode.py {export_path} {export_with_stripped_names}') \
         .process(binary_name) \
         .noanalysis()\
         .scriptPath(f'{GHIDRA_SCRIPTS}') \
