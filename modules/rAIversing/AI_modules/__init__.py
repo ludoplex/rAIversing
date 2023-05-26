@@ -16,3 +16,7 @@ class AiModuleInterface:
     def calc_used_tokens(self, input_code):
         """Calculates the number of tokens used by the input code"""
         pass
+
+    def get_model_name(self):
+        """Returns the name of the model"""
+        pass
