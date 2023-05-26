@@ -164,8 +164,9 @@ class HeadlessAnalyzerWrapper:
         self.__build__()
         print(self.__command__)
 
-    def run(self,debug=False):
+    def run(self, debug=False):
         self.__build__()
-        output = subprocess.check_output(self.__command__, shell=True,stderr= subprocess.STDOUT)
         if debug:
-            print(output.decode('utf-8'))
+            os.system(self.__command__)
+        else:
+            output = subprocess.check_output(self.__command__, shell=True, stderr=subprocess.STDOUT)
