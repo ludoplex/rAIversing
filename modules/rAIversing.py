@@ -1,65 +1,26 @@
 import argparse
-import json
-import logging
-from inspect import getframeinfo, stack
 
 from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.Engine import rAIverseEngine
-from rAIversing.Ghidra_Custom_API import binary_to_c_code, import_changes_to_ghidra_project, existing_project_to_c_code, \
-    import_changes_to_existing_project
-from rAIversing.evaluator import eval_p2im_firmwares
+from rAIversing.Ghidra_Custom_API import *
+from rAIversing.evaluator.EvaluationManager import EvaluationManager
 from rAIversing.pathing import *
-from rAIversing.utils import check_and_fix_bin_path, check_and_fix_project_path, \
-    is_already_exported, format_newlines_in_code
+
+from rAIversing.utils import check_and_fix_bin_path, check_and_fix_project_path, is_already_exported
 
 
 def testbench(ai_module):
-    # string="int function_1_00084f54() {\n\\n    int result;\n\\n    if (*PTR_PTR_DAT_000850f0 != 0 && *PTR_DAT_000850ec != '\\\\0') {\n\\n      result = (*pointer_to_function_1_00084f54)();\n\\n      return result;\n\\n    }\n\\n    return 0;\n\\n  }"
-    string = """
+    pass
 
-{
-"improved_code": "void do_nothing(void)\n{\n  // This function does nothing and simply returns.\n  return;\n}",
-"renaming_operations": {
-"FUN_000816a6": "do_nothing"
-}
-}
-
-Explanation:
-
-The original code does nothing and simply returns. We can improve its readability by renaming the function to "do_nothing" which better describes its purpose. We do not need to change any of the variable names since they are not used in the code.
-
-The improved code is as follows:
-
-void do_nothing(void)
-{
-  // This function does nothing and simply returns.
-  return;
-}
-
-The renaming operations are as follows:
-
-Original Function Name:
-FUN_000816a6
-
-New Function Name:
-do_nothing"""
-
-    with open(os.path.join(MODULES_ROOT, "rAIversing/AI_modules/openAI_core/temp/temp_response.json"), "r") as f:
-        string = f.read()
-
-        string = ai_module.add_missing_commas(string)
-        print(string)
-        response_dict = json.loads(string, strict=False)
-
-    print(response_dict)
-    print(response_dict["improved_code"])
 
 def evaluation(ai_module=None, parallel=1):
-    eval_p2im_firmwares(ai_module, parallel=parallel)
+    eval_man = EvaluationManager(P2IM_BINS_ROOT, ai_module, 3, connections=parallel)
+    eval_man.run()
+    eval_man.evaluate()
 
 
 def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=None, custom_headless_binary=None,
-                          max_tokens=3000, dry_run=False,parallel=1):
+                          max_tokens=3000, dry_run=False, parallel=1):
     if ai_module is None:
         raise ValueError("No AI module was provided")
     if not os.path.isdir(os.path.abspath(path)):
@@ -102,7 +63,8 @@ def run_on_new_binary(binary_path, arch, ai_module=None, custom_headless_binary=
     if ai_module is None:
         raise ValueError("No AI module was provided")
     import_path = check_and_fix_bin_path(binary_path)
-    binary_to_c_code(import_path, arch, custom_headless_binary=custom_headless_binary, project_location=output_path,project_name=project_name)
+    binary_to_c_code(import_path, arch, custom_headless_binary=custom_headless_binary, project_location=output_path,
+                     project_name=project_name)
     if output_path is not None:
         binary_name = os.path.basename(binary_path).replace(".", "_")
         json_path = f"{os.path.join(output_path, binary_name)}.json"
@@ -129,9 +91,7 @@ def run_on_new_binary(binary_path, arch, ai_module=None, custom_headless_binary=
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        prog='rAIversing',
-        description='Reverse engineering tool using AI')
+    parser = argparse.ArgumentParser(prog='rAIversing', description='Reverse engineering tool using AI')
     parser.add_argument('--testbench', action='store_true', help='Run testbench')
     parser.add_argument('--evaluation', action='store_true', help='Run evaluation')
     parser.add_argument('--access_token_path', help='OpenAI access token path', default=None)
@@ -139,16 +99,13 @@ if __name__ == "__main__":
     parser.add_argument('-g', '--ghidra_path', help='/path/to/custom/ghidra/support/analyzeHeadless', default=None)
     parser.add_argument('-m', '--max_token', help='Max Tokens before Skipping Functions', default=3000, type=int)
     parser.add_argument('-t', '--threads', help='Number of parallel requests', default=1, type=int)
-    parser.add_argument('-d', '--dry', help='Dry run to calculate how many tokens will be used',
-                        action='store_true')
+    parser.add_argument('-d', '--dry', help='Dry run to calculate how many tokens will be used', action='store_true')
     subparsers = parser.add_subparsers(help='sub-command help', dest='command')
 
     ghidra_selection = subparsers.add_parser('ghidra', help='Run rAIversing on a ghidra project')
     binary_selection = subparsers.add_parser('binary', help='Run rAIversing on a new binary')
 
-    ghidra_selection.add_argument('-p', '--path',
-                                  help='/path/to/directory/containing/project.rep/',
-                                  required=True)
+    ghidra_selection.add_argument('-p', '--path', help='/path/to/directory/containing/project.rep/', required=True)
     ghidra_selection.add_argument('-b', '--binary_name', help='name of the used binary', default=None)
     ghidra_selection.add_argument('-n', '--project_name', help='Project Name as entered in Ghidra', default=None)
 
@@ -157,11 +114,12 @@ if __name__ == "__main__":
                                   required=True)
     binary_selection.add_argument('-a', '--arch', help='Processor ID as defined in Ghidra (e.g.: x86:LE:64:default)',
                                   default="ARM:LE:32:Cortex")  # TODO: Check if required
-    binary_selection.add_argument('-n', '--project_name', help='Project Name for the Ghidra Project (defaults to the binary name)', default=None)
-    binary_selection.add_argument('-o', '--output_path', help='Output path for the project aka ~/projects/{my_binary|project_name (if specified)} ',
+    binary_selection.add_argument('-n', '--project_name',
+                                  help='Project Name for the Ghidra Project (defaults to the binary name)',
                                   default=None)
-
-
+    binary_selection.add_argument('-o', '--output_path',
+                                  help='Output path for the project aka ~/projects/{my_binary|project_name (if specified)} ',
+                                  default=None)
 
     args = parser.parse_args()
 
@@ -175,16 +133,18 @@ if __name__ == "__main__":
     if args.testbench:
         testbench(ai_module)
     elif args.evaluation:
-        evaluation(ai_module,args.threads)
+        evaluation(ai_module, args.threads)
     elif args.command == "ghidra":
         print(args)
         run_on_ghidra_project(args.path, args.project_name, args.binary_name, ai_module=ai_module,
-                              custom_headless_binary=args.ghidra_path, max_tokens=args.max_token,parallel=args.threads, dry_run=args.dry)
+                              custom_headless_binary=args.ghidra_path, max_tokens=args.max_token, parallel=args.threads,
+                              dry_run=args.dry)
 
     elif args.command == "binary":
         print(args)
         run_on_new_binary(args.path, args.arch, ai_module, custom_headless_binary=args.ghidra_path,
-                          max_tokens=args.max_token, dry_run=args.dry, output_path=args.output_path,parallel=args.threads,project_name=args.project_name)
+                          max_tokens=args.max_token, dry_run=args.dry, output_path=args.output_path,
+                          parallel=args.threads, project_name=args.project_name)
 
     else:
         parser.print_help()
