@@ -32,7 +32,7 @@ def assemble_prompt_v1(code):
 
 def assemble_prompt_v2(code):
     pre = """
-You have been given a piece of code which needs to be reverse engineered and improved. The original code is as follows:
+You have been given a piece of C code which needs to be reverse engineered and improved. The original code is as follows:
         
 """
     post = """
@@ -252,19 +252,23 @@ class ChatGPTModule(AiModuleInterface):
         full_prompt = assemble_prompt_v2(input_code)
         renaming_dict = {}
         response_string = ""
+        response_string_orig = ""
         # print(full_prompt)
 
         for i in range(0, retries):
             try:
-                response_string = self.prompt(full_prompt)
+                response_string_orig = self.prompt(full_prompt)
                 # print(response_string)
                 # with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                 #    f.write(response_string)
                 # with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "r") as f:
                 #    response_string = f.read()
-                response_dict, response_string = self.process_response(response_string)
+                response_dict, response_string = self.process_response(response_string_orig)
                 improved_code, renaming_dict = split_response(response_dict)
                 new_func_name = extract_function_name(improved_code)
+                if new_func_name is None or new_func_name == "":
+                    self.console.print(
+                        f"[orange3]Got invalid code from model, retrying {i + 1}/{retries}[/orange3]")
                 for key, value in renaming_dict.items():
                     if value == new_func_name:
                         func_name = key
@@ -283,6 +287,10 @@ class ChatGPTModule(AiModuleInterface):
                 else:
                     self.console.print(
                         f"[blue]{func_name}[/blue] [orange3]Got invalid code from model, retrying {i + 1}/{retries}[/orange3]")
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                        f.write(response_string_orig)
+                        f.write("\n\n")
+                        f.write(improved_code)
                     continue
 
             except NoResponseException as e:
@@ -290,6 +298,8 @@ class ChatGPTModule(AiModuleInterface):
 
             except json.JSONDecodeError as e:
                 if i >= retries - 1:
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                        f.write(response_string_orig)
                     raise MaxTriesExceeded("Max tries exceeded")
                 if "Expecting value: line 1 column 1 (char 0)" in str(e) or "Unterminated string starting at:" in str(
                     e):
