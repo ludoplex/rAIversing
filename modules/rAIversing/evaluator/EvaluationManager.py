@@ -11,8 +11,6 @@ from rAIversing.pathing import *
 from rAIversing.evaluator.utils import make_run_path, split_run_path
 
 
-
-
 # evaluates the model given paths to testfolders with each 3 subfolders (original, stripped, no_propagation)
 # for each binary in each subfolder, the model is run and the results are saved in a csv file
 # TODO
@@ -25,10 +23,14 @@ class EvaluationManager:
         self.connections = connections
         self.evaluator = evaluator if evaluator is not None else DefaultEvaluator(self.ai_modules, self.source_dirs,
                                                                                   self.runs)
+        self.setup_dirs()
+        self.extract_code()
+        self.prepare_runs()
 
     def run_atomic(self, ai_module, run_path, binary):
         for json_path in Path(run_path).glob("*.json"):
-            if json_path.name == f"{binary}_original.json" or json_path.name.endswith("comp.json") or json_path.name.endswith("scored.json"):
+            if json_path.name == f"{binary}_original.json" or json_path.name.endswith(
+                    "comp.json") or json_path.name.endswith("scored.json"):
                 continue
             else:
                 no_prop = json_path.name.endswith("no_propagation.json")
@@ -37,21 +39,16 @@ class EvaluationManager:
                 raie.max_parallel_functions = self.connections
                 raie.run_parallel_rev(no_propagation=no_prop)
 
-    def single_run(self, ai_module, source_dir, run):
-        model_name = ai_module.get_model_name()
-        source_dir_name = os.path.basename(source_dir)
-        run_name = f"run_{run}"
-        usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
-        #usable_binaries = ["Heat_Press"]  # TODO remove
-        for binary in usable_binaries:
-            run_path = os.path.join(EVALUATION_ROOT, model_name, os.path.basename(source_dir), f"run_{run}", binary)
-            self.run_atomic(ai_module, run_path, binary)
-
     def run(self):
         for ai_module in self.ai_modules:
             for source_dir in self.source_dirs:
                 for run in range(1, self.runs + 1):
-                    self.single_run(ai_module, source_dir, run)
+                    model_name = ai_module.get_model_name()
+                    usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
+                    # usable_binaries = ["Heat_Press"]  # TODO remove
+                    for binary in usable_binaries:
+                        run_path = make_run_path(model_name, source_dir, run, binary)
+                        self.run_atomic(ai_module, run_path, binary)
 
     def setup(self):
         self.setup_dirs()
