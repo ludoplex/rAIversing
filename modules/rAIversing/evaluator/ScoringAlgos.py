@@ -1,13 +1,5 @@
-import json, difflib, re, shutil
+import difflib, re
 
-from rich.console import Console, CONSOLE_SVG_FORMAT
-from rich.table import Table, Column
-
-from rAIversing.Engine import rAIverseEngine
-from rAIversing.Ghidra_Custom_API import binary_to_c_code, import_changes_to_ghidra_project, \
-    import_changes_to_existing_project, existing_project_to_c_code
-
-from rAIversing.pathing import *
 
 
 # This is a list of mostly verbs that, if present, describe the intended functionality of a function.
