@@ -1,13 +1,12 @@
-import json, difflib, re, shutil
-
 from rich.console import Console, CONSOLE_SVG_FORMAT
 from rich.table import Table, Column
 
 from rAIversing.Engine import rAIverseEngine
-from rAIversing.Ghidra_Custom_API import binary_to_c_code, import_changes_to_ghidra_project, \
-    import_changes_to_existing_project, existing_project_to_c_code
+from rAIversing.Ghidra_Custom_API import binary_to_c_code, import_changes_to_existing_project, existing_project_to_c_code
+from rAIversing.evaluator.ScoringAlgos import calc_score_v1
 from rAIversing.pathing import *
-from rAIversing.utils import load_func_data, save_to_json
+from rAIversing.utils import save_to_json
+from rAIversing.evaluator.utils import load_funcs_data
 
 # This is a list of mostly verbs that, if present, describe the intended functionality of a function.
 # If two functions share the same verb, they are highly likely to be similar.
@@ -50,11 +49,6 @@ replacement_dict = {"strchr": "find_character_in_string", "strrchr": "find_last_
 }
 
 
-class Evaluator:
-    def __init__(self):
-        pass
-
-
 def eval_p2im_firmwares(ai_module, parallel=1):
     usable_binaries = os.listdir(f"{BINARIES_ROOT}/p2im/stripped")  # ["Heat_Press", "CNC", "Gateway"]
     # usable_binaries = ["Heat_Press", "CNC", "Gateway"]
@@ -83,10 +77,10 @@ def eval_p2im_firmwares(ai_module, parallel=1):
         dc_dict_no_prop = {}
         eval_dict_no_prop = {}
 
-        funcs_actual, layers_actual = load_func_data(f"Evaluation/{binary}.json")
-        funcs_orig, layers_orig = load_func_data(f"Evaluation/{binary}_original.json")
-        funcs_gt, layers_gt = load_func_data(f"Evaluation/{binary}_original_stripped.json")
-        funcs_no_prop, layers_no_prop = load_func_data(f"Evaluation/{binary}_no_propagation.json")
+        funcs_actual = load_funcs_data(f"Evaluation/{binary}.json")
+        funcs_orig = load_funcs_data(f"Evaluation/{binary}_original.json")
+        funcs_gt = load_funcs_data(f"Evaluation/{binary}_original_stripped.json")
+        funcs_no_prop = load_funcs_data(f"Evaluation/{binary}_no_propagation.json")
 
         sum_actual, counted_actual = run_comparison(include_all, funcs_orig, funcs_actual, dc_dict, eval_dict)
         score_actual = sum_actual / counted_actual
@@ -238,7 +232,7 @@ def run_comparison(include_all, original_functions, reversed_functions, dc_dict=
                 regarded_functions -= 1
                 continue
 
-        score = compute_similarity_score(orig_fun_name, reversed_name, entrypoint)
+        score = calc_score_v1(orig_fun_name, reversed_name, entrypoint)
         if wrt_to_dicts:
             dc_dict[orig_fun_name] = reversed_name
             evaluation_dict[entrypoint] = {orig_fun_name: reversed_name, "score": score}
@@ -253,51 +247,6 @@ def run_comparison(include_all, original_functions, reversed_functions, dc_dict=
             continue
         overall_score += score
     return overall_score, regarded_functions
-
-
-def compute_similarity_score(original_function_name, reversed_function_name, entrypoint):
-    original_function_name = original_function_name.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
-    reversed_function_name = reversed_function_name.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
-    score = 0.0
-    # remove duplicates from similarity_indicators
-    similarity_indicators_local = list(set(similarity_indicators))
-
-    for indicator in similarity_indicators:
-        if indicator in original_function_name and indicator in reversed_function_name:
-            score = 1.0
-            break
-        elif "nothing" in reversed_function_name:
-            score = 1.0
-            break
-    if score == 0.0:
-        score = calc_group_similarity(original_function_name, reversed_function_name)
-
-    for old, new in replacement_dict.items():
-        if new not in original_function_name and old == original_function_name:
-            original_function_name = original_function_name.replace(old, new)
-            break
-    if score == 0.0:
-        for indicator in similarity_indicators:
-            if indicator in original_function_name and indicator in reversed_function_name:
-                score = 1.0
-                break
-            elif "nothing" in reversed_function_name:
-                score = 1.0
-                break
-
-    if score == 0.0:
-        score = calc_group_similarity(original_function_name, reversed_function_name)
-
-    if score == 0.0:
-        score = difflib.SequenceMatcher(None, original_function_name, reversed_function_name).ratio()
-    return score
-
-
-def calc_group_similarity(original_function_name, reversed_function_name):
-    for group in similarity_indicator_groups:
-        if re.match(group[0], original_function_name) and re.match(group[1], reversed_function_name):
-            return 1.0
-    return 0.0
 
 
 def calc_relative_percentage_difference(best, worst, actual):
