@@ -1,12 +1,10 @@
+import csv
 import json
-import multiprocessing
 import random
+import re
 import string
-import threading
-import time
 from inspect import getframeinfo, stack
 
-from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.pathing import *
 import multiprocessing as mp
 
@@ -243,20 +241,6 @@ def handle_spawn_worker(processes, prompting_args, started):
         started += 1
 
 
-def load_func_data(file):
-    """
-    if file is not a path to a file, it is assumed to be relative to PROJECTS_ROOT
-    :param file:
-    """
-    if not os.path.exists(file):
-        file = os.path.join(PROJECTS_ROOT, file)
-    with open(file, "r") as f:
-        save_file = json.load(f)
-        functions = save_file["functions"]
-        layers = save_file["layers"]
-    return functions, layers
-
-
 def save_to_json(data, file):
     """
     if file is not a path to an existing file, it is assumed to be relative to PROJECTS_ROOT
@@ -268,6 +252,32 @@ def save_to_json(data, file):
     with open(file, "w") as f:
         json.dump(data, f, indent=4)
 
+def save_to_csv(data, file):
+    """
+    if file is not a path to an existing file, it is assumed to be relative to PROJECTS_ROOT
+    :param data:
+    :param file:
+    """
+    if not os.path.exists(file):
+        file = os.path.join(PROJECTS_ROOT, file)
+    with open(file, "w") as f:
+        writer = csv.writer(f)
+        writer.writerows(data)
+
+
 
 def filename(path):
     return os.path.basename(path).split(".")[0]
+
+
+def to_snake_case(name):
+    p1 = re.compile('(.)([A-Z][a-z]+)')
+    p2 = re.compile('__([A-Z])')
+    p3 = re.compile('([a-z0-9])([A-Z])')
+    name = p1.sub(r'\1_\2', name)
+    name = p2.sub(r'_\1', name)
+    name = p3.sub(r'\1_\2', name)
+
+    return name.lower()
+
+

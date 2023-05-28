@@ -5,23 +5,30 @@ from pathlib import Path
 from rAIversing.AI_modules import AiModuleInterface
 from rAIversing.Engine import rAIverseEngine
 from rAIversing.Ghidra_Custom_API import binary_to_c_code, existing_project_to_c_code
+from rAIversing.evaluator.DefaultEvaluator import DefaultEvaluator
+from rAIversing.evaluator.EvaluatorInterface import EvaluatorInterface
 from rAIversing.pathing import *
+from rAIversing.evaluator.utils import make_run_path, split_run_path
+
+
 
 
 # evaluates the model given paths to testfolders with each 3 subfolders (original, stripped, no_propagation)
 # for each binary in each subfolder, the model is run and the results are saved in a csv file
 # TODO
-class EvaluationManager():
+class EvaluationManager:
 
-    def __init__(self, source_dirs, ai_modules, runs=1, connections=1):
+    def __init__(self, source_dirs, ai_modules, runs=1, connections=1, evaluator: EvaluatorInterface = None):
         self.source_dirs = [source_dirs] if isinstance(source_dirs, str) else source_dirs
         self.ai_modules = [ai_modules] if isinstance(ai_modules, AiModuleInterface) else ai_modules
         self.runs = runs
         self.connections = connections
+        self.evaluator = evaluator if evaluator is not None else DefaultEvaluator(self.ai_modules, self.source_dirs,
+                                                                                  self.runs)
 
     def run_atomic(self, ai_module, run_path, binary):
         for json_path in Path(run_path).glob("*.json"):
-            if json_path.name == f"{binary}_original.json":
+            if json_path.name == f"{binary}_original.json" or json_path.name.endswith("comp.json") or json_path.name.endswith("scored.json"):
                 continue
             else:
                 no_prop = json_path.name.endswith("no_propagation.json")
@@ -35,7 +42,7 @@ class EvaluationManager():
         source_dir_name = os.path.basename(source_dir)
         run_name = f"run_{run}"
         usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
-        usable_binaries = ["Heat_Press"]
+        #usable_binaries = ["Heat_Press"]  # TODO remove
         for binary in usable_binaries:
             run_path = os.path.join(EVALUATION_ROOT, model_name, os.path.basename(source_dir), f"run_{run}", binary)
             self.run_atomic(ai_module, run_path, binary)
@@ -61,10 +68,9 @@ class EvaluationManager():
                                 exist_ok=True)
 
                 for run in range(1, self.runs + 1):
-                    run_name = f"run_{run}"
                     for binary in os.listdir(os.path.join(source_dir, "stripped")):
-                        os.makedirs(os.path.join(EVALUATION_ROOT, model_name, source_dir_name, run_name, binary),
-                                    exist_ok=True)
+                        os.makedirs(make_run_path(model_name, source_dir, run, binary), exist_ok=True)
+                        run_path = make_run_path(model_name, source_dir, run, binary)
 
     def extract_code(self):
         for ai_module in self.ai_modules:
@@ -110,10 +116,14 @@ class EvaluationManager():
                         binary = os.path.basename(binary_path)
                         extraction_path = os.path.join(EVALUATION_ROOT, model_name, os.path.basename(source_dir),
                                                        "extraction", binary)
-                        run_path = os.path.join(EVALUATION_ROOT, model_name, os.path.basename(source_dir), f"run_{run}",
-                                                binary)
+                        run_path = make_run_path(model_name, source_dir, run, binary)
 
                         for file in os.listdir(extraction_path):
-                            if not file.endswith(".c"):
+                            if file.endswith(".json"):
                                 if not os.path.exists(os.path.join(run_path, file)):
                                     shutil.copy(os.path.join(extraction_path, file), run_path)
+
+    def evaluate(self, evaluator: EvaluatorInterface = None):
+        if evaluator is None:
+            evaluator = self.evaluator
+        evaluator.evaluate()
