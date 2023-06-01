@@ -13,6 +13,10 @@ class MaxTriesExceeded(Exception):
     """Raised when the max tries is exceeded"""
 
 
+class OutOfTriesException(Exception):
+    """Raised when the max tries is exceeded with an api error. Is your HardLimit reached?"""
+
+
 class NoResponseException(Exception):
     """Raised when no response is received"""
 
@@ -56,7 +60,12 @@ def extract_function_name(code):
         code = code.split("\n\n")[1].split("(")[0].split("\n")[-1].split(" ")[-1]
         return code
 
-    return code.split("(")[0].split(" ")[-1]
+    code = code.split("(")[0].split(" ")[-1]
+    code = code.replace("\\n", "\n")
+
+    splitted = re.split('[^a-zA-Z0-9_]', code)
+
+    return splitted[-1]
 
 
 def generate_function_name(code, name):
@@ -252,6 +261,7 @@ def save_to_json(data, file):
     with open(file, "w") as f:
         json.dump(data, f, indent=4)
 
+
 def save_to_csv(data, file):
     """
     if file is not a path to an existing file, it is assumed to be relative to PROJECTS_ROOT
@@ -263,7 +273,6 @@ def save_to_csv(data, file):
     with open(file, "w") as f:
         writer = csv.writer(f)
         writer.writerows(data)
-
 
 
 def filename(path):
@@ -281,3 +290,10 @@ def to_snake_case(name):
     return name.lower()
 
 
+def insert_missing_delimiter(response, exception):
+    target = str(exception).split("delimiter:")[-1]
+    char = int(target.split("char")[1].split(")")[0])
+    line_wrap = ",\n" + (response[:char].split("\n")[-1])
+    pre_wrap = response[:char].rstrip()
+    fixed = pre_wrap + line_wrap + response[char:]
+    return fixed
