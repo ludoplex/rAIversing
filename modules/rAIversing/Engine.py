@@ -12,7 +12,7 @@ from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.pathing import PROJECTS_ROOT
 from rAIversing.utils import check_and_fix_bin_path, extract_function_name, generate_function_name, MaxTriesExceeded, \
     check_and_fix_double_function_renaming, check_do_nothing, get_random_string, ptr_escape, prompt_parallel, \
-    prompt_dispatcher, handle_spawn_worker
+    prompt_dispatcher, handle_spawn_worker, OutOfTriesException
 
 
 class rAIverseEngine:
@@ -386,7 +386,8 @@ class rAIverseEngine:
 
         except Exception as e:
             self.console.print(f"[bold red]Error while improving {name} {e}[/bold red]")
-            exit(0)
+            raise e
+
         self.functions[name]["improved"] = True
         self.functions[name]["code"] = improved_code
         self.functions[name]["current_name"] = new_name
@@ -453,6 +454,9 @@ class rAIverseEngine:
                             renaming_dict = {name: new_name}
                             improved_code = self.functions[name]["code"].replace(name, new_name)
                             self.functions[name]["skipped"] = True
+                    except OutOfTriesException as e:
+                        self.console.print(f"[bold red]Out of tries[/bold red] in function [red]{name}[/red]! Is your HardLimit reached?")
+                        raise Exception(e)
                     except Exception as e:
                         self.console.print(f"[bold red]Error[/bold red] in function [red]{name}[/red]: {e}")
                         raise Exception(e)
