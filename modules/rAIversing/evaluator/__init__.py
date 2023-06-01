@@ -250,6 +250,11 @@ def run_comparison(include_all, original_functions, reversed_functions, dc_dict=
 
 
 def calc_relative_percentage_difference(best, worst, actual):
-    range = best - worst
-    difference = actual - worst
-    return (difference / range) * 100
+    try:
+        range_ = best - worst
+        difference = actual - worst
+        return (difference / range_) * 100
+    except ZeroDivisionError:
+        print("Division by zero!!!!! @ calc_relative_percentage_difference")
+        return 0
+
