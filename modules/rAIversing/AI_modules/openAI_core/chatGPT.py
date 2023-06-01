@@ -13,7 +13,7 @@ from rAIversing.AI_modules import AiModuleInterface
 from rAIversing.pathing import *
 from rAIversing.utils import extract_function_name, NoResponseException, clear_extra_data, split_response, \
     check_valid_code, MaxTriesExceeded, InvalidResponseException, format_newlines_in_code, escape_failed_escapes, \
-    check_reverse_engineer_fail_happend, locator
+    check_reverse_engineer_fail_happend, locator, OutOfTriesException, insert_missing_delimiter
 
 PROMPT_TEXT = """
     
@@ -38,7 +38,7 @@ You have been given a piece of C code which needs to be reverse engineered and i
     post = """
         
         Your task is to create an improved and more readable version of the code without changing variables starting with "PTR_" or "DAT_".
-        If possible give the function a more descriptive name in snake_case, otherwise leave it as it is. (Functions start with "FUN_") 
+        If possible give the function a more descriptive name, otherwise leave it as it is. (Functions start with "FUN_") 
         
         Your response should include the following:
                         
@@ -227,6 +227,10 @@ class ChatGPTModule(AiModuleInterface):
                 response_dict = json.loads(response_string, strict=False)
                 break
 
+            except json.JSONDecodeError as e:
+                response_string = insert_missing_delimiter(response_string, e)
+                continue
+
             except Exception as e:
                 if """Expecting ',' delimiter:""" in str(e):
                     self.logger.exception(e)
@@ -236,6 +240,9 @@ class ChatGPTModule(AiModuleInterface):
 
                     print(response_string_orig)
                     print(f"###### RESPONSE END @ {locator()}######")
+                    print(f"###### CURRENT STATE @ {locator()}######")
+                    print(response_string)
+                    print(f"###### CURRENT STATE END @ {locator()}######")
                 elif "Extra data" in str(e):
                     try:
                         response_dict = clear_extra_data(response_string, e)
@@ -254,7 +261,7 @@ class ChatGPTModule(AiModuleInterface):
         response_string = ""
         response_string_orig = ""
         # print(full_prompt)
-
+        old_func_name = extract_function_name(input_code)
         for i in range(0, retries):
             try:
                 response_string_orig = self.prompt(full_prompt)
@@ -266,17 +273,14 @@ class ChatGPTModule(AiModuleInterface):
                 response_dict, response_string = self.process_response(response_string_orig)
                 improved_code, renaming_dict = split_response(response_dict)
                 new_func_name = extract_function_name(improved_code)
+
                 if new_func_name is None or new_func_name == "":
-                    self.console.print(
-                        f"[orange3]Got invalid code from model, retrying {i + 1}/{retries}[/orange3]")
-                for key, value in renaming_dict.items():
-                    if value == new_func_name:
-                        func_name = key
-                        break
+                    self.console.log(
+                        f"[blue]{old_func_name}[/blue]:[orange3]Got invalid code from model, Retry  {i + 1}/{retries}[/orange3]")
 
                 if check_reverse_engineer_fail_happend(improved_code):
-                    self.console.print(
-                        f"[blue]{func_name}[/blue] [orange3] got reverse engineer fail from model, retrying {i + 1}/{retries}[/orange3]")
+                    self.console.log(
+                        f"[blue]{old_func_name}[/blue]:[orange3]Got reverse engineer fail from model, Retry  {i + 1}/{retries}[/orange3]")
                     continue
 
                 if check_valid_code(improved_code):
@@ -285,8 +289,8 @@ class ChatGPTModule(AiModuleInterface):
                         raise Exception("No change")
                     return improved_code, renaming_dict
                 else:
-                    self.console.print(
-                        f"[blue]{func_name}[/blue] [orange3]Got invalid code from model, retrying {i + 1}/{retries}[/orange3]")
+                    self.console.log(
+                        f"[blue]{old_func_name}[/blue]:[orange3]Got invalid code from model, Retry  {i + 1}/{retries}[/orange3]")
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                         f.write(response_string_orig)
                         f.write("\n\n")
@@ -302,24 +306,22 @@ class ChatGPTModule(AiModuleInterface):
                         f.write(response_string_orig)
                     raise MaxTriesExceeded("Max tries exceeded")
                 if "Expecting value: line 1 column 1 (char 0)" in str(e) or "Unterminated string starting at:" in str(
-                    e):
-                    self.console.print(
-                        f"[orange3]Got incomplete response from model, retrying {i + 1}/{retries}[/orange3]")
+                        e):
+                    self.console.log(
+                        f"[blue]{old_func_name}[/blue]:[orange3]Got incomplete response from model, Retry  {i + 1}/{retries}[/orange3]")
                     if i > 1:
                         continue
 
                     if len(full_prompt) // 2 > len(response_string) > len(full_prompt) // 4:
                         self.logger.warning(f"Response was: {response_string}")
                         self.logger.warning(f"Prompt was: {full_prompt}")
-                    if len(response_string.split("\n")) < 3:
-                        self.logger.warning(f"Function was: {extract_function_name(input_code)}")
                     continue
             except APIConnectionError as e:
                 if i >= retries - 1:
-                    raise MaxTriesExceeded("Max tries exceeded")
+                    raise OutOfTriesException("Out of tries! Is your HardLimit reached?")
                 if "Too Many Requests" in str(e):
-                    self.console.print(
-                        f"[orange3]Got too many requests from model, will sleep now retrying {i + 1}/{retries}[/orange3]")
+                    self.console.log(
+                        f"[blue]{old_func_name}[/blue]:[orange3]Got [red]Too many requests[/red] from model, will sleep now! Retry {i + 1}/{retries}[/orange3]")
                     time.sleep(120)
                     continue
             except InvalidResponseException as e:
