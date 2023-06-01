@@ -2,6 +2,7 @@ import json
 import os
 
 from rAIversing.pathing import PROJECTS_ROOT, EVALUATION_ROOT
+from rAIversing.utils import to_snake_case
 
 
 def load_funcs_data(file):
@@ -18,7 +19,7 @@ def load_funcs_data(file):
 
 
 def make_run_path(model_name, source_dir, run, binary):
-    return os.path.join(EVALUATION_ROOT, model_name, os.path.basename(source_dir), f"run_{run}", binary)
+    return os.path.join(EVALUATION_ROOT, model_name, os.path.basename(source_dir), f"run_{run}" if run != "" else "", binary)
 
 
 def split_run_path(run_path):
@@ -95,3 +96,7 @@ def find_entrypoint(funcs, current_name):
         if func["current_name"] == current_name:
             return func["entrypoint"]
     raise Exception(f"Entrypoint for {current_name} not found")
+
+
+def tokenize_name_v1(name):
+    return to_snake_case(name).split("_")

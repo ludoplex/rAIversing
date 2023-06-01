@@ -3,6 +3,7 @@ import os
 from rich.console import Console, CONSOLE_SVG_FORMAT
 from rich.table import Table, Column
 from rAIversing.evaluator.EvaluatorInterface import EvaluatorInterface
+from rAIversing.evaluator.ScoringAlgos import calc_score_v2
 from rAIversing.evaluator.utils import *
 from rAIversing.evaluator import load_funcs_data, calc_score_v1, calc_relative_percentage_difference
 from rAIversing.pathing import REPO_ROOT
@@ -11,7 +12,7 @@ import pandas as pd
 
 
 class DefaultEvaluator(EvaluatorInterface):
-    def __init__(self, ai_modules, source_dirs, runs=1, calculation_function=calc_score_v1):
+    def __init__(self, ai_modules, source_dirs, runs=1, calculation_function=calc_score_v2):
         super().__init__(ai_modules, source_dirs, runs)
         self.calculator = calculation_function
         self.results = {}
@@ -88,13 +89,12 @@ class DefaultEvaluator(EvaluatorInterface):
                     entrypoint = original[orig_name]["entrypoint"]
                 except KeyError:
                     if orig_name.split("_")[-1] == pred_name.split("_")[-1]:
-                        entrypoint = "0x".join(orig_name.split("_")[:-1])
+                        entrypoint = "0x"+(orig_name.split("_")[-1])
                     else:
                         entrypoint = find_entrypoint(original, orig_name)
                 score = self.calculator(orig_name, pred_name, entrypoint)
-                scored[group][entrypoint] = {"original": orig_name, "predicted": pred_name, "score": score}
-                # Had to change this format as otherwise it could break if original name is "score"
-                # and this allows for easier access to the data when collecting lfl/hfl
+                scored[group][entrypoint] = {"original": orig_name, "predicted": pred_name,
+                                             "score": score}  # Had to change this format as otherwise it could break if original name is "score"  # and this allows for easier access to the data when collecting lfl/hfl
         return direct, scored
 
     def insert_result(self, run_path, result, group):
@@ -133,16 +133,38 @@ class DefaultEvaluator(EvaluatorInterface):
         for ai_module in self.ai_modules:
             model_name = ai_module.get_model_name()
             for source_dir in self.source_dirs:
-                source_dir_name = os.path.basename(source_dir)
-                table = self.create_table(f"{model_name} on {source_dir_name} ({self.runs} runs)")
-                for binary in os.listdir(os.path.join(source_dir, "stripped")):
-                    source_dir_name = os.path.basename(source_dir)
-                    scores = self.get_cumulative_results(model_name, source_dir_name, binary)
-                    self.fill_table(table, scores, binary)
-                export_console = Console(record=True, width=160)
-                export_console.print(table)
-                export_console.save_svg(os.path.join(REPO_ROOT, f"Eval_{source_dir_name}.svg"), clear=False, title="",
-                                        code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
+                self.create_cumulative_results(model_name, source_dir)
+                self.create_run_results(model_name, source_dir)
+
+    def create_run_results(self, model_name, source_dir):
+        source_dir_name = os.path.basename(source_dir)
+        usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
+        # usable_binaries = ["CNC"]  # TODO remove
+        for run in range(1, self.runs + 1):
+            table = self.create_table(f"{model_name} on {source_dir_name} (Run {run})")
+            for binary in usable_binaries:
+                scores = self.get_results(model_name, source_dir_name, run, binary)
+                self.fill_table(table, scores, binary)
+            export_console = Console(record=True, width=160)
+            export_console.print(table)
+            run_path = make_run_path(model_name, source_dir, run,"")
+            export_console.save_svg(os.path.join(run_path, f"Eval_{model_name}_{source_dir_name}_run_{run}.svg"), clear=False, title="",
+                                    code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
+
+    def create_cumulative_results(self, model_name, source_dir):
+        source_dir_name = os.path.basename(source_dir)
+        table = self.create_table(f"{model_name} on {source_dir_name} ({self.runs} runs)")
+        usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
+        # usable_binaries = ["CNC"]  # TODO remove
+        for binary in usable_binaries:
+            source_dir_name = os.path.basename(source_dir)
+            scores = self.get_cumulative_results(model_name, source_dir_name, binary)
+            self.fill_table(table, scores, binary)
+        export_console = Console(record=True, width=160)
+        export_console.print(table)
+        export_path = make_run_path(model_name, source_dir, "", "")
+        export_console.save_svg(os.path.join(export_path, f"Eval_Avg_{model_name}_{source_dir_name}_{self.runs}_runs.svg"), clear=False, title="",
+                                code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
 
     def create_table(self, title):
         result_table = Table(Column(header="Binary", style="bold bright_yellow on grey23"),
@@ -152,7 +174,7 @@ class DefaultEvaluator(EvaluatorInterface):
                              Column(header="Best\nCase", style="bold green on grey23", justify="center"),
                              Column(header=" Worst\nCase", style="bold red on grey23", justify="center"),
                              Column(header="Act/Best\nAll|Hfl", style="bold green1 on grey23", justify="center"),
-                             Column(header="Actual vs Best (direct)\nAll|Hfl", style="bold green1 on grey23",
+                             Column(header="Act vs Best\n(direct)\nAll|Hfl", style="bold green1 on grey23",
                                     justify="center"),
                              Column(header="RPD\nAll|Hfl", style="bold spring_green2 on grey23", justify="center"),
                              Column(header="Total\nOrig|Act", style="magenta on grey23", justify="center"),
@@ -160,11 +182,11 @@ class DefaultEvaluator(EvaluatorInterface):
                              Column(header="Counted\nBest", style="blue on grey23"),
                              Column(header="Counted\nWorst", style="magenta3 on grey23"), title=title,
                              title_style="bold bright_red on grey23 ", style="on grey23",
-                             border_style="bold bright_green",
-                             header_style="bold yellow1 on grey23", )
+                             border_style="bold bright_green", header_style="bold yellow1 on grey23", )
         return result_table
 
     def fill_table(self, table, scores, binary):
+        # self.console.print(scores)
 
         score_pred = scores["pred"]["all"]["score"]
         score_pred_hfl = scores["pred"]["hfl"]["score"]
@@ -188,15 +210,15 @@ class DefaultEvaluator(EvaluatorInterface):
         score_best_vs_pred = score_pred / score_best
         score_best_vs_pred_hfl = score_pred_hfl / score_best_hfl
 
+        # self.console.print(f"score_best_hfl: {score_best_hfl}, score_worst_hfl: {score_worst_hfl}, score_pred_hfl: {score_pred_hfl}")
         score_rpd_hfl = calc_relative_percentage_difference(score_best_hfl, score_worst_hfl, score_pred_hfl)
 
         score_rpd = calc_relative_percentage_difference(score_best, score_worst, score_pred)
 
         table.add_row(binary, f"{score_pred * 100:.2f}%", f"{score_pred_hfl * 100:.2f}%",
-                      f"{score_pred_lfl * 100:.2f}%",
-                      f"{score_best_hfl * 100:.2f}%", f"{score_worst_hfl * 100:.2f}%",
+                      f"{score_pred_lfl * 100:.2f}%", f"{score_best_hfl * 100:.2f}%", f"{score_worst_hfl * 100:.2f}%",
                       f"{score_best_vs_pred * 100:.1f}%|{score_best_vs_pred_hfl * 100:.1f}%",
                       f"{score_best_vs_pred_direct * 100:.2f}%|{score_best_vs_pred_direct_hfl * 100:.2f}%",
                       f"{score_rpd :.1f}%|{score_rpd_hfl :.1f}%",
-                      f"{total_orig}[bold magenta1]|[/bold magenta1]{total_pred}",
-                      f"{counted_pred}", f"{counted_best}", f"{counted_worst}")
+                      f"{total_orig}[bold magenta1]|[/bold magenta1]{total_pred}", f"{counted_pred}", f"{counted_best}",
+                      f"{counted_worst}")

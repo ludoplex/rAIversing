@@ -1,6 +1,7 @@
 import difflib, re
 
-
+from rAIversing.evaluator.utils import tokenize_name_v1
+from rAIversing.utils import to_snake_case
 
 # This is a list of mostly verbs that, if present, describe the intended functionality of a function.
 # If two functions share the same verb, they are highly likely to be similar.
@@ -43,42 +44,68 @@ replacement_dict = {"strchr": "find_character_in_string", "strrchr": "find_last_
                     }
 
 
-def calc_score_v1(original_function_name, reversed_function_name, entrypoint):
-    original_function_name = original_function_name.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
-    reversed_function_name = reversed_function_name.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
+def calc_score_v1(original, predicted, entrypoint):
+    #original = original.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
+    original = to_snake_case(original).replace(f"_{entrypoint.replace('0x', '')}", "")
+    #predicted = predicted.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
+    predicted = to_snake_case(predicted).replace(f"_{entrypoint.replace('0x', '')}", "")
+
+
     score = 0.0
+    #print(to_snake_case(original), to_snake_case(predicted))
+
+
     # remove duplicates from similarity_indicators
     similarity_indicators_local = list(set(similarity_indicators))
 
+    if original in predicted or predicted in original:
+        return 1.0
+
     for indicator in similarity_indicators:
-        if indicator in original_function_name and indicator in reversed_function_name:
+        if indicator in original and indicator in predicted:
             score = 1.0
             break
-        elif "nothing" in reversed_function_name:
+        elif "nothing" in predicted:
             score = 1.0
             break
     if score == 0.0:
-        score = calc_group_similarity(original_function_name, reversed_function_name)
+        score = calc_group_similarity(original, predicted)
 
     for old, new in replacement_dict.items():
-        if new not in original_function_name and old == original_function_name:
-            original_function_name = original_function_name.replace(old, new)
+        if new not in original and old == original:
+            original = original.replace(old, new)
             break
     if score == 0.0:
         for indicator in similarity_indicators:
-            if indicator in original_function_name and indicator in reversed_function_name:
+            if indicator in original and indicator in predicted:
                 score = 1.0
                 break
-            elif "nothing" in reversed_function_name:
+            elif "nothing" in predicted:
                 score = 1.0
                 break
 
     if score == 0.0:
-        score = calc_group_similarity(original_function_name, reversed_function_name)
+        score = calc_group_similarity(original, predicted)
 
     if score == 0.0:
-        score = difflib.SequenceMatcher(None, original_function_name, reversed_function_name).ratio()
+        score = difflib.SequenceMatcher(None, original, predicted).ratio()
     return score
+
+
+def calc_score_v2(original,predicted,entrypoint):
+    original = original.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
+    predicted = predicted.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
+
+    original_tokens = set(tokenize_name_v1(original))
+    predicted_tokens = set(tokenize_name_v1(predicted))
+
+    if len(original_tokens.intersection(predicted_tokens)) > 0:
+        return 1.0
+    else:
+        #return 0.0
+        return calc_score_v1(original, predicted, entrypoint)
+
+
 
 
 def calc_group_similarity(original_function_name, reversed_function_name):
