@@ -222,17 +222,20 @@ class ChatGPTModule(AiModuleInterface):
         if '`' in response_string:
             response_string = response_string.replace('`', '"')
         ideas_left = True
+        max_delimiter_insertions = 1
         while ideas_left:
             try:
                 response_dict = json.loads(response_string, strict=False)
                 break
 
-            except json.JSONDecodeError as e:
-                response_string = insert_missing_delimiter(response_string, e)
-                continue
 
             except Exception as e:
                 if """Expecting ',' delimiter:""" in str(e):
+                    if max_delimiter_insertions != 0:
+                        response_string = insert_missing_delimiter(response_string, e)
+                        max_delimiter_insertions -= 1
+                        continue
+
                     self.logger.exception(e)
                     print(f"###### RESPONSE START @ {locator()}######")
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
@@ -277,6 +280,7 @@ class ChatGPTModule(AiModuleInterface):
                 if new_func_name is None or new_func_name == "":
                     self.console.log(
                         f"[blue]{old_func_name}[/blue]:[orange3]Got invalid code from model, Retry  {i + 1}/{retries}[/orange3]")
+                    continue
 
                 if check_reverse_engineer_fail_happend(improved_code):
                     self.console.log(
