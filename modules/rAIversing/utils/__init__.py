@@ -134,7 +134,13 @@ def clear_extra_data(response, e):
 def split_response(response_dict):
     renaming_dict = {}
     response_string = ""
-    if len(response_dict) == 2:
+    improved_key = key_finder(["code", "Code","improve"], response_dict)
+    dict_key = key_finder(["dict", "Dict","renaming","operation"], response_dict)
+    if improved_key is not None and dict_key is not None:
+        improved_code = response_dict[improved_key]
+        renaming_dict = response_dict[dict_key]
+
+    elif len(response_dict) == 2:
         for key in response_dict:
             if "code" in key:
                 improved_code = response_dict[key]
@@ -297,3 +303,27 @@ def insert_missing_delimiter(response, exception):
     pre_wrap = response[:char].rstrip()
     fixed = pre_wrap + line_wrap + response[char:]
     return fixed
+
+
+def key_finder(key_parts, dictionary):
+    """
+    :param key_parts: list of key parts (strings) or single string
+    :param dictionary: the dictionary to search in
+    :return: search result
+    """
+    if type(key_parts) == str:
+        key_parts = [key_parts]
+    options = set()
+    for key in dictionary.keys():
+        for part in key_parts:
+            if part in key:
+                options.add(key)
+    if len(options) == 1:
+        return options.pop()
+    elif len(options) > 1:
+        print(dictionary)
+        print(f"Multiple options found for {key_parts}: {options}")
+        raise Exception(f"Multiple options found for {key_parts}: {options}")
+
+    else:
+        raise Exception(f"Could not find key {key_parts} in {dictionary}")
