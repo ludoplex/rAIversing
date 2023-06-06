@@ -16,9 +16,9 @@ from rAIversing.utils import check_and_fix_bin_path, extract_function_name, gene
 
 
 class rAIverseEngine:
-    def __init__(self, ai_module, json_path="", binary_path="", max_tokens=3000):
+    def __init__(self, ai_module, json_path="", binary_path="", max_tokens=None):
         self.max_parallel_functions = os.cpu_count() // 2
-        self.max_tokens = max_tokens
+        self.max_tokens = max_tokens if max_tokens is not None else ai_module.get_max_tokens()
         self.ai_module = ai_module  # type: chatGPT
         self.functions = {}
         self.used_tokens = 0

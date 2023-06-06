@@ -15,7 +15,7 @@ P2IM_NO_PROP_BINS = os.path.join(P2IM_BINS_ROOT, "no_propagation")
 GHIDRA_ROOT = os.path.join(MODULES_ROOT, "ghidra")
 GHIDRA_SCRIPTS = os.path.join(GHIDRA_ROOT, "ghidra_scripts")
 AI_MODULES_ROOT = os.path.join(MODULES_ROOT, "rAIversing", "AI_modules")
-
+DEFAULT_API_KEY_PATH = os.path.join(AI_MODULES_ROOT, "openAI_core", "api_key.txt")
 
 #TODO: fill in the following to match your ghidra installation
 GHIDRA_INSTALL_DIR = os.path.join(GHIDRA_ROOT, "ghidra_10.2.2_PUBLIC")

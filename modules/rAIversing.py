@@ -14,13 +14,15 @@ def testbench(ai_module):
 
 
 def evaluation(ai_module=None, parallel=1):
-    eval_man = EvaluationManager(P2IM_BINS_ROOT, ai_module, 3, connections=parallel)
+    ai_modules = [chatGPT.api_key(engine="gpt-4")]
+    #ai_modules = [chatGPT.api_key(),ai_module = chatGPT.api_key()]
+    eval_man = EvaluationManager(P2IM_BINS_ROOT, ai_modules, 1, connections=parallel)
     eval_man.run()
     eval_man.evaluate()
 
 
 def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=None, custom_headless_binary=None,
-                          max_tokens=3000, dry_run=False, parallel=1):
+                          max_tokens=None, dry_run=False, parallel=1):
     if ai_module is None:
         raise ValueError("No AI module was provided")
     if not os.path.isdir(os.path.abspath(path)):
@@ -94,10 +96,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='rAIversing', description='Reverse engineering tool using AI')
     parser.add_argument('--testbench', action='store_true', help='Run testbench')
     parser.add_argument('--evaluation', action='store_true', help='Run evaluation')
-    parser.add_argument('--access_token_path', help='OpenAI access token path', default=None)
     parser.add_argument('-a', '--api_key_path', help='OpenAI API key path (preferred)', default=None)
     parser.add_argument('-g', '--ghidra_path', help='/path/to/custom/ghidra/support/analyzeHeadless', default=None)
-    parser.add_argument('-m', '--max_token', help='Max Tokens before Skipping Functions', default=3000, type=int)
+    parser.add_argument('-m', '--max_token', help='Max Tokens before Skipping Functions', default=None, type=int)
     parser.add_argument('-t', '--threads', help='Number of parallel requests', default=1, type=int)
     parser.add_argument('-d', '--dry', help='Dry run to calculate how many tokens will be used', action='store_true')
     subparsers = parser.add_subparsers(help='sub-command help', dest='command')
@@ -125,8 +126,6 @@ if __name__ == "__main__":
 
     if args.api_key_path is not None:
         ai_module = chatGPT.api_key(args.api_key_path)
-    elif args.access_token_path is not None:
-        ai_module = chatGPT.access_token(args.access_token_path)
     else:
         ai_module = chatGPT.api_key()
 

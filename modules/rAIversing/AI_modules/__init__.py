@@ -5,7 +5,7 @@ class AiModuleInterface:
         """Prompts the model and returns the result"""
         pass
 
-    def prompt_with_renaming(self, input_code,retries): # type: (str,int) -> (str, dict)
+    def prompt_with_renaming(self, input_code, retries):  # type: (str,int) -> (str, dict)
         """Prompts the model and returns the resulting code and a dict of renamed Names"""
         pass
 
@@ -19,4 +19,8 @@ class AiModuleInterface:
 
     def get_model_name(self):
         """Returns the name of the model"""
+        pass
+
+    def get_max_tokens(self):
+        """Returns the maximum number of tokens the model can handle"""
         pass

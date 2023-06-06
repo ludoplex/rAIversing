@@ -65,13 +65,7 @@ You have been given a piece of C code which needs to be reverse engineered and i
     return pre + code + post
 
 
-def access_token(path_to_access_token=os.path.join(AI_MODULES_ROOT, "openAI_core", "access_token.txt")):
-    chat = ChatGPTModule()
-    chat.init_access_token(path_to_access_token)
-    return chat
-
-
-def api_key(path_to_api_key=os.path.join(AI_MODULES_ROOT, "openAI_core", "api_key.txt"), engine="gpt-3.5-turbo"):
+def api_key(path_to_api_key=DEFAULT_API_KEY_PATH, engine="gpt-3.5-turbo"):
     chat = ChatGPTModule()
     chat.init_api(path_to_api_key, engine=engine)
     return chat
@@ -80,8 +74,9 @@ def api_key(path_to_api_key=os.path.join(AI_MODULES_ROOT, "openAI_core", "api_ke
 class ChatGPTModule(AiModuleInterface):
     def __init__(self):
         self.chat = None
+        self.chat_large = None
         self.api_key = None
-        self.access_token = None
+        self.api_key_path = None
         self.logger = logging.getLogger("ChatGPTModule")
         self.console = Console()
         self.engine = "gpt-3.5-turbo"  # Model name for the openAI API
@@ -89,16 +84,21 @@ class ChatGPTModule(AiModuleInterface):
     def get_model_name(self):
         return self.engine
 
-    def init_api(self, path_to_api_key=None, engine="gpt-3.5-turbo"):
+    def init_api(self, path_to_api_key=DEFAULT_API_KEY_PATH, engine="gpt-3.5-turbo"):
         self.engine = engine
-        with open(path_to_api_key) as f:
+        self.api_key_path = path_to_api_key
+        with open(self.api_key_path) as f:
             self.api_key = f.read()
         self.chat = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine)
+        if "gpt-4" in self.engine:
+            self.chat_large = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=f"{self.engine}-32k")
 
-    def init_access_token(self, path_to_access_token=None):
-        with open(path_to_access_token) as f:
-            self.access_token = f.read()
-        self.chat = revChatGPT.V1.Chatbot(config={"access_token": self.access_token})
+
+    def get_max_tokens(self):
+        if "gpt-4" in self.engine:
+            return 30500
+        else:
+            return 3500
 
     def assemble_prompt(self, input_code):
         return assemble_prompt_v2(input_code)
@@ -106,20 +106,17 @@ class ChatGPTModule(AiModuleInterface):
     def prompt(self, prompt):  # type: (str) -> str
         """Prompts the model and returns the result"""
 
-        if self.access_token is not None:
-            try:
-                response = self.chat.ask(prompt)
-                for data in response:
-                    answer = data["message"]
-            except Exception as e:
-                print(f"Error {e} in response:\n>>>>>>>>")
-                print(dict(response))
-                print("<<<<<<<<")
-                exit(-1)
-        elif self.api_key is not None:
-            answer = self.chat.ask(prompt)
-            self.chat.conversation["default"].pop(1)
-            self.chat.conversation["default"].pop(1)
+        if self.api_key is not None:
+            if "gpt-4" in self.engine and self.calc_used_tokens(prompt) > 6500:
+                answer = self.chat_large.ask(prompt)
+                self.chat_large.conversation["default"].pop(1)
+                self.chat_large.conversation["default"].pop(1)
+            else:
+                answer = self.chat.ask(prompt)
+                self.chat.conversation["default"].pop(1)
+                self.chat.conversation["default"].pop(1)
+        else:
+            raise Exception("No API Key set")
 
         if answer is None or answer == "":
             raise NoResponseException("No Answer from Chat (empty string)")
@@ -370,7 +367,7 @@ class ChatGPTModule(AiModuleInterface):
         return response_dict, response_string
 
     def calc_used_tokens(self, function):
-        enc = tiktoken.encoding_for_model("gpt-3.5-turbo-0301")
+        enc = tiktoken.encoding_for_model(self.engine)
         return int(1.65 * len(enc.encode(function)))
 
     def add_missing_commas(self, response_string):
