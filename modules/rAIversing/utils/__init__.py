@@ -78,6 +78,8 @@ def check_reverse_engineer_fail_happend(code):
     code = extract_function_name(code)
     if "reverse" in code.lower() and "engineer" in code.lower():
         return True
+    elif "improve" in code.lower() and "function" in code.lower():
+        return True
     else:
         return False
 
@@ -134,8 +136,8 @@ def clear_extra_data(response, e):
 def split_response(response_dict):
     renaming_dict = {}
     response_string = ""
-    improved_key = key_finder(["code", "Code","improve"], response_dict)
-    dict_key = key_finder(["dict", "Dict","renaming","operation"], response_dict)
+    improved_key = key_finder(["code", "Code", "improve"], response_dict)
+    dict_key = key_finder(["dict", "Dict", "renaming", "operation"], response_dict)
     if improved_key is not None and dict_key is not None:
         improved_code = response_dict[improved_key]
         renaming_dict = response_dict[dict_key]
@@ -210,9 +212,8 @@ def prompt_parallel(ai_module, result_queue, name, code, retries):
     except KeyboardInterrupt:
         return
 
-
     except Exception as e:
-        print(f"Error in {name}: {e}\n")
+        print(f"Error in {name}: {e}")
         result_queue.put((name, "SKIP"))
 
 
@@ -222,8 +223,6 @@ def locator(context=False):
         return f"{caller.filename}:{caller.lineno} - {caller.code_context}"
     else:
         return f"{caller.filename}:{caller.lineno}"
-
-
 
 
 def handle_spawn_worker(processes, prompting_args, started):
@@ -305,3 +304,54 @@ def key_finder(key_parts, dictionary):
 
     else:
         raise Exception(f"Could not find key {key_parts} in {dictionary}")
+
+
+def clean_bad_renamings(renaming_dict, code, name):
+    forbidden_strings = ["\\", "/", ":", "*", "?", "\"", "<", ">", "|", " ", "PTR_", "DAT_", "FUNC_"]
+    clean_dict = {}
+
+    for old, new in renaming_dict.items():
+        if old in code and (old != new):
+            if new == "" or old == "":
+                continue
+            if any([forbidden in new or forbidden in old for forbidden in forbidden_strings]):
+                continue
+            if "FUN_" in old and name != old:
+                continue
+            try:
+                val = hex(int(old, 16))
+                continue
+            except:
+                pass
+            try:
+                val = hex(int(new, 16))
+                continue
+            except:
+                pass
+            if old in clean_dict.keys():
+                raise Exception(f"Duplicate key {old} in renaming dict")
+            clean_dict[old] = new
+
+    return clean_dict
+
+
+def do_renaming(renaming_dict, code, name):
+    """
+    Replaces all occurrences of keys in renaming_dict with their values in code.
+    Cleans the renaming dict of bad entries and returns both the cleaned dict and the code with the names replaced.
+    :param renaming_dict: dictionary of old names to new names
+    :param code: the code to replace names in
+    :param name: the name of the function
+    :return: the code with the names replaced and the cleaned renaming dict
+    """
+    clean_dict = clean_bad_renamings(renaming_dict, code, name)
+    temporary_remapping = {}
+    clean_dict_sorted = dict(sorted(clean_dict.items(), key=lambda item: (-len(item[0]), item[0])))
+
+    for old, new in clean_dict_sorted.items():
+        rand_str = get_random_string(10)
+        temporary_remapping[rand_str] = new
+        code = code.replace(old, rand_str)
+    for tag, new in temporary_remapping.items():
+        code = code.replace(tag, new)
+    return code, clean_dict
