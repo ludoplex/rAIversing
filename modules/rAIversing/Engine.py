@@ -12,7 +12,7 @@ from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.pathing import PROJECTS_ROOT
 from rAIversing.utils import check_and_fix_bin_path, extract_function_name, generate_function_name, MaxTriesExceeded, \
     check_and_fix_double_function_renaming, check_do_nothing, get_random_string, ptr_escape, prompt_parallel, \
-    handle_spawn_worker, OutOfTriesException
+    handle_spawn_worker, locator
 
 
 class rAIverseEngine:
@@ -270,14 +270,12 @@ class rAIverseEngine:
         return count
 
     def run_parallel_rev(self, no_propagation=False):
-        function_layer = len(self.layers)+1
+        function_layer = len(self.layers) + 1
         skipped_remaining_functions = False
         self.skip_too_big()
         self.skip_do_nothing()
         overall_processed_functions = self.count_processed()
         lfl = []
-        #TODO Make LFL a deterministic thing that gets loaded from the save file and check if finished
-
 
 
         while not self.check_all_improved():
@@ -293,7 +291,7 @@ class rAIverseEngine:
                     self.console.print(f"These functions remain {self.get_missing_functions()}")
                 break
             else:
-                if len(self.layers)>0:
+                if len(self.layers) > 0:
                     old_layer = self.layers[-1]
                     leftover_functions = list(set(old_layer).intersection(set(lfl)))
                     if len(leftover_functions) == 0:
@@ -331,6 +329,7 @@ class rAIverseEngine:
                     processed_functions += 1
                     if result == "SKIP":
                         self.skip_function(name)
+                        handle_spawn_worker(processes, prompting_args, started)
                         continue
                     else:
                         current_cost = self.handle_result_processing(name, result, no_propagation=no_propagation)
@@ -394,7 +393,7 @@ class rAIverseEngine:
             renaming_dict[name] = new_name
 
         except Exception as e:
-            self.console.print(f"[bold red]Error while improving {name} {e}[/bold red]")
+            self.console.print(f"[bold red]Error while improving {name} {e}[/bold red]" + locator())
             raise e
 
         self.functions[name]["improved"] = True
@@ -428,32 +427,6 @@ class rAIverseEngine:
         self.current_fn_lookup[function_name] = current_name
         self.original_fn_lookup[current_name] = function_name
         del self.original_fn_lookup[old_current_name]
-
-    def cleanup(self):
-        self.load_save_file()
-        for name, data in self.functions.items():
-            data["code"] = data["code"].replace("\n\\n", "\n")
-
-            current_name = extract_function_name(data["code"])
-            if name == current_name:
-                continue
-            else:
-                address_postfix = data["entrypoint"].split("x")[1]
-                if not current_name.endswith(address_postfix):
-                    new_name = f"{current_name}_{address_postfix}"
-                    self.functions[name]["current_name"] = new_name
-                    self.functions[name]["code"] = data["code"].replace(current_name, new_name)
-                    self.current_fn_lookup[name] = new_name
-                    self.original_fn_lookup[new_name] = name
-                else:
-                    continue
-        self.rename_for_all_functions(self.current_fn_lookup)
-        self.save_functions()
-
-    def testbench(self):
-        print(self.ai_module.calc_used_tokens(self.ai_module.assemble_prompt("")))
-
-        self.cleanup()  # self.ai_module.testbench()
 
     def dry_run(self):
         number_of_tokens = 0
