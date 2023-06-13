@@ -13,44 +13,26 @@ from rAIversing.AI_modules import AiModuleInterface
 from rAIversing.pathing import *
 from rAIversing.utils import extract_function_name, NoResponseException, clear_extra_data, split_response, \
     check_valid_code, MaxTriesExceeded, InvalidResponseException, format_newlines_in_code, escape_failed_escapes, \
-    check_reverse_engineer_fail_happend, locator, OutOfTriesException, insert_missing_delimiter
+    check_reverse_engineer_fail_happend, locator, OutOfTriesException, insert_missing_delimiter, do_renaming
 from rAIversing.AI_modules.openAI_core.PromptEngine import PromptEngine
-
-PROMPT_TEXT = """
-    
-    Respond with a single JSON object containing the following keys and values:
-    improved_code : make the following code more readable without changing variables starting with PTR_ , DAT_ or FUN_
-    renaming_operations : list all changes in json format with keys being the old names and the values the corresponding new names.
-    Do not use single quotes
-    
-    Original code:
-    """
 
 
 def assemble_prompt_v1(code):
-    return PROMPT_TEXT + code
-
-
-def assemble_prompt_v2(code):
     pre = """
 You have been given a piece of C code which needs to be reverse engineered and improved. The original code is as follows:
-        
+
 """
     post = """
-        
-        Your task is to create an improved and more readable version of the code without changing variables starting with "PTR_" or "DAT_".
+    
+    Your task is to create an improved and more readable version of the code without changing variables starting with "PTR_" or "DAT_".
         If possible give the function a more descriptive name, otherwise leave it as it is. (Functions start with "FUN_") 
         
         Your response should include the following:
-                        
-        1. The improved code, which should be more readable and easier to understand. Do not use single characters for variable names.
-        2. A dictionary that maps the original names of the function, parameters and variables to their new names in the improved code.
+        A dictionary that maps the original names of the function, parameters and variables to their new names in the improved code.
         
         Respond in the following format:
         
         {
-        "improved_code": "<your escaped and improved code here>",
-        "renaming_operations": {
         "<original_function_name>": "<new_function_name>",
         "<original_parameter_name_1>": "<new_parameter_name_1>",
         "<original_parameter_name_2>": "<new_parameter_name_2>",
@@ -59,9 +41,9 @@ You have been given a piece of C code which needs to be reverse engineered and i
         "<original_variable_name_2>": "<new_variable_name_2>",
         ...
         }
-        }
+        
         Do not use single quotes. No Explanation is needed.
-        """
+"""
 
     return pre + code + post
 
@@ -72,12 +54,11 @@ def api_key(path_to_api_key=DEFAULT_API_KEY_PATH, engine=PromptEngine.DEFAULT):
     return chat
 
 
-
 class ChatGPTModule(AiModuleInterface):
     def __init__(self):
-        self.chat_small = None # type: revChatGPT.V3.Chatbot
-        self.chat_medium = None # type: revChatGPT.V3.Chatbot
-        self.chat_large = None # type: revChatGPT.V3.Chatbot
+        self.chat_small = None  # type: revChatGPT.V3.Chatbot
+        self.chat_medium = None  # type: revChatGPT.V3.Chatbot
+        self.chat_large = None  # type: revChatGPT.V3.Chatbot
         self.api_key = None
         self.api_key_path = None
         self.logger = logging.getLogger("ChatGPTModule")
@@ -91,53 +72,63 @@ class ChatGPTModule(AiModuleInterface):
         self.engine = engine
         self.api_key_path = path_to_api_key
         with open(self.api_key_path) as f:
-            self.api_key = f.read()
+            self.api_key = f.read().strip()
             if self.api_key == "":
                 raise Exception("API Key is empty")
-        self.chat_small = revChatGPT.V3.Chatbot(api_key=self.api_key)
-        self.chat_medium = revChatGPT.V3.Chatbot(api_key=self.api_key, engine="gpt-4")
-        #self.chat_large = revChatGPT.V3.Chatbot(api_key=self.api_key, engine="gpt-4-32k-0314")
-        self.chat_large = revChatGPT.V3.Chatbot(api_key=self.api_key, engine="gpt-4") #TODO change back once gpt-4-32k is available
+
+        # self.chat_small = revChatGPT.V3.Chatbot(api_key=self.api_key,engine=self.engine.small())
+        # self.chat_medium = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine.medium())
+        # self.chat_large = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine.large())
+        trunc_offset = 50
+
+        self.chat_small = Chatbot(api_key=self.api_key, engine=self.engine.small(),
+                                  max_tokens=max(self.engine.small_range()),
+                                  truncate_limit=max(self.engine.small_range()) - trunc_offset)
+        self.chat_medium = Chatbot(api_key=self.api_key, engine=self.engine.medium(),
+                                   max_tokens=max(self.engine.medium_range()),
+                                   truncate_limit=max(self.engine.medium_range()) - trunc_offset)
+        self.chat_large = Chatbot(api_key=self.api_key, engine=self.engine.large(),
+                                  max_tokens=max(self.engine.large_range()),
+                                  truncate_limit=max(self.engine.large_range()) - trunc_offset)
 
     def get_max_tokens(self):
         if self.engine == PromptEngine.GPT_3_5_TURBO:
-            return 3500
+            return 15000
         elif self.engine == PromptEngine.GPT_4:
-            #return 30500 #TODO change back to 30500 once gpt-4-32k is available
-            return 7000
+            return 31000
         elif self.engine == PromptEngine.HYBRID:
-            #return 30500 #TODO change back to 30500 once gpt-4-32k is available
-            return 7000
+            return 31000
 
     def assemble_prompt(self, input_code):
-        return assemble_prompt_v2(input_code)
+        return assemble_prompt_v1(input_code)
 
     def prompt(self, prompt):  # type: (str) -> (str,int)
         """Prompts the model and returns the result and the number of used tokens"""
-        #self.console.print("Prompting ChatGPT with: " + str(self.calc_used_tokens(prompt)) + " tokens")
+        # self.console.print("Prompting ChatGPT with: " + str(self.calc_used_tokens(prompt)) + " tokens")
         needed_tokens = self.calc_used_tokens(prompt)
         used_tokens = 0
         answer = ""
         if needed_tokens > self.get_max_tokens():
             raise Exception("Used more tokens than allowed: " + str(needed_tokens) + " > " + str(self.get_max_tokens()))
-        elif needed_tokens > 7000 and (self.engine == PromptEngine.GPT_4 or self.engine == PromptEngine.HYBRID):
-
+        elif needed_tokens in self.engine.large_range():
             answer = self.chat_large.ask(prompt)
             self.chat_large.conversation["default"].pop()
             used_tokens = self.chat_large.get_token_count()
             self.chat_large.reset()
             time.sleep(30)
-        elif needed_tokens > 3500 and (self.engine == PromptEngine.GPT_4 or self.engine == PromptEngine.HYBRID):
+        elif needed_tokens in self.engine.medium_range():
             answer = self.chat_medium.ask(prompt)
             self.chat_medium.conversation["default"].pop()
             used_tokens = self.chat_medium.get_token_count()
             self.chat_medium.reset()
             time.sleep(30)
-        else:
+        elif needed_tokens in self.engine.small_range():
             answer = self.chat_small.ask(prompt)
             self.chat_small.conversation["default"].pop()
             used_tokens = self.chat_small.get_token_count()
             self.chat_small.reset()
+        else:
+            raise Exception("Used more tokens than allowed: " + str(needed_tokens) + " > " + str(self.get_max_tokens()))
         if answer is None or answer == "":
             raise NoResponseException("No Answer from Chat (empty string)")
 
@@ -168,42 +159,35 @@ class ChatGPTModule(AiModuleInterface):
     def process_response(self, response_string_orig):
         try:
             response_dict = json.loads(response_string_orig, strict=False)
-            return response_dict, response_string_orig
+            return response_dict
         except:
             pass
 
         response_string = self.remove_plaintext_from_response(response_string_orig)
         try:
             response_dict = json.loads(response_string, strict=False)
-            return response_dict, response_string_orig
+            return response_dict
         except:
             pass
-
-        # response_string = self.format_string_correctly(response_string)
-        # try:
-        #    response_dict = json.loads(response_string, strict=False)
-        #    return response_dict, response_string_orig
-        # except:
-        #    pass
 
         response_string = self.remove_trailing_commas(response_string)
         try:
             response_dict = json.loads(response_string, strict=False)
-            return response_dict, response_string_orig
+            return response_dict
         except:
             pass
 
         response_string = self.add_missing_commas(response_string)
         try:
             response_dict = json.loads(response_string, strict=False)
-            return response_dict, response_string_orig
+            return response_dict
         except:
             pass
 
         response_string = escape_failed_escapes(response_string)
         try:
             response_dict = json.loads(response_string, strict=False)
-            return response_dict, response_string_orig
+            return response_dict
         except:
             pass
 
@@ -212,7 +196,7 @@ class ChatGPTModule(AiModuleInterface):
             # For cases where the code is not escaped and contains double quotes
 
             response_dict = json.loads(response_string, strict=False)
-            return response_dict, response_string_orig
+            return response_dict
         except:
             pass
 
@@ -272,11 +256,14 @@ class ChatGPTModule(AiModuleInterface):
 
                 raise e
 
-        return response_dict, response_string_orig
+        return response_dict
 
     def prompt_with_renaming(self, input_code, retries=5):  # type: (str,int) -> (str, dict)
-        """Prompts the model and returns the resulting code and a dict of renamed Names"""
-        full_prompt = assemble_prompt_v2(input_code)
+        """Prompts the model and returns the resulting code and a dict of renamed Names
+            This version uses the new prompt format and is more efficient than the old one
+            It only asks the model for the renaming dict and then applies it to the code
+        """
+        full_prompt = assemble_prompt_v1(input_code)
         renaming_dict = {}
         response_string = ""
         response_string_orig = ""
@@ -284,17 +271,15 @@ class ChatGPTModule(AiModuleInterface):
         old_func_name = extract_function_name(input_code)
         total_tokens_used = 0
         for i in range(0, retries):
+            if i > 0:
+                # self.console.log(f"[blue]{old_func_name}[/blue]:[orange3]Retry {i + 1}/{retries}[/orange3]")
+                pass
             try:
-                response_string_orig,used_tokens = self.prompt(full_prompt)
+                response_string_orig, used_tokens = self.prompt(full_prompt)
                 total_tokens_used += used_tokens
-                # print(response_string)
-                # with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
-                #    f.write(response_string)
-                # with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "r") as f:
-                #    response_string = f.read()
-                response_dict, response_string = self.process_response(response_string_orig)
-                improved_code, renaming_dict = split_response(response_dict)
-                new_func_name = extract_function_name(improved_code)
+                response_dict = self.process_response(response_string_orig)
+                improved_code, renaming_dict = do_renaming(response_dict, input_code, old_func_name)
+                new_func_name = renaming_dict[old_func_name]
 
                 if new_func_name is None or new_func_name == "":
                     self.console.log(
@@ -304,6 +289,8 @@ class ChatGPTModule(AiModuleInterface):
                 if check_reverse_engineer_fail_happend(improved_code):
                     self.console.log(
                         f"[blue]{old_func_name}[/blue]:[orange3]Got reverse engineer fail from model, Retry  {i + 1}/{retries}[/orange3]")
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                        f.write(response_string_orig)
                     continue
 
                 if check_valid_code(improved_code):
@@ -331,37 +318,53 @@ class ChatGPTModule(AiModuleInterface):
                 if "Expecting value: line 1 column 1 (char 0)" in str(e) or "Unterminated string starting at:" in str(
                         e):
                     self.console.log(
-                        f"[blue]{old_func_name}[/blue]:[orange3]Got incomplete response from model, Retry  {i + 1}/{retries}[/orange3]")
+                        f"[blue]{old_func_name}[/blue]:[orange3]Got incomplete response from model, Retry  {i + 1}/{retries}! Is it maybe too long: {self.calc_used_tokens(full_prompt)}[/orange3]")
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                        f.write(response_string_orig)
                     if i > 1:
                         continue
 
-                    if len(full_prompt) // 2 > len(response_string) > len(full_prompt) // 4:
-                        self.logger.warning(f"Response was: {response_string}")
+                    if len(full_prompt) // 2 > len(response_string_orig) > len(full_prompt) // 4:
+                        self.logger.warning(f"Response was: {response_string_orig}")
                         self.logger.warning(f"Prompt was: {full_prompt}")
                     continue
             except APIConnectionError as e:
 
                 if i >= retries - 1:
                     self.logger.exception(e)
-                    raise OutOfTriesException(f"Out of tries! Is your HardLimit reached? Tokens used:{self.calc_used_tokens(full_prompt)}")
+                    raise OutOfTriesException(
+                        f"Out of tries! Is your HardLimit reached? Tokens used:{self.calc_used_tokens(full_prompt)}")
 
                 if "Too Many Requests" in str(e):
-                    self.console.log(
-                        f"[blue]{old_func_name}[/blue]:[orange3]Got [red]Too many requests[/red] from model, will sleep now! Retry {i + 1}/{retries}[/orange3]")
+
+                    if "You exceeded your current quota, please check your plan and billing details." in str(e):
+                        raise OutOfTriesException(f"Out of tries! Your HardLimit is reached!!!!")
+                    if "That model is currently overloaded with other requests" in str(e):
+                        self.console.log(
+                            f"[blue]{old_func_name}[/blue]:[orange3] [red]Model Overloaded!![/red], will sleep now! Retry {i + 1}/{retries}[/orange3]")
+                    else:
+                        self.console.print(str(e))
+                        self.console.log(
+                            f"[blue]{old_func_name}[/blue]:[orange3]Got [red]Too many requests[/red] from model, will sleep now! Retry {i + 1}/{retries}[/orange3]")
                     time.sleep(120)
                     continue
             except InvalidResponseException as e:
+
                 if i >= retries - 1:
-                    raise MaxTriesExceeded("Max tries exceeded "+locator())
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                        f.write(response_string_orig)
+                    raise MaxTriesExceeded("Max tries exceeded " + locator())
                 continue
             except requests.exceptions.ChunkedEncodingError as e:
                 if i >= retries - 1:
-                    raise MaxTriesExceeded("Max tries exceeded "+locator())
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                        f.write(response_string_orig)
+                    raise MaxTriesExceeded("Max tries exceeded " + locator())
                 continue
 
             except TypeError as e:
                 print(f"###### RESPONSE START @ {locator()} ######")
-                print(response_string)
+                print(response_string_orig)
                 print(f"###### RESPONSE END @ {locator()} ######")
                 self.logger.exception(e)
                 self.logger.error(locator())
@@ -379,27 +382,27 @@ class ChatGPTModule(AiModuleInterface):
                 else:
                     self.logger.exception(e)
                     print("###### RESPONSE START ######")
-                    print(response_string)
+                    print(response_string_orig)
                     print("###### RESPONSE END ######")
                     raise Exception(e)
+        with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+            f.write(response_string_orig)
         raise MaxTriesExceeded("Max tries exceeded")
 
-    def testbench(self):
-
-        with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp.json"), "r") as f:
-            response = f.read()
-        response_dict, response_string = self.process_response(response)
-        return response_dict, response_string
-
     def calc_used_tokens(self, function):
+        """Calculates the used tokens for a given function, based on the engine
+        and a multiplier of 1.015 to account for the lenght of the response.
+        It is an approximation, that is designed to be more accurate for bigger functions,
+        in order to get as close to the limit as possible, without exceeding it.
+        """
+
         if self.engine == PromptEngine.HYBRID:
             enc = tiktoken.encoding_for_model("gpt-4")
         elif "gpt-4" in self.engine.value or "gpt-3.5" in self.engine.value:
             enc = tiktoken.encoding_for_model("gpt-4")
         else:
-            raise NotImplementedError(f"Engine {self.engine} not supported yet!"+locator())
-
-        return int(len(enc.encode(function)))
+            raise NotImplementedError(f"Engine {self.engine} not supported yet!" + locator())
+        return int(1.015 * len(enc.encode(function)))
 
     def add_missing_commas(self, response_string):
         """Adds missing commas to the response string"""
