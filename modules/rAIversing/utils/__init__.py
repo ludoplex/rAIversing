@@ -224,28 +224,6 @@ def locator(context=False):
         return f"{caller.filename}:{caller.lineno}"
 
 
-def prompt_dispatcher(args, total, self, result_queue):
-    started = 0
-    processes = []
-
-    for arg in args:
-        p = mp.Process(target=prompt_parallel, args=arg)
-        p.start()
-        processes.append(p)
-        started += 1
-
-    results_dict = {}
-    while len(results_dict) < len(args):
-        name, result = result_queue.get()
-        results_dict[name] = result
-        current_cost = self.ai_module.calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"]))
-        self.console.print(
-            f"{len(results_dict)}/{total} | Improving function [blue]{name}[/blue] for {current_cost} Tokens | Used tokens: {self.used_tokens}")
-        self.used_tokens += current_cost
-    for p in processes:
-        p.join()
-        p.close()
-    return results_dict
 
 
 def handle_spawn_worker(processes, prompting_args, started):
