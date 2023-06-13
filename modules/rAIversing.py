@@ -50,11 +50,10 @@ def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=N
     if dry_run:
         raie.dry_run()
         return
-    if parallel > 1:
-        raie.max_parallel_functions = parallel
-        raie.run_parallel_rev()
-    else:
-        raie.run_recursive_rev()
+
+    raie.max_parallel_functions = parallel
+    raie.run_parallel_rev()
+
     raie.export_processed(all_functions=True)
     import_changes_to_existing_project(import_path, binary_name, project_name,
                                        custom_headless_binary=custom_headless_binary)
@@ -79,11 +78,9 @@ def run_on_new_binary(binary_path, arch, ai_module=None, custom_headless_binary=
     if dry_run:
         raie.dry_run()
         return
-    if parallel > 1:
-        raie.max_parallel_functions = parallel
-        raie.run_parallel_rev()
-    else:
-        raie.run_recursive_rev()
+    raie.max_parallel_functions = parallel
+    raie.run_parallel_rev()
+
     raie.export_processed(all_functions=True)
     if output_path is not None:
         import_changes_to_existing_project(project_location, binary_name, project_name,
