@@ -14,6 +14,7 @@ from rAIversing.pathing import *
 from rAIversing.utils import extract_function_name, NoResponseException, clear_extra_data, split_response, \
     check_valid_code, MaxTriesExceeded, InvalidResponseException, format_newlines_in_code, escape_failed_escapes, \
     check_reverse_engineer_fail_happend, locator, OutOfTriesException, insert_missing_delimiter
+from rAIversing.AI_modules.openAI_core.PromptEngine import PromptEngine
 
 PROMPT_TEXT = """
     
@@ -65,63 +66,82 @@ You have been given a piece of C code which needs to be reverse engineered and i
     return pre + code + post
 
 
-def api_key(path_to_api_key=DEFAULT_API_KEY_PATH, engine="gpt-3.5-turbo"):
+def api_key(path_to_api_key=DEFAULT_API_KEY_PATH, engine=PromptEngine.DEFAULT):
     chat = ChatGPTModule()
     chat.init_api(path_to_api_key, engine=engine)
     return chat
 
 
+
 class ChatGPTModule(AiModuleInterface):
     def __init__(self):
-        self.chat = None
-        self.chat_large = None
+        self.chat_small = None # type: revChatGPT.V3.Chatbot
+        self.chat_medium = None # type: revChatGPT.V3.Chatbot
+        self.chat_large = None # type: revChatGPT.V3.Chatbot
         self.api_key = None
         self.api_key_path = None
         self.logger = logging.getLogger("ChatGPTModule")
         self.console = Console()
-        self.engine = "gpt-3.5-turbo"  # Model name for the openAI API
+        self.engine = PromptEngine.DEFAULT
 
     def get_model_name(self):
-        return self.engine
+        return self.engine.value
 
-    def init_api(self, path_to_api_key=DEFAULT_API_KEY_PATH, engine="gpt-3.5-turbo"):
+    def init_api(self, path_to_api_key=DEFAULT_API_KEY_PATH, engine=PromptEngine.DEFAULT):
         self.engine = engine
         self.api_key_path = path_to_api_key
         with open(self.api_key_path) as f:
             self.api_key = f.read()
-        self.chat = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine)
-        if "gpt-4" in self.engine:
-            self.chat_large = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=f"{self.engine}-32k")
-
+            if self.api_key == "":
+                raise Exception("API Key is empty")
+        self.chat_small = revChatGPT.V3.Chatbot(api_key=self.api_key)
+        self.chat_medium = revChatGPT.V3.Chatbot(api_key=self.api_key, engine="gpt-4")
+        #self.chat_large = revChatGPT.V3.Chatbot(api_key=self.api_key, engine="gpt-4-32k-0314")
+        self.chat_large = revChatGPT.V3.Chatbot(api_key=self.api_key, engine="gpt-4") #TODO change back once gpt-4-32k is available
 
     def get_max_tokens(self):
-        if "gpt-4" in self.engine:
-            return 30500
-        else:
+        if self.engine == PromptEngine.GPT_3_5_TURBO:
             return 3500
+        elif self.engine == PromptEngine.GPT_4:
+            #return 30500 #TODO change back to 30500 once gpt-4-32k is available
+            return 7000
+        elif self.engine == PromptEngine.HYBRID:
+            #return 30500 #TODO change back to 30500 once gpt-4-32k is available
+            return 7000
 
     def assemble_prompt(self, input_code):
         return assemble_prompt_v2(input_code)
 
-    def prompt(self, prompt):  # type: (str) -> str
-        """Prompts the model and returns the result"""
+    def prompt(self, prompt):  # type: (str) -> (str,int)
+        """Prompts the model and returns the result and the number of used tokens"""
+        #self.console.print("Prompting ChatGPT with: " + str(self.calc_used_tokens(prompt)) + " tokens")
+        needed_tokens = self.calc_used_tokens(prompt)
+        used_tokens = 0
+        answer = ""
+        if needed_tokens > self.get_max_tokens():
+            raise Exception("Used more tokens than allowed: " + str(needed_tokens) + " > " + str(self.get_max_tokens()))
+        elif needed_tokens > 7000 and (self.engine == PromptEngine.GPT_4 or self.engine == PromptEngine.HYBRID):
 
-        if self.api_key is not None:
-            if "gpt-4" in self.engine and self.calc_used_tokens(prompt) > 6500:
-                answer = self.chat_large.ask(prompt)
-                self.chat_large.conversation["default"].pop(1)
-                self.chat_large.conversation["default"].pop(1)
-            else:
-                answer = self.chat.ask(prompt)
-                self.chat.conversation["default"].pop(1)
-                self.chat.conversation["default"].pop(1)
+            answer = self.chat_large.ask(prompt)
+            self.chat_large.conversation["default"].pop()
+            used_tokens = self.chat_large.get_token_count()
+            self.chat_large.reset()
+            time.sleep(30)
+        elif needed_tokens > 3500 and (self.engine == PromptEngine.GPT_4 or self.engine == PromptEngine.HYBRID):
+            answer = self.chat_medium.ask(prompt)
+            self.chat_medium.conversation["default"].pop()
+            used_tokens = self.chat_medium.get_token_count()
+            self.chat_medium.reset()
+            time.sleep(30)
         else:
-            raise Exception("No API Key set")
-
+            answer = self.chat_small.ask(prompt)
+            self.chat_small.conversation["default"].pop()
+            used_tokens = self.chat_small.get_token_count()
+            self.chat_small.reset()
         if answer is None or answer == "":
             raise NoResponseException("No Answer from Chat (empty string)")
 
-        return answer.replace("<|im_sep|>", "")
+        return answer.replace("<|im_sep|>", ""), used_tokens
 
     def remove_plaintext_from_response(self, response):  # type: (str) -> str
         """Removes everything from the response before the first { and after the last }"""
@@ -262,9 +282,11 @@ class ChatGPTModule(AiModuleInterface):
         response_string_orig = ""
         # print(full_prompt)
         old_func_name = extract_function_name(input_code)
+        total_tokens_used = 0
         for i in range(0, retries):
             try:
-                response_string_orig = self.prompt(full_prompt)
+                response_string_orig,used_tokens = self.prompt(full_prompt)
+                total_tokens_used += used_tokens
                 # print(response_string)
                 # with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                 #    f.write(response_string)
@@ -288,7 +310,7 @@ class ChatGPTModule(AiModuleInterface):
                     improved_code = self.postprocess_code(improved_code)
                     if improved_code == input_code:
                         raise Exception("No change")
-                    return improved_code, renaming_dict
+                    return improved_code, renaming_dict, total_tokens_used
                 else:
                     self.console.log(
                         f"[blue]{old_func_name}[/blue]:[orange3]Got invalid code from model, Retry  {i + 1}/{retries}[/orange3]")
@@ -318,8 +340,11 @@ class ChatGPTModule(AiModuleInterface):
                         self.logger.warning(f"Prompt was: {full_prompt}")
                     continue
             except APIConnectionError as e:
+
                 if i >= retries - 1:
-                    raise OutOfTriesException("Out of tries! Is your HardLimit reached?")
+                    self.logger.exception(e)
+                    raise OutOfTriesException(f"Out of tries! Is your HardLimit reached? Tokens used:{self.calc_used_tokens(full_prompt)}")
+
                 if "Too Many Requests" in str(e):
                     self.console.log(
                         f"[blue]{old_func_name}[/blue]:[orange3]Got [red]Too many requests[/red] from model, will sleep now! Retry {i + 1}/{retries}[/orange3]")
@@ -327,11 +352,11 @@ class ChatGPTModule(AiModuleInterface):
                     continue
             except InvalidResponseException as e:
                 if i >= retries - 1:
-                    raise MaxTriesExceeded("Max tries exceeded")
+                    raise MaxTriesExceeded("Max tries exceeded "+locator())
                 continue
             except requests.exceptions.ChunkedEncodingError as e:
                 if i >= retries - 1:
-                    raise MaxTriesExceeded("Max tries exceeded")
+                    raise MaxTriesExceeded("Max tries exceeded "+locator())
                 continue
 
             except TypeError as e:
@@ -367,8 +392,14 @@ class ChatGPTModule(AiModuleInterface):
         return response_dict, response_string
 
     def calc_used_tokens(self, function):
-        enc = tiktoken.encoding_for_model(self.engine)
-        return int(1.65 * len(enc.encode(function)))
+        if self.engine == PromptEngine.HYBRID:
+            enc = tiktoken.encoding_for_model("gpt-4")
+        elif "gpt-4" in self.engine.value or "gpt-3.5" in self.engine.value:
+            enc = tiktoken.encoding_for_model("gpt-4")
+        else:
+            raise NotImplementedError(f"Engine {self.engine} not supported yet!"+locator())
+
+        return int(len(enc.encode(function)))
 
     def add_missing_commas(self, response_string):
         """Adds missing commas to the response string"""

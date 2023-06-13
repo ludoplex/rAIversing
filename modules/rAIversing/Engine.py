@@ -12,7 +12,7 @@ from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.pathing import PROJECTS_ROOT
 from rAIversing.utils import check_and_fix_bin_path, extract_function_name, generate_function_name, MaxTriesExceeded, \
     check_and_fix_double_function_renaming, check_do_nothing, get_random_string, ptr_escape, prompt_parallel, \
-    prompt_dispatcher, handle_spawn_worker, OutOfTriesException
+    handle_spawn_worker, OutOfTriesException
 
 
 class rAIverseEngine:
@@ -270,20 +270,19 @@ class rAIverseEngine:
         return count
 
     def run_parallel_rev(self, no_propagation=False):
-        function_layer = 0
+        function_layer = len(self.layers)+1
         skipped_remaining_functions = False
         self.skip_too_big()
         self.skip_do_nothing()
         overall_processed_functions = self.count_processed()
         lfl = []
+        #TODO Make LFL a deterministic thing that gets loaded from the save file and check if finished
+
+
 
         while not self.check_all_improved():
             self.console.log(f"[bold yellow]Gathering functions for layer [/bold yellow]{function_layer}")
             self.handle_unlocking()
-
-            # This only happens when we are done with the first layer guaranteeing that we dont duplicate layers in the save file
-            if len(lfl) != 0:
-                self.layers.append(lfl)
 
             lfl = self.get_lowest_function_layer() if not no_propagation else self.get_missing_functions()
             if len(lfl) == 0:
@@ -293,7 +292,18 @@ class rAIverseEngine:
                     self.console.print(f"[bold orange3]No functions found for layer [/bold orange3]{function_layer}")
                     self.console.print(f"These functions remain {self.get_missing_functions()}")
                 break
+            else:
+                if len(self.layers)>0:
+                    old_layer = self.layers[-1]
+                    leftover_functions = list(set(old_layer).intersection(set(lfl)))
+                    if len(leftover_functions) == 0:
+                        self.layers.append(lfl)
+                    else:
+                        lfl = leftover_functions
+                else:
+                    self.layers.append(lfl)
 
+            function_layer = len(self.layers)
             self.console.print(
                 f"Starting layer {function_layer} with {len(lfl)} of {len(self.functions)} functions. Overall processed functions: {overall_processed_functions}/{len(self.functions)} Used tokens: {self.used_tokens}")
 
@@ -319,21 +329,19 @@ class rAIverseEngine:
                 try:
                     name, result = result_queue.get()
                     processed_functions += 1
-                    current_cost = self.ai_module.calc_used_tokens(
-                        self.ai_module.assemble_prompt(self.functions[name]["code"]))
-                    self.used_tokens += current_cost
                     if result == "SKIP":
                         self.skip_function(name)
                         continue
                     else:
-                        self.handle_result_processing(name, result, no_propagation=no_propagation)
+                        current_cost = self.handle_result_processing(name, result, no_propagation=no_propagation)
+                        self.used_tokens += current_cost
+
                     self.console.print(
                         f"{processed_functions}/{total} | Improved function [blue]{name}[/blue] for {current_cost} Tokens | Used tokens: {self.used_tokens}")
 
                     if processed_functions % 5 == 0:
                         self.save_functions()
                         self.console.print(f"{processed_functions}/{total} | Saved functions!")
-
                     handle_spawn_worker(processes, prompting_args, started)
                 except KeyboardInterrupt:
                     self.console.print(f"[bold red] \nKeyboard interrupt. Saving functions and exiting")
@@ -378,6 +386,7 @@ class rAIverseEngine:
         try:
             improved_code = result[0]
             renaming_dict = result[1]
+            total_tokens_used = result[2]
             to_be_improved_code = self.functions[name]["code"]
             improved_code = self.undo_bad_renaming(renaming_dict, improved_code, to_be_improved_code)
             improved_code = check_and_fix_double_function_renaming(improved_code, renaming_dict, name)

@@ -3,10 +3,14 @@ import argparse
 from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.Engine import rAIverseEngine
 from rAIversing.Ghidra_Custom_API import *
+from rAIversing.evaluator import eval_p2im_firmwares
 from rAIversing.evaluator.EvaluationManager import EvaluationManager
+from rAIversing.evaluator.utils import make_run_path
 from rAIversing.pathing import *
+from rAIversing.AI_modules.openAI_core.PromptEngine import PromptEngine
 
-from rAIversing.utils import check_and_fix_bin_path, check_and_fix_project_path, is_already_exported
+from rAIversing.utils import check_and_fix_bin_path, check_and_fix_project_path, is_already_exported, \
+    extract_function_name, insert_missing_delimiter, split_response
 
 
 def testbench(ai_module):
@@ -14,8 +18,8 @@ def testbench(ai_module):
 
 
 def evaluation(ai_module=None, parallel=1):
-    ai_modules = [chatGPT.api_key(engine="gpt-4")]
-    #ai_modules = [chatGPT.api_key(),ai_module = chatGPT.api_key()]
+    #ai_modules = [chatGPT.api_key(PromptMode.HYBRID)]
+    ai_modules = [ai_module]
     eval_man = EvaluationManager(P2IM_BINS_ROOT, ai_modules, 1, connections=parallel)
     eval_man.run()
     eval_man.evaluate()
@@ -59,7 +63,7 @@ def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=N
                                        custom_headless_binary=custom_headless_binary)
 
 
-def run_on_new_binary(binary_path, arch, ai_module=None, custom_headless_binary=None, max_tokens=3000, dry_run=False,
+def run_on_new_binary(binary_path, arch, ai_module=None, custom_headless_binary=None, max_tokens=None, dry_run=False,
                       output_path=None, parallel=1, project_name=None):
     if ai_module is None:
         raise ValueError("No AI module was provided")
@@ -98,6 +102,7 @@ if __name__ == "__main__":
     parser.add_argument('-m', '--max_token', help='Max Tokens before Skipping Functions', default=None, type=int)
     parser.add_argument('-t', '--threads', help='Number of parallel requests', default=1, type=int)
     parser.add_argument('-d', '--dry', help='Dry run to calculate how many tokens will be used', action='store_true')
+    parser.add_argument('-e', '--engine', help='Engine to use(gpt-3.5-turbo/gpt-4/hybrid)', default="gpt-3.5-turbo")
     subparsers = parser.add_subparsers(help='sub-command help', dest='command')
 
     ghidra_selection = subparsers.add_parser('ghidra', help='Run rAIversing on a ghidra project')
@@ -121,10 +126,11 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    engine = PromptEngine(args.engine)
     if args.api_key_path is not None:
-        ai_module = chatGPT.api_key(args.api_key_path)
+        ai_module = chatGPT.api_key(args.api_key_path,engine=engine)
     else:
-        ai_module = chatGPT.api_key()
+        ai_module = chatGPT.api_key(engine=engine)
 
     if args.testbench:
         testbench(ai_module)
