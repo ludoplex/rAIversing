@@ -119,16 +119,17 @@ def check_do_nothing(code):
         return False
 
 
-def clear_extra_data(response, e):
+def clear_extra_data(response, error):
     # Extra data: line 8 column 1 (char 177)
     # remove everything after char 177 from response
     last_del = 0
+    e = str(error)
     while last_del != int(e.split("char ")[1].split(")")[0]):
         last_del = int(e.split("char ")[1].split(")")[0])
         response = response[:last_del]
         try:
             response_dict = json.loads(response, strict=False)
-            return response_dict
+            return response
         except json.decoder.JSONDecodeError as a:
             e = str(a)
 
@@ -207,6 +208,9 @@ def escape_failed_escapes(response_string):
 def prompt_parallel(ai_module, result_queue, name, code, retries):
     try:
         # print(f"Starting {name}")
+        if f"{name}\n" in code:
+            code = code.replace(f"{name}\n", f"{name}")
+
         result = ai_module.prompt_with_renaming(code, retries)
         result_queue.put((name, result))
     except KeyboardInterrupt:
