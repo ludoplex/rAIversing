@@ -49,96 +49,6 @@ replacement_dict = {"strchr": "find_character_in_string", "strrchr": "find_last_
 }
 
 
-def eval_p2im_firmwares(ai_module, parallel=1):
-    usable_binaries = os.listdir(f"{BINARIES_ROOT}/p2im/stripped")  # ["Heat_Press", "CNC", "Gateway"]
-    # usable_binaries = ["Heat_Press", "CNC", "Gateway"]
-    console = Console(soft_wrap=True)
-
-    evaluate_p2im(ai_module, console, parallel, usable_binaries)
-
-    include_all = False
-
-    result_table = create_table()
-    postfix = ""
-    if postfix != "":
-        postfix = f"_{postfix}_"
-    for binary in usable_binaries:
-        console.log(f"[bold bright_green]Evaluating {binary}{postfix}[/bold bright_green]")
-        dc_dict = {}
-        eval_dict = {}
-        funcs_actual = {}
-        funcs_orig = {}
-        funcs_no_prop = {}
-        funcs_gt = {}
-        dc_dict_GT = {}
-        eval_dict_GT = {}
-        dc_dict_hfl = {}
-        eval_dict_hfl = {}
-        dc_dict_no_prop = {}
-        eval_dict_no_prop = {}
-
-        funcs_actual = load_funcs_data(f"Evaluation/{binary}.json")
-        funcs_orig = load_funcs_data(f"Evaluation/{binary}_original.json")
-        funcs_gt = load_funcs_data(f"Evaluation/{binary}_original_stripped.json")
-        funcs_no_prop = load_funcs_data(f"Evaluation/{binary}_no_propagation.json")
-
-        sum_actual, counted_actual = run_comparison(include_all, funcs_orig, funcs_actual, dc_dict, eval_dict)
-        score_actual = sum_actual / counted_actual
-
-        sum_hfl, counted_hfl = run_comparison(include_all, funcs_orig, funcs_actual, dc_dict_hfl, eval_dict_hfl,
-            skip_lfl=True)
-        score_hfl = sum_hfl / counted_hfl
-
-        sum_lfl, counted_lfl = run_comparison(include_all, funcs_orig, funcs_actual, skip_hfl=True)
-        score_lfl = sum_lfl / counted_lfl
-
-        sum_ground_truth_hfl, counted_ground_truth = run_comparison(include_all, funcs_orig, funcs_gt, dc_dict_GT,
-            eval_dict_GT, skip_lfl=True)
-        score_best_hfl = sum_ground_truth_hfl / counted_ground_truth
-
-        sum_ground_truth_all, counted_ground_truth = run_comparison(include_all, funcs_orig, funcs_gt)
-        score_best_all = sum_ground_truth_all / counted_ground_truth
-
-        sum_no_prop_hfl, counted_no_prop = run_comparison(include_all, funcs_orig, funcs_no_prop, dc_dict_no_prop,
-            eval_dict_no_prop, skip_lfl=True)
-        score_worst_hfl = sum_no_prop_hfl / counted_no_prop
-
-        sum_no_prop, counted_no_prop = run_comparison(include_all, funcs_orig, funcs_no_prop)
-        score_worst_all = sum_no_prop / counted_no_prop
-
-        sum_gt_vs_actual_direct_all, counted_gt_vs_actual = run_comparison(include_all, funcs_gt, funcs_actual)
-        score_gt_vs_actual_dir_all = sum_gt_vs_actual_direct_all / counted_gt_vs_actual
-
-        sum_gt_vs_actual_direct_hfl, counted_gt_vs_actual = run_comparison(include_all, funcs_gt, funcs_actual,
-            skip_lfl=True)
-        score_gt_vs_actual_dir_hfl = sum_gt_vs_actual_direct_hfl / counted_gt_vs_actual
-
-        save_to_json(dc_dict, f"Evaluation/{binary}_comp.json")
-        save_to_json(eval_dict, f"Evaluation/{binary}_eval.json")
-        save_to_json(dc_dict_GT, f"Evaluation/{binary}_best_comp.json")
-        save_to_json(eval_dict_GT, f"Evaluation/{binary}_best_eval.json")
-        save_to_json(dc_dict_no_prop, f"Evaluation/{binary}_worst_comp.json")
-        save_to_json(eval_dict_no_prop, f"Evaluation/{binary}_worst_eval.json")
-
-        score_gt_vs_actual = score_actual / score_best_hfl
-
-        score_rpd_hfl = calc_relative_percentage_difference(score_best_hfl, score_worst_hfl, score_hfl)
-
-        score_rpd_all = calc_relative_percentage_difference(score_best_all, score_worst_all, score_actual)
-
-        result_table.add_row(binary, f"{score_actual * 100:.2f}%", f"{score_hfl * 100:.2f}%", f"{score_lfl * 100:.2f}%",
-                             f"{score_best_hfl * 100:.2f}%", f"{score_worst_hfl * 100:.2f}%",
-                             f"{score_gt_vs_actual * 100:.2f}%",
-                             f"{score_gt_vs_actual_dir_all * 100:.2f}%|{score_gt_vs_actual_dir_hfl * 100:.2f}%",
-                             f"{score_rpd_all :.1f}%|{score_rpd_hfl :.1f}%",
-                             f"{len(funcs_orig.keys())}[bold magenta1]|[/bold magenta1]{len(funcs_actual.keys())}",
-                             f"{counted_actual}", f"{counted_ground_truth}", f"{counted_no_prop}")
-
-    export_console = Console(record=True, width=150)
-    export_console.print(result_table)
-    export_console.save_svg(os.path.join(REPO_ROOT, f"evaluation_results.svg"), clear=False, title="",
-                            code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
-
 
 def create_table():
     result_table = Table(Column(header="Binary", style="bold bright_yellow on grey23"),
@@ -251,8 +161,8 @@ def run_comparison(include_all, original_functions, reversed_functions, dc_dict=
 
 def calc_relative_percentage_difference(best, worst, actual):
     try:
-        range_ = best - worst
-        difference = actual - worst
+        range_ = (best*100) - (worst*100)
+        difference = (actual*100) - (worst*100)
         return (difference / range_) * 100
     except ZeroDivisionError:
         print("Division by zero!!!!! @ calc_relative_percentage_difference")
