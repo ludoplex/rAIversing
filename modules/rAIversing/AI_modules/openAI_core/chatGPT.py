@@ -28,12 +28,13 @@ You have been given a piece of C code which needs to be reverse engineered and i
     post = """
     
     Your task is to create an improved and more readable version of the code without changing variables starting with "PTR_" or "DAT_".
-        If possible give the function a more descriptive name, otherwise leave it as it is. (Functions start with "FUN_") 
+    If possible give the function a more descriptive name, otherwise leave it as it is. (Functions start with "FUN_") 
+    Do NOT name the function "reverse_engineered", "improved_function" or similar.
         
-        Your response should include the following:
+    Your response should include the following:
         A dictionary that maps the original names of the function, parameters and variables to their new names in the improved code.
         
-        Respond in the following format:
+    Respond in the following format:
         
         {
         "<original_function_name>": "<new_function_name>",
