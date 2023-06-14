@@ -3,10 +3,13 @@ import logging
 import time
 import requests
 
-import revChatGPT.V1
 import revChatGPT.V3
 import tiktoken
+
+
+
 from revChatGPT.typings import *
+
 from rich.console import Console
 
 from rAIversing.AI_modules import AiModuleInterface
@@ -81,13 +84,13 @@ class ChatGPTModule(AiModuleInterface):
         # self.chat_large = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine.large())
         trunc_offset = 50
 
-        self.chat_small = Chatbot(api_key=self.api_key, engine=self.engine.small(),
+        self.chat_small = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine.small(),
                                   max_tokens=max(self.engine.small_range()),
                                   truncate_limit=max(self.engine.small_range()) - trunc_offset)
-        self.chat_medium = Chatbot(api_key=self.api_key, engine=self.engine.medium(),
+        self.chat_medium = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine.medium(),
                                    max_tokens=max(self.engine.medium_range()),
                                    truncate_limit=max(self.engine.medium_range()) - trunc_offset)
-        self.chat_large = Chatbot(api_key=self.api_key, engine=self.engine.large(),
+        self.chat_large = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine.large(),
                                   max_tokens=max(self.engine.large_range()),
                                   truncate_limit=max(self.engine.large_range()) - trunc_offset)
 
