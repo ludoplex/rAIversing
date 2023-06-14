@@ -53,9 +53,9 @@ class PromptEngine(Enum):
 
     def large(self):
         if self == PromptEngine.GPT_4:
-            return PromptEngine.GPT_4.value + "-32k-0613"
+            return PromptEngine.GPT_4.value #+ "-32k-0613"
         elif self == PromptEngine.HYBRID:
-            return PromptEngine.GPT_4.value + "-32k-0613"
+            return PromptEngine.GPT_4.value #+ "-32k-0613"
         elif self == PromptEngine.GPT_3_5_TURBO or self == PromptEngine.DEFAULT:
             return PromptEngine.GPT_3_5_TURBO.value + "-16k"
         else:
@@ -63,7 +63,8 @@ class PromptEngine(Enum):
 
     def large_range(self):
         if self == PromptEngine.GPT_4:
-            return range(7001, 31001)
+            return range(3501, 7001)
+            #return range(7001, 31001)
         elif self == PromptEngine.HYBRID:
             return range(15001, 31001)
         elif self == PromptEngine.GPT_3_5_TURBO or self == PromptEngine.DEFAULT:
