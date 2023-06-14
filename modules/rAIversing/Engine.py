@@ -12,7 +12,7 @@ from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.pathing import PROJECTS_ROOT
 from rAIversing.utils import check_and_fix_bin_path, extract_function_name, generate_function_name, MaxTriesExceeded, \
     check_and_fix_double_function_renaming, check_do_nothing, get_random_string, ptr_escape, prompt_parallel, \
-    handle_spawn_worker, locator
+    handle_spawn_worker, locator, to_snake_case
 
 
 class rAIverseEngine:
@@ -277,7 +277,6 @@ class rAIverseEngine:
         overall_processed_functions = self.count_processed()
         lfl = []
 
-
         while not self.check_all_improved():
             self.console.log(f"[bold yellow]Gathering functions for layer [/bold yellow]{function_layer}")
             self.handle_unlocking()
@@ -335,8 +334,12 @@ class rAIverseEngine:
                         current_cost = self.handle_result_processing(name, result, no_propagation=no_propagation)
                         self.used_tokens += current_cost
 
+                    renaming_dict = result[1]
                     self.console.print(
-                        f"{processed_functions}/{total} | Improved function [blue]{name}[/blue] for {current_cost} Tokens | Used tokens: {self.used_tokens}")
+                        f"{processed_functions}/{total} | ({self.used_tokens}|{current_cost}) | [blue]{name}[/blue] -> [blue]{renaming_dict[name]}[/blue]")
+
+                    # self.console.print(
+                    #   f"{processed_functions}/{total} | Improved function [blue]{name}[/blue] for {current_cost} Tokens | Used tokens: {self.used_tokens}")
 
                     if processed_functions % 5 == 0:
                         self.save_functions()
@@ -390,6 +393,7 @@ class rAIverseEngine:
             improved_code = self.undo_bad_renaming(renaming_dict, improved_code, to_be_improved_code)
             improved_code = check_and_fix_double_function_renaming(improved_code, renaming_dict, name)
             improved_code, new_name = generate_function_name(improved_code, name)
+            new_name = to_snake_case(new_name)
             renaming_dict[name] = new_name
 
         except Exception as e:
