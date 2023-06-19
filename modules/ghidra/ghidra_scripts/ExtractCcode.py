@@ -10,6 +10,7 @@ import sys
 from ghidra.app.decompiler.flatapi import FlatDecompilerAPI
 from ghidra.program.flatapi import FlatProgramAPI
 from ghidra.util.task import ConsoleTaskMonitor
+import ghidra.program.model.symbol.SourceType.IMPORTED as IMPORTED
 
 from pathing import *
 
@@ -60,7 +61,10 @@ def main(export_path=None, export_with_stripped_names=False):
         else:
             function_name = func.getName()
         if export_with_stripped_names:
-            code = fdapi.decompile(func).replace(func.getName(), function_name)
+            original_name = func.getName()
+            func.setName(function_name, IMPORTED)
+            code = fdapi.decompile(func)
+            func.setName(original_name, IMPORTED)
         else:
             code = fdapi.decompile(func)
 
