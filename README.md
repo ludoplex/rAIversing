@@ -122,6 +122,8 @@ rAIversing.py
     * set the GHIDRA_INSTALL_DIR var in `~/rAIversing/modules/rAIversing/pathing/__init__.py` to `ghidra_xxx_PUBLIC` (
       replace `ghidra_10.2.2_PUBLIC` with `ghidra_xxx_PUBLIC`)
 
+* run `chmod +x ~/rAIversing/modules/ghidra/ghidra_xxx_PUBLIC/support/analyzeHeadless`
+
 ### OpenAI
 
 * create api_key file `modules/rAIversing/AI_modules/openAI_core/api_key.txt`
