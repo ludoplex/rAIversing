@@ -48,6 +48,8 @@ class HeadlessAnalyzerWrapper:
         self.__max_cpu__ = ""
         self.__loader__ = ""
         self.__noanalysis__ = ""
+        if not os.access(self.__analyzeHeadlessBinary__, os.X_OK):
+            raise PermissionError(f'analyzeHeadlessBinary is not executable: {self.__analyzeHeadlessBinary__}\n run "chmod +x {self.__analyzeHeadlessBinary__}"')
 
     def noanalysis(self):
         self.__noanalysis__ = f' -noanalysis'
