@@ -4,3 +4,5 @@ revChatGPT==6.2.2
 tiktoken==0.4.0
 rich==13.3.3
 requests~=2.31.0
+pandas~=2.0.2
+matplotlib~=3.7.1
