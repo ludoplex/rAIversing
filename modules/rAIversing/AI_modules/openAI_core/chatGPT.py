@@ -14,7 +14,7 @@ from rAIversing.pathing import *
 from rAIversing.utils import extract_function_name, NoResponseException, clear_extra_data, check_valid_code, \
     MaxTriesExceeded, InvalidResponseException, format_newlines_in_code, escape_failed_escapes, \
     check_reverse_engineer_fail_happend, locator, OutOfTriesException, insert_missing_delimiter, do_renaming, \
-    IncompleteResponseException
+    IncompleteResponseException, insert_missing_double_quote
 
 
 def assemble_prompt_v1(code):
@@ -221,8 +221,11 @@ class ChatGPTModule(AiModuleInterface):
             response_string = response_string.replace('```', '')
         if '`' in response_string:
             response_string = response_string.replace('`', '"')
+        if """'""" in response_string:
+            response_string = response_string.replace("""'""", '"')
         ideas_left = True
-        max_delimiter_insertions = 1
+        max_delimiter_insertions = 5
+        max_double_quote_insertions = 20
 
         while ideas_left:
             try:
@@ -264,6 +267,13 @@ class ChatGPTModule(AiModuleInterface):
                         print(f"###### CURRENT STATE END @ {locator()}######")
                         pass
                 elif "Expecting property name enclosed in double quotes" in str(e):
+                    if max_double_quote_insertions != 0:
+                        response_string = insert_missing_double_quote(response_string, e)
+                        max_double_quote_insertions -= 1
+                        continue
+
+
+
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                         f.write(response_string_orig)
                     print(e)
@@ -273,6 +283,7 @@ class ChatGPTModule(AiModuleInterface):
                     print(f"###### CURRENT STATE @ {locator()}######")
                     print(response_string)
                     print(f"###### CURRENT STATE END @ {locator()}######")
+                    ideas_left = False
                     pass
                 else:
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:

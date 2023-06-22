@@ -1,12 +1,12 @@
 import csv
 import json
+import multiprocessing as mp
 import random
 import re
 import string
 from inspect import getframeinfo, stack
 
 from rAIversing.pathing import *
-import multiprocessing as mp
 
 
 class MaxTriesExceeded(Exception):
@@ -24,8 +24,10 @@ class NoResponseException(Exception):
 class InvalidResponseException(Exception):
     """Raised when the response is invalid"""
 
+
 class IncompleteResponseException(Exception):
     """Raised when the response is incomplete"""
+
 
 def ptr_escape(string):
     rand_str = get_random_string(5)
@@ -211,8 +213,8 @@ def prompt_parallel(ai_module, result_queue, name, code, retries):
     try:
         # print(f"Starting {name}")
         if f"{name}\n" in code:
-            for i in range(1,20):
-                code = code.replace(f"{name}\n{' '*i}(", f"{name}(")
+            for i in range(1, 20):
+                code = code.replace(f"{name}\n{' ' * i}(", f"{name}(")
         result = ai_module.prompt_with_renaming(code, retries)
         result_queue.put((name, result))
     except KeyboardInterrupt:
@@ -229,10 +231,10 @@ def prompt_parallel(ai_module, result_queue, name, code, retries):
 
         result_queue.put((name, "SKIP"))
 
-def fix_renaming_dict(renaming_dict,old_name):
+
+def fix_renaming_dict(renaming_dict, old_name):
     if renaming_dict is {}:
         raise Exception("Renaming dict is empty")
-
 
 
 def locator(context=False):
@@ -300,6 +302,16 @@ def insert_missing_delimiter(response, exception):
     return fixed
 
 
+def insert_missing_double_quote(response, exception):
+    # Expecting property name enclosed in double quotes: line 9 column 5 (char 252)
+    target = str(exception).split("char ")[1].split(")")[0]
+    char = int(target)
+    pre = response[:char] + '"'
+    mid = response[char:].split(':')[0] + '":'
+    post = response[char:].split(':',1)[1]
+    return pre + mid + post
+
+
 def key_finder(key_parts, dictionary):
     """
     :param key_parts: list of key parts (strings) or single string
@@ -359,8 +371,6 @@ def clean_bad_renamings(renaming_dict, code, name):
             if old in clean_dict.keys():
                 raise Exception(f"Duplicate key {old} in renaming dict")
             clean_dict[old] = new
-
-
 
     return clean_dict
 
