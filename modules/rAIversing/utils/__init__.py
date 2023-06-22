@@ -307,8 +307,13 @@ def insert_missing_double_quote(response, exception):
     target = str(exception).split("char ")[1].split(")")[0]
     char = int(target)
     pre = response[:char] + '"'
-    mid = response[char:].split(':')[0] + '":'
-    post = response[char:].split(':',1)[1]
+    if ":" in response[char:]:
+        mid = response[char:].split(':')[0] + '":'
+        post = response[char:].split(':',1)[1]
+    else:
+        print(response)
+        print(exception)
+        raise Exception("Could not find ':' in response")
     return pre + mid + post
 
 
