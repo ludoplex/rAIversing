@@ -1,23 +1,20 @@
 import json
 import logging
 import time
-import requests
 
+import requests
 import revChatGPT.V3
 import tiktoken
-
-
-
 from revChatGPT.typings import *
-
 from rich.console import Console
 
 from rAIversing.AI_modules import AiModuleInterface
-from rAIversing.pathing import *
-from rAIversing.utils import extract_function_name, NoResponseException, clear_extra_data, split_response, \
-    check_valid_code, MaxTriesExceeded, InvalidResponseException, format_newlines_in_code, escape_failed_escapes, \
-    check_reverse_engineer_fail_happend, locator, OutOfTriesException, insert_missing_delimiter, do_renaming
 from rAIversing.AI_modules.openAI_core.PromptEngine import PromptEngine
+from rAIversing.pathing import *
+from rAIversing.utils import extract_function_name, NoResponseException, clear_extra_data, check_valid_code, \
+    MaxTriesExceeded, InvalidResponseException, format_newlines_in_code, escape_failed_escapes, \
+    check_reverse_engineer_fail_happend, locator, OutOfTriesException, insert_missing_delimiter, do_renaming, \
+    IncompleteResponseException
 
 
 def assemble_prompt_v1(code):
@@ -28,13 +25,12 @@ You have been given a piece of C code which needs to be reverse engineered and i
     post = """
     
     Your task is to create an improved and more readable version of the code without changing variables starting with "PTR_" or "DAT_".
-    If possible give the function a more descriptive name, otherwise leave it as it is. (Functions start with "FUN_") 
-    Do NOT name the function "reverse_engineered", "improved_function" or similar.
+    Give the function a more descriptive name that closely describes what it does.  
         
     Your response should include the following:
         A dictionary that maps the original names of the function, parameters and variables to their new names in the improved code.
         
-    Respond in the following format:
+    DO ONLY respond in the following format:
         
         {
         "<original_function_name>": "<new_function_name>",
@@ -46,7 +42,8 @@ You have been given a piece of C code which needs to be reverse engineered and i
         ...
         }
         
-        Do not use single quotes. No Explanation is needed.
+    Do not use single quotes. No Explanation is needed.
+    Do NOT rename the function to "reverse_engineered", "improved_function" or similar.
 """
 
     return pre + code + post
@@ -86,14 +83,14 @@ class ChatGPTModule(AiModuleInterface):
         trunc_offset = 50
 
         self.chat_small = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine.small(),
-                                  max_tokens=max(self.engine.small_range()),
-                                  truncate_limit=max(self.engine.small_range()) - trunc_offset)
+                                                max_tokens=max(self.engine.small_range()),
+                                                truncate_limit=max(self.engine.small_range()) - trunc_offset)
         self.chat_medium = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine.medium(),
-                                   max_tokens=max(self.engine.medium_range()),
-                                   truncate_limit=max(self.engine.medium_range()) - trunc_offset)
+                                                 max_tokens=max(self.engine.medium_range()),
+                                                 truncate_limit=max(self.engine.medium_range()) - trunc_offset)
         self.chat_large = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine.large(),
-                                  max_tokens=max(self.engine.large_range()),
-                                  truncate_limit=max(self.engine.large_range()) - trunc_offset)
+                                                max_tokens=max(self.engine.large_range()),
+                                                truncate_limit=max(self.engine.large_range()) - trunc_offset)
 
     def get_max_tokens(self):
         return max(self.engine.large_range())
@@ -163,6 +160,9 @@ class ChatGPTModule(AiModuleInterface):
             pass
 
         response_string = self.remove_plaintext_from_response(response_string_orig)
+        if response_string == "":
+            raise IncompleteResponseException("Respond Incomplete, closing bracket missing")
+
         try:
             response_dict = json.loads(response_string, strict=False)
             return response_dict
@@ -223,6 +223,7 @@ class ChatGPTModule(AiModuleInterface):
             response_string = response_string.replace('`', '"')
         ideas_left = True
         max_delimiter_insertions = 1
+
         while ideas_left:
             try:
                 response_dict = json.loads(response_string, strict=False)
@@ -262,8 +263,28 @@ class ChatGPTModule(AiModuleInterface):
                         print(response_string)
                         print(f"###### CURRENT STATE END @ {locator()}######")
                         pass
-
-                raise e
+                elif "Expecting property name enclosed in double quotes" in str(e):
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                        f.write(response_string_orig)
+                    print(e)
+                    print(f"###### RESPONSE START @ {locator()}######")
+                    print(response_string_orig)
+                    print(f"###### RESPONSE END @ {locator()}######")
+                    print(f"###### CURRENT STATE @ {locator()}######")
+                    print(response_string)
+                    print(f"###### CURRENT STATE END @ {locator()}######")
+                    pass
+                else:
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                        f.write(response_string_orig)
+                    print(e)
+                    print(f"###### RESPONSE START @ {locator()}######")
+                    print(response_string_orig)
+                    print(f"###### RESPONSE END @ {locator()}######")
+                    print(f"###### CURRENT STATE @ {locator()}######")
+                    print(response_string)
+                    print(f"###### CURRENT STATE END @ {locator()}######")
+                    raise e
 
         return response_dict
 
@@ -283,6 +304,7 @@ class ChatGPTModule(AiModuleInterface):
 
         total_tokens_used = 0
         for i in range(0, retries):
+            e = " " or str(e)
             if i > 0:
                 self.console.log(f"[blue]{old_func_name}[/blue]:[orange3]Retry {i + 1}/{retries}[/orange3]")
                 with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
@@ -293,12 +315,17 @@ class ChatGPTModule(AiModuleInterface):
                 total_tokens_used += used_tokens
                 response_dict = self.process_response(response_string_orig)
                 improved_code, renaming_dict = do_renaming(response_dict, input_code, old_func_name)
+                # with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                #   f.write(response_string_orig)
+
                 try:
                     new_func_name = renaming_dict[old_func_name]
                 except:
-                    self.console.print(f"###### OLD FUNC NAME {old_func_name} not in {renaming_dict} ######")
+                    self.console.log(
+                        f"[blue]{old_func_name}[/blue]: [orange3]not in Response, Retry  {i + 1}/{retries}[/orange3]")
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                        f.write(response_string_orig)
                     continue
-
 
                 if new_func_name is None or new_func_name == "":
                     self.console.log(
@@ -329,6 +356,16 @@ class ChatGPTModule(AiModuleInterface):
             except NoResponseException as e:
                 raise e
 
+            except IncompleteResponseException as e:
+                if i >= retries - 1:
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                        f.write(response_string_orig)
+                    self.console.log(response_string_orig)
+                    raise MaxTriesExceeded("Max tries exceeded " + str(e) + locator())
+                self.console.log(
+                    f"[blue]{old_func_name}[/blue]:[orange3]Got incomplete response from model, Retry  {i + 1}/{retries}! Is it maybe too long: {self.calc_used_tokens(full_prompt)}[/orange3]")
+                continue
+
             except json.JSONDecodeError as e:
                 if i >= retries - 1:
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
@@ -349,6 +386,8 @@ class ChatGPTModule(AiModuleInterface):
                         self.logger.warning(f"Prompt was: {full_prompt}")
                     continue
                 else:
+                    self.logger.warning(f"Response was: {response_string_orig}")
+                    self.logger.exception(e)
                     raise e
             except APIConnectionError as e:
 
@@ -365,7 +404,6 @@ class ChatGPTModule(AiModuleInterface):
                         self.console.log(
                             f"[blue]{old_func_name}[/blue]:[orange3] [red]Model Overloaded!![/red], will sleep now! Retry {i + 1}/{retries}[/orange3]")
                     else:
-                        self.console.print(str(e))
                         self.console.log(
                             f"[blue]{old_func_name}[/blue]:[orange3]Got [red]Too many requests[/red] from model, will sleep now! Retry {i + 1}/{retries}[/orange3]")
                     time.sleep(120)
@@ -387,6 +425,8 @@ class ChatGPTModule(AiModuleInterface):
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                         f.write(response_string_orig)
                     raise MaxTriesExceeded("Max tries exceeded " + locator())
+                self.console.log(
+                    f"[blue]{old_func_name}[/blue]:[orange3]Got ChunkedEncodingError, Retry  {i + 1}/{retries}!")
                 continue
 
             except TypeError as e:
@@ -414,6 +454,8 @@ class ChatGPTModule(AiModuleInterface):
                     raise Exception(e)
         with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
             f.write(response_string_orig)
+
+        self.console.log(f"[blue]{old_func_name}[/blue]:[orange3] Max Tries Exceeded[/orange3]")
         raise MaxTriesExceeded("Max tries exceeded " + locator())
 
     def calc_used_tokens(self, function):
