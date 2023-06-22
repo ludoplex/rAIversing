@@ -4,6 +4,7 @@ import os, re
 
 import multiprocessing as mp
 import threading
+import time
 
 from rich.console import Console
 
@@ -344,6 +345,7 @@ class rAIverseEngine:
                     if processed_functions % 5 == 0:
                         self.save_functions()
                         self.console.print(f"{processed_functions}/{total} | Saved functions!")
+                    time.sleep(1.5)
                     handle_spawn_worker(processes, prompting_args, started)
                 except KeyboardInterrupt:
                     self.console.print(f"[bold red] \nKeyboard interrupt. Saving functions and exiting")
@@ -444,12 +446,4 @@ class rAIverseEngine:
         renaming_dict = {}
         for name, data in self.functions.items():
             if check_do_nothing(data["code"]) and not data["improved"] and not data["skipped"]:
-                new_name = f"{name.replace('FUN_', 'do_nothing_')}"
-                renaming_dict[name] = new_name
-                improved_code = self.functions[name]["code"].replace(name, new_name)
-                self.functions[name]["improved"] = True
-                self.functions[name]["code"] = improved_code
-                self.functions[name]["current_name"] = new_name
-                self.functions[name]["renaming"] = {name: new_name}
-                self.console.print(f"Function [blue]{name}[/blue] skipped")
-        self.rename_for_all_functions(renaming_dict)
+                self.skip_function(name)
