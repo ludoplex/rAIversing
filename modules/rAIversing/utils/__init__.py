@@ -24,6 +24,8 @@ class NoResponseException(Exception):
 class InvalidResponseException(Exception):
     """Raised when the response is invalid"""
 
+class IncompleteResponseException(Exception):
+    """Raised when the response is incomplete"""
 
 def ptr_escape(string):
     rand_str = get_random_string(5)
@@ -165,7 +167,7 @@ def split_response(response_dict):
             elif "new" in key:
                 new_key = key
             else:
-                raise InvalidResponseException("Invalid response format")
+                raise InvalidResponseException("Invalid response format " + str(response_dict))
         if type(response_dict[old_key]) == list and type(response_dict[new_key]) == list:
             for old, new in zip(response_dict[old_key], response_dict[new_key]):
                 renaming_dict[old] = new
@@ -209,16 +211,28 @@ def prompt_parallel(ai_module, result_queue, name, code, retries):
     try:
         # print(f"Starting {name}")
         if f"{name}\n" in code:
-            code = code.replace(f"{name}\n", f"{name}")
-
+            for i in range(1,20):
+                code = code.replace(f"{name}\n{' '*i}(", f"{name}(")
         result = ai_module.prompt_with_renaming(code, retries)
         result_queue.put((name, result))
     except KeyboardInterrupt:
         return
 
-    except Exception as e:
-        print(f"Error in {name}: {e}")
+    except MaxTriesExceeded as e:
+        print(f"Error in {name}")
         result_queue.put((name, "SKIP"))
+
+    except Exception as e:
+
+        print(f"Error in {name}: {e} " + locator())
+        print(f"Type: {type(e)}")
+
+        result_queue.put((name, "SKIP"))
+
+def fix_renaming_dict(renaming_dict,old_name):
+    if renaming_dict is {}:
+        raise Exception("Renaming dict is empty")
+
 
 
 def locator(context=False):
@@ -311,8 +325,18 @@ def key_finder(key_parts, dictionary):
 
 
 def clean_bad_renamings(renaming_dict, code, name):
-    forbidden_strings = ["\\", "/", ":", "*", "?", "\"", "<", ">", "|", " ", "PTR_", "DAT_", "FUNC_"]
+    forbidden_strings = ["\\", "/", "*", "?", "\"", "<", ">", "|", " ", "PTR_", "DAT_", "FUNC_"]
     clean_dict = {}
+    if name not in renaming_dict.keys():
+        candidates = []
+        for key in renaming_dict.keys():
+            if name in key:
+                candidates.append(key)
+        if len(candidates) > 0:
+            renaming_dict[name] = renaming_dict[candidates[0]]
+            renaming_dict.pop(candidates[0])
+        else:
+            print(f"Could not find {name} in renaming dict{renaming_dict}")
 
     for old, new in renaming_dict.items():
         if old in code and (old != new):
@@ -335,6 +359,8 @@ def clean_bad_renamings(renaming_dict, code, name):
             if old in clean_dict.keys():
                 raise Exception(f"Duplicate key {old} in renaming dict")
             clean_dict[old] = new
+
+
 
     return clean_dict
 
