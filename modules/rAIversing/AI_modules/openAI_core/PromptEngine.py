@@ -1,6 +1,12 @@
 from enum import Enum
 
 
+small_threshold = 3301
+medium_threshold = 7001
+medium_large_threshold = 15001
+large_threshold = 30501
+
+
 class PromptEngine(Enum):
     DEFAULT = "gpt-3.5-turbo"
     """Default Engine, currently gpt-3.5-turbo"""
@@ -23,11 +29,11 @@ class PromptEngine(Enum):
 
     def small_range(self):
         if self == PromptEngine.GPT_4:
-            return range(0, 3501)
+            return range(0, small_threshold)
         elif self == PromptEngine.HYBRID:
-            return range(0, 3501)
+            return range(0, small_threshold)
         elif self == PromptEngine.GPT_3_5_TURBO or self == PromptEngine.DEFAULT:
-            return range(0, 3501)
+            return range(0, small_threshold)
         else:
             raise NotImplementedError("Small context size not implemented for this engine")
 
@@ -43,11 +49,11 @@ class PromptEngine(Enum):
 
     def medium_range(self):
         if self == PromptEngine.GPT_4:
-            return range(3501, 7001)
+            return range(small_threshold, medium_threshold)
         elif self == PromptEngine.HYBRID:
-            return range(3501, 15001)
+            return range(small_threshold, medium_large_threshold)
         elif self == PromptEngine.GPT_3_5_TURBO or self == PromptEngine.DEFAULT:
-            return range(3501, 15001)
+            return range(small_threshold, medium_large_threshold)
         else:
             raise NotImplementedError("Medium context size not implemented for this engine")
 
@@ -63,11 +69,11 @@ class PromptEngine(Enum):
 
     def large_range(self):
         if self == PromptEngine.GPT_4:
-            return range(3501, 7001)
+            return range(small_threshold, medium_threshold)
             #return range(7001, 31001)
         elif self == PromptEngine.HYBRID:
-            return range(15001, 31001)
+            return range(medium_large_threshold, large_threshold)
         elif self == PromptEngine.GPT_3_5_TURBO or self == PromptEngine.DEFAULT:
-            return range(3501, 15001)  # Same as medium
+            return range(small_threshold, medium_large_threshold)  # Same as medium
         else:
             raise NotImplementedError("Large context size not implemented for this engine")
