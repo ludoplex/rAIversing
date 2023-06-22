@@ -1,4 +1,4 @@
-from rAIversing.pathing import *
+from modules.rAIversing.pathing import *
 import os, sys
 
 def setup_test_binaries_p2im():
