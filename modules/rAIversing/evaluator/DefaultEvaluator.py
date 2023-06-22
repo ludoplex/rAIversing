@@ -208,7 +208,7 @@ class DefaultEvaluator(EvaluatorInterface):
                              Column(header="Act/Best\nAll|Hfl", style="bold green1 on grey23", justify="center"),
                              Column(header="Act vs Best\n(direct)\nAll|Hfl", style="bold green1 on grey23",
                                     justify="center"),
-                             Column(header="RPD\nAll|Hfl", style="bold spring_green2 on grey23", justify="center"),
+                             Column(header="RPD\nAll|Hfl|Lfl", style="bold spring_green2 on grey23", justify="center"),
                              Column(header="Total\nOrig|Act", style="magenta on grey23", justify="center"),
                              Column(header="Counted\nActual", style="magenta1 on grey23"),
                              Column(header="Counted\nBest", style="blue on grey23"),
