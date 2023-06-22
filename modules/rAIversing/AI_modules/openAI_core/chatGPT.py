@@ -80,17 +80,17 @@ class ChatGPTModule(AiModuleInterface):
         # self.chat_small = revChatGPT.V3.Chatbot(api_key=self.api_key,engine=self.engine.small())
         # self.chat_medium = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine.medium())
         # self.chat_large = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine.large())
-        trunc_offset = 50
+        trunc_offset = 100
 
         self.chat_small = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine.small(),
-                                                max_tokens=max(self.engine.small_range()),
-                                                truncate_limit=max(self.engine.small_range()) - trunc_offset)
+                                                max_tokens=max(self.engine.small_range())+trunc_offset,
+                                                truncate_limit=max(self.engine.small_range()))
         self.chat_medium = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine.medium(),
-                                                 max_tokens=max(self.engine.medium_range()),
-                                                 truncate_limit=max(self.engine.medium_range()) - trunc_offset)
+                                                 max_tokens=max(self.engine.medium_range()) + trunc_offset,
+                                                 truncate_limit=max(self.engine.medium_range()))
         self.chat_large = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine.large(),
-                                                max_tokens=max(self.engine.large_range()),
-                                                truncate_limit=max(self.engine.large_range()) - trunc_offset)
+                                                max_tokens=max(self.engine.large_range()) + trunc_offset,
+                                                truncate_limit=max(self.engine.large_range()))
 
     def get_max_tokens(self):
         return max(self.engine.large_range())
@@ -98,28 +98,40 @@ class ChatGPTModule(AiModuleInterface):
     def assemble_prompt(self, input_code):
         return assemble_prompt_v1(input_code)
 
-    def prompt(self, prompt):  # type: (str) -> (str,int)
+    def prompt(self, prompt,try_larger=False):  # type: (str,int) -> (str,int)
         """Prompts the model and returns the result and the number of used tokens"""
         # self.console.print("Prompting ChatGPT with: " + str(self.calc_used_tokens(prompt)) + " tokens")
         needed_tokens = self.calc_used_tokens(prompt)
         used_tokens = 0
         answer = ""
+
         if needed_tokens > self.get_max_tokens():
             raise Exception("Used more tokens than allowed: " + str(needed_tokens) + " > " + str(self.get_max_tokens()))
-        elif needed_tokens in self.engine.large_range():
+        elif needed_tokens in self.engine.large_range() or try_larger:
             answer = self.chat_large.ask(prompt)
+            if "{" not in answer:
+                print(f"messages: {self.chat_large.conversation['default']}")
+                print(f"Answer: {answer}" + locator())
+                print(f"length of messages: {len(self.chat_large.conversation['default'])}")
             self.chat_large.conversation["default"].pop()
             used_tokens = self.chat_large.get_token_count()
             self.chat_large.reset()
             time.sleep(30)
         elif needed_tokens in self.engine.medium_range():
             answer = self.chat_medium.ask(prompt)
+            if "{" not in answer:
+                print(f"messages: {self.chat_medium.conversation['default']}")
+                print(f"Answer: {answer}" + locator())
             self.chat_medium.conversation["default"].pop()
             used_tokens = self.chat_medium.get_token_count()
             self.chat_medium.reset()
             time.sleep(30)
         elif needed_tokens in self.engine.small_range():
             answer = self.chat_small.ask(prompt)
+            if "{" not in answer:
+                print(f"Answer: {answer}" + locator())
+                print(f"tokens: {self.chat_small.get_token_count()}")
+                print(f"needed tokens: {needed_tokens}")
             self.chat_small.conversation["default"].pop()
             used_tokens = self.chat_small.get_token_count()
             self.chat_small.reset()
@@ -312,7 +324,7 @@ class ChatGPTModule(AiModuleInterface):
         old_func_name = extract_function_name(input_code)
         if old_func_name is None or old_func_name == "":
             raise Exception(f"No function name found in input code {input_code}")
-
+        try_larger=False
         total_tokens_used = 0
         for i in range(0, retries):
             e = " " or str(e)
@@ -322,7 +334,7 @@ class ChatGPTModule(AiModuleInterface):
                     f.write(response_string_orig)
                 pass
             try:
-                response_string_orig, used_tokens = self.prompt(full_prompt)
+                response_string_orig, used_tokens = self.prompt(full_prompt,try_larger)
                 total_tokens_used += used_tokens
                 response_dict = self.process_response(response_string_orig)
                 improved_code, renaming_dict = do_renaming(response_dict, input_code, old_func_name)
@@ -373,6 +385,8 @@ class ChatGPTModule(AiModuleInterface):
                         f.write(response_string_orig)
                     self.console.log(response_string_orig)
                     raise MaxTriesExceeded("Max tries exceeded " + str(e) + locator())
+                if i >= (retries - 1) / 2:
+                    try_larger = True
                 self.console.log(
                     f"[blue]{old_func_name}[/blue]:[orange3]Got incomplete response from model, Retry  {i + 1}/{retries}! Is it maybe too long: {self.calc_used_tokens(full_prompt)}[/orange3]")
                 continue
