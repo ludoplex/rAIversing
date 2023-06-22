@@ -2,9 +2,9 @@ from enum import Enum
 
 
 small_threshold = 3301
-medium_threshold = 7001
-medium_large_threshold = 15001
-large_threshold = 30501
+medium_threshold = 6901
+medium_large_threshold = 14901
+large_threshold = 30401
 
 
 class PromptEngine(Enum):
