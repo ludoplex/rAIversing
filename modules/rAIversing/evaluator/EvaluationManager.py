@@ -16,13 +16,15 @@ from rAIversing.evaluator.utils import make_run_path, split_run_path
 # TODO
 class EvaluationManager:
 
-    def __init__(self, source_dirs, ai_modules, runs=1, connections=1, evaluator: EvaluatorInterface = None):
+    def __init__(self, source_dirs, ai_modules, runs=1, connections=1, evaluator = None):
         self.source_dirs = [source_dirs] if isinstance(source_dirs, str) else source_dirs
         self.ai_modules = [ai_modules] if isinstance(ai_modules, AiModuleInterface) else ai_modules
         self.runs = runs
         self.connections = connections
-        self.evaluator = evaluator if evaluator is not None else DefaultEvaluator(self.ai_modules, self.source_dirs,
-                                                                                  self.runs)
+        self.evaluator = evaluator(self.ai_modules, self.source_dirs,
+                                   self.runs) if evaluator is not None else DefaultEvaluator(self.ai_modules,
+                                                                                             self.source_dirs,
+                                                                                                self.runs)
         self.setup_dirs()
         self.extract_code()
         self.prepare_runs()
@@ -64,7 +66,7 @@ class EvaluationManager:
                     os.makedirs(os.path.join(EVALUATION_ROOT, model_name, source_dir_name, "extraction", binary),
                                 exist_ok=True)
 
-                for run in range(1, self.runs + 1):
+                for run in range(0, self.runs + 1):
                     for binary in os.listdir(os.path.join(source_dir, "stripped")):
                         os.makedirs(make_run_path(model_name, source_dir, run, binary), exist_ok=True)
                         run_path = make_run_path(model_name, source_dir, run, binary)
@@ -120,7 +122,10 @@ class EvaluationManager:
                                 if not os.path.exists(os.path.join(run_path, file)):
                                     shutil.copy(os.path.join(extraction_path, file), run_path)
 
-    def evaluate(self, evaluator: EvaluatorInterface = None):
+    def evaluate(self, evaluator = None):
         if evaluator is None:
             evaluator = self.evaluator
+        else:
+            evaluator = evaluator(self.ai_modules, self.source_dirs,
+                                  self.runs)
         evaluator.evaluate()
