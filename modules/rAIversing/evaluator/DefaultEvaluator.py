@@ -6,10 +6,9 @@ from rich.table import Table, Column
 from rAIversing.evaluator.EvaluatorInterface import EvaluatorInterface
 from rAIversing.evaluator.ScoringAlgos import calc_score_v2
 from rAIversing.evaluator.utils import *
-from rAIversing.evaluator import load_funcs_data, calc_score_v1, calc_relative_percentage_difference
-from rAIversing.pathing import REPO_ROOT
-from rAIversing.utils import save_to_json, save_to_csv
-import pandas as pd
+from rAIversing.evaluator import load_funcs_data, calc_relative_percentage_difference
+from rAIversing.evaluator.utils import setup_results
+from rAIversing.utils import save_to_json
 
 
 class DefaultEvaluator(EvaluatorInterface):
@@ -19,23 +18,7 @@ class DefaultEvaluator(EvaluatorInterface):
         self.results = {}
         self.save_all = False
         self.console = Console(soft_wrap=True)
-        self.setup_results()
-
-    def setup_results(self):
-        """
-        Sets up the run_results dictionary, which is used to store the results of the evaluation
-        Cumulative results are stored in run 0
-        """
-        for ai_module in self.ai_modules:
-            model_name = ai_module.get_model_name()
-            self.results[model_name] = {}
-            for source_dir in self.source_dirs:
-                source_dir_name = os.path.basename(source_dir)
-                self.results[model_name][source_dir_name] = {}
-                for run in range(0, self.runs + 1):  # NOTE: cumulative results are stored in run 0
-                    self.results[model_name][source_dir_name][run] = {}
-                    for binary in os.listdir(os.path.join(source_dir, "stripped")):
-                        self.results[model_name][source_dir_name][run][binary] = {}
+        setup_results(self.ai_modules, self.results, self.source_dirs, self.runs)
 
     def set_calculator(self, calculation_function):
         self.calculator = calculation_function
@@ -63,10 +46,10 @@ class DefaultEvaluator(EvaluatorInterface):
         worst_direct, worst_scored = self.generate_comparison(original_fn, worst_fn)
         best_vs_predict_direct, best_vs_predict_scored = self.generate_comparison(best_fn, predicted_fn)
 
-        self.insert_result(run_path, collect_partial_scores(predict_scored, predicted_fn), "pred")
-        self.insert_result(run_path, collect_partial_scores(best_scored, best_fn), "best")
-        self.insert_result(run_path, collect_partial_scores(worst_scored, worst_fn), "worst")
-        self.insert_result(run_path, collect_partial_scores(best_vs_predict_scored, predicted_fn), "best_vs_pred")
+        self.insert_result(run_path, collect_partial_scores(predict_scored), "pred")
+        self.insert_result(run_path, collect_partial_scores(best_scored), "best")
+        self.insert_result(run_path, collect_partial_scores(worst_scored), "worst")
+        self.insert_result(run_path, collect_partial_scores(best_vs_predict_scored), "best_vs_pred")
         self.insert_result(run_path, {"original": {"score": 0, "count": len(original_fn)},
                                       "predicted": {"score": 0, "count": len(predicted_fn)}}, "total_count")
 
@@ -86,16 +69,11 @@ class DefaultEvaluator(EvaluatorInterface):
         scored = {"hfl": {}, "lfl": {}}
         for group, layer in direct.items():
             for orig_name, pred_name in layer.items():
-                try:
-                    entrypoint = original[orig_name]["entrypoint"]
-                except KeyError:
-                    if orig_name.split("_")[-1] == pred_name.split("_")[-1]:
-                        entrypoint = "0x" + (orig_name.split("_")[-1])
-                    else:
-                        entrypoint = find_entrypoint(original, orig_name)
+                entrypoint = find_entrypoint(original, orig_name, pred_name)
                 score = self.calculator(orig_name, pred_name, entrypoint)
                 scored[group][entrypoint] = {"original": orig_name, "predicted": pred_name,
-                                             "score": score}  # Had to change this format as otherwise it could break if original name is "score"  # and this allows for easier access to the data when collecting lfl/hfl
+                                             "score": score}
+                # Had to change this format as otherwise it could break if original name is "score"  # and this allows for easier access to the data when collecting lfl/hfl
         return direct, scored
 
     def insert_result(self, run_path, result, group):
@@ -176,7 +154,7 @@ class DefaultEvaluator(EvaluatorInterface):
             self.fill_table(table, scores, binary)
         export_console = Console(record=True, width=165)
         export_console.print(table)
-        export_path = make_run_path(model_name, source_dir, "", "")
+        export_path = make_run_path(model_name, source_dir, "0", "")
         export_console.save_svg(
             os.path.join(export_path, f"Eval_Avg_{model_name}_{source_dir_name}_{self.runs}_runs.svg"), clear=False,
             title="",
@@ -192,7 +170,7 @@ class DefaultEvaluator(EvaluatorInterface):
             self.fill_table(table, scores, binary)
         export_console = Console(record=True, width=165)
         export_console.print(table)
-        export_path = make_run_path(model_name, source_dir, "", "")
+        export_path = make_run_path(model_name, source_dir, "0", "")
         export_console.save_svg(
             os.path.join(export_path, f"Eval_Median_{model_name}_{source_dir_name}_{self.runs}_runs.svg"), clear=False,
             title="",
