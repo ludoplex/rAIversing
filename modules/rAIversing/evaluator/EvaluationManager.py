@@ -1,4 +1,3 @@
-import os
 import shutil
 from pathlib import Path
 
@@ -7,8 +6,8 @@ from rAIversing.Engine import rAIverseEngine
 from rAIversing.Ghidra_Custom_API import binary_to_c_code, existing_project_to_c_code
 from rAIversing.evaluator.DefaultEvaluator import DefaultEvaluator
 from rAIversing.evaluator.EvaluatorInterface import EvaluatorInterface
+from rAIversing.evaluator.utils import make_run_path
 from rAIversing.pathing import *
-from rAIversing.evaluator.utils import make_run_path, split_run_path
 
 
 # evaluates the model given paths to testfolders with each 3 subfolders (original, stripped, no_propagation)
