@@ -1,0 +1,616 @@
+{
+    "hfl": {
+        "0x00081682": {
+            "original": "String",
+            "predicted": "initialize_array_with_zeroes_00081682",
+            "score": 0.11764705882352941
+        },
+        "0x00081c5c": {
+            "original": "__aeabi_cfcmpeq",
+            "predicted": "combine_two_numbers_00081c5c",
+            "score": 0.29411764705882354
+        },
+        "0x00082b38": {
+            "original": "_vfiprintf_r",
+            "predicted": "FUNC_00082b38",
+            "score": 0.25
+        },
+        "0x00081508": {
+            "original": "init",
+            "predicted": "initialize_data_00081508",
+            "score": 1.0
+        },
+        "0x000815d4": {
+            "original": "USARTClass",
+            "predicted": "write_value_to_buffer_000815d4",
+            "score": 0.12903225806451613
+        },
+        "0x00080410": {
+            "original": "get_FC3",
+            "predicted": "process_values_00080410",
+            "score": 0.19047619047619047
+        },
+        "0x000842a4": {
+            "original": "__smakebuf_r",
+            "predicted": "set_permissions_and_process_param_000842a4",
+            "score": 0.17777777777777778
+        },
+        "0x00083b14": {
+            "original": "__sinit",
+            "predicted": "initialize_data_structures_00083b14",
+            "score": 1.0
+        },
+        "0x00084700": {
+            "original": "_lseek_r",
+            "predicted": "zeroOrValue_00084700",
+            "score": 0.21052631578947367
+        },
+        "0x00081ca8": {
+            "original": "__aeabi_fcmpge",
+            "predicted": "check_if_not_both_zero_and_return_sum_00081ca8",
+            "score": 0.23529411764705882
+        },
+        "0x000847ac": {
+            "original": "__gnu_uldivmod_helper",
+            "predicted": "calculate_difference_000847ac",
+            "score": 0.2926829268292683
+        },
+        "0x00080c0c": {
+            "original": "_GLOBAL__sub_I_g_APinDescription",
+            "predicted": "initialize_buffers_and_write_values_00080c0c",
+            "score": 0.29850746268656714
+        },
+        "0x00080a68": {
+            "original": "_GLOBAL__sub_I__ZN6ModbusC2Ev",
+            "predicted": "initialize_and_add_to_buffer_00080a68",
+            "score": 0.3157894736842105
+        },
+        "0x0008165c": {
+            "original": "copy",
+            "predicted": "update_data_if_executed_0008165c",
+            "score": 0.07407407407407407
+        },
+        "0x00081e04": {
+            "original": "free",
+            "predicted": "allocate_memory_block_00081e04",
+            "score": 0.08
+        },
+        "0x00081df4": {
+            "original": "malloc",
+            "predicted": "execute_function_with_data_pointer_00081df4",
+            "score": 0.24489795918367346
+        },
+        "0x0008477c": {
+            "original": "__gnu_ldivmod_helper",
+            "predicted": "calculate_difference_0008477c",
+            "score": 0.25
+        },
+        "0x00083f34": {
+            "original": "__sfvwrite_r",
+            "predicted": "FUNC_00083f34",
+            "score": 0.125
+        },
+        "0x00084750": {
+            "original": "__aeabi_uldivmod",
+            "predicted": "calculate_difference_or_default_00084750",
+            "score": 0.2978723404255319
+        },
+        "0x00081c54": {
+            "original": "__aeabi_cfrcmple",
+            "predicted": "combine_numbers_and_return_sum_00081c54",
+            "score": 0.2608695652173913
+        },
+        "0x00083808": {
+            "original": "__swsetup_r",
+            "predicted": "process_data_00083808",
+            "score": 0.17391304347826086
+        },
+        "0x0008456c": {
+            "original": "_wcrtomb_r",
+            "predicted": "process_data_0008456c",
+            "score": 0.18181818181818182
+        },
+        "0x000816a8": {
+            "original": "main",
+            "predicted": "initialize_and_execute_device_000816a8",
+            "score": 0.12121212121212122
+        },
+        "0x00083d9c": {
+            "original": "_free_r",
+            "predicted": "allocateMemoryBlock_00083d9c",
+            "score": 0.07692307692307693
+        },
+        "0x000813a8": {
+            "original": "RingBuffer",
+            "predicted": "initialize_memory_000813a8",
+            "score": 0.2962962962962963
+        },
+        "0x0008043e": {
+            "original": "poll",
+            "predicted": "check_data_0008043e",
+            "score": 0.0
+        },
+        "0x000825a0": {
+            "original": "realloc",
+            "predicted": "execute_function_with_data_000825a0",
+            "score": 0.12121212121212122
+        },
+        "0x000805d0": {
+            "original": "loop",
+            "predicted": "FUNC_000805d0",
+            "score": 0.0
+        },
+        "0x00081622": {
+            "original": "changeBuffer",
+            "predicted": "execute_and_update_data_00081622",
+            "score": 0.22857142857142856
+        },
+        "0x00082970": {
+            "original": "_sbrk_r",
+            "predicted": "calculateSumAndReturnIfValid_00082970",
+            "score": 0.17142857142857143
+        },
+        "0x0008449c": {
+            "original": "__sseek",
+            "predicted": "process_data_0008449c",
+            "score": 0.21052631578947367
+        },
+        "0x00084728": {
+            "original": "_read_r",
+            "predicted": "processReturnValue_00084728",
+            "score": 0.24
+        },
+        "0x00083c40": {
+            "original": "_fputwc_r",
+            "predicted": "process_data_00083c40",
+            "score": 0.19047619047619047
+        },
+        "0x00081d7c": {
+            "original": "__libc_init_array",
+            "predicted": "execute_functions_00081d7c",
+            "score": 0.17647058823529413
+        },
+        "0x000815fe": {
+            "original": "~String",
+            "predicted": "allocate_memory_block_and_return_pointer_000815fe",
+            "score": 0.1702127659574468
+        },
+        "0x000802da": {
+            "original": "query",
+            "predicted": "validate_data_000802da",
+            "score": 0.1111111111111111
+        },
+        "0x00081c94": {
+            "original": "__aeabi_fcmple",
+            "predicted": "check_numbers_combined_00081c94",
+            "score": 0.2777777777777778
+        },
+        "0x00082ac0": {
+            "original": "__sprint_r.part.0",
+            "predicted": "process_data_00082ac0",
+            "score": 0.27586206896551724
+        },
+        "0x00083d00": {
+            "original": "_malloc_trim_r",
+            "predicted": "calculateMemoryOffsetAndReturnSuccess_00083d00",
+            "score": 0.19607843137254902
+        },
+        "0x000846dc": {
+            "original": "_isatty_r",
+            "predicted": "process_param_000846dc",
+            "score": 0.2727272727272727
+        },
+        "0x00081208": {
+            "original": "millis",
+            "predicted": "get_value_from_pointer_thunk_00081714",
+            "score": 0.09302325581395349
+        },
+        "0x00080f24": {
+            "original": "Reset_Handler",
+            "predicted": "initialize_memory_regions_00080f24",
+            "score": 0.15789473684210525
+        },
+        "0x00081210": {
+            "original": "pinMode",
+            "predicted": "process_data_00081210",
+            "score": 0.3157894736842105
+        },
+        "0x00081e14": {
+            "original": "_malloc_r",
+            "predicted": "FUNC_00081e14",
+            "score": 0.15384615384615385
+        },
+        "0x0008378c": {
+            "original": "__sbprintf",
+            "predicted": "process_data_and_check_error_0008378c",
+            "score": 0.15789473684210525
+        },
+        "0x000801b0": {
+            "original": "getRxBuffer",
+            "predicted": "process_data_000801b0",
+            "score": 0.17391304347826086
+        },
+        "0x00080da0": {
+            "original": "PIO_Configure",
+            "predicted": "handle_data_00080da0",
+            "score": 0.08333333333333333
+        },
+        "0x00084464": {
+            "original": "__swrite",
+            "predicted": "process_data_00084464",
+            "score": 0.2
+        },
+        "0x0008163a": {
+            "original": "reserve",
+            "predicted": "execute_and_update_data_0008163a",
+            "score": 0.2
+        },
+        "0x000846a4": {
+            "original": "fclose",
+            "predicted": "process_data_000846a4",
+            "score": 0.2222222222222222
+        },
+        "0x000825b0": {
+            "original": "_realloc_r",
+            "predicted": "FUNC_000825b0",
+            "score": 0.14285714285714285
+        },
+        "0x0008160c": {
+            "original": "invalidate",
+            "predicted": "reset_memory_0008160c",
+            "score": 0.18181818181818182
+        },
+        "0x00080258": {
+            "original": "sendTxBuffer",
+            "predicted": "calculate_checksum_and_update_data_00080258",
+            "score": 0.21739130434782608
+        },
+        "0x000844c4": {
+            "original": "__swbuf_r",
+            "predicted": "process_data_000844c4",
+            "score": 0.09523809523809523
+        },
+        "0x000846b4": {
+            "original": "_fstat_r",
+            "predicted": "set_permissions_000846b4",
+            "score": 0.34782608695652173
+        },
+        "0x00081318": {
+            "original": "digitalWrite",
+            "predicted": "process_flag_00081318",
+            "score": 0.08333333333333333
+        },
+        "0x000804a8": {
+            "original": "setup",
+            "predicted": "initialize_system_000804a8",
+            "score": 0.18181818181818182
+        },
+        "0x00080ce0": {
+            "original": "serialEventRun",
+            "predicted": "check_differences_in_pointers_00080ce0",
+            "score": 0.27906976744186046
+        },
+        "0x00083adc": {
+            "original": "_fflush_r",
+            "predicted": "process_data_00083adc",
+            "score": 0.09523809523809523
+        },
+        "0x00083974": {
+            "original": "register_fini",
+            "predicted": "add_data_to_buffer_00083974",
+            "score": 0.1935483870967742
+        }
+    },
+    "lfl": {
+        "0x00081388": {
+            "original": "tickReset",
+            "predicted": "decrement_and_call_if_zero_00081388",
+            "score": 0.2857142857142857
+        },
+        "0x000811c6": {
+            "original": "_read",
+            "predicted": "returnZero_000811c6",
+            "score": 0.26666666666666666
+        },
+        "0x00082994": {
+            "original": "strcpy",
+            "predicted": "copy_string_00082994",
+            "score": 1.0
+        },
+        "0x00080aa8": {
+            "original": "serialEvent",
+            "predicted": "do_nothing_00080aa8",
+            "score": 0.042
+        },
+        "0x00081184": {
+            "original": "__false",
+            "predicted": "returnZero_00081184",
+            "score": 0.11764705882352941
+        },
+        "0x00080118": {
+            "original": "frame_dummy",
+            "predicted": "execute_function_if_not_null_00080118",
+            "score": 0.15384615384615385
+        },
+        "0x00081034": {
+            "original": "adc_configure_trigger",
+            "predicted": "update_register_00081034",
+            "score": 0.3888888888888889
+        },
+        "0x000813c2": {
+            "original": "store_char",
+            "predicted": "update_buffer_000813c2",
+            "score": 0.34782608695652173
+        },
+        "0x00083c0c": {
+            "original": "__sfp_lock_release",
+            "predicted": "do_nothing_00083c0c",
+            "score": 0.042
+        },
+        "0x00084a80": {
+            "original": "__udivdi3",
+            "predicted": "FUNC_00084a80",
+            "score": 0.15384615384615385
+        },
+        "0x00080e18": {
+            "original": "pmc_enable_periph_clk",
+            "predicted": "check_character_00080e18",
+            "score": 0.2777777777777778
+        },
+        "0x00081d1c": {
+            "original": "__fixunssfsi",
+            "predicted": "validate_uint_00081d1c",
+            "score": 0.24
+        },
+        "0x00083c08": {
+            "original": "__sfp_lock_acquire",
+            "predicted": "do_nothing_00083c08",
+            "score": 0.042
+        },
+        "0x0008120c": {
+            "original": "delay",
+            "predicted": "do_nothing_0008120c",
+            "score": 0.042
+        },
+        "0x000811ae": {
+            "original": "_close",
+            "predicted": "get_error_code_000811ae",
+            "score": 0.4
+        },
+        "0x00081bf4": {
+            "original": "__cmpsf2",
+            "predicted": "perform_bitwise_operations_00081bf4",
+            "score": 0.23529411764705882
+        },
+        "0x000803d4": {
+            "original": "validateAnswer",
+            "predicted": "check_for_value_000803d4",
+            "score": 0.27586206896551724
+        },
+        "0x000811cc": {
+            "original": "_write",
+            "predicted": "copy_bytes_to_dat_000811cc",
+            "score": 0.2608695652173913
+        },
+        "0x00081730": {
+            "original": "__aeabi_fsub",
+            "predicted": "FUNC_00081730",
+            "score": 0.25
+        },
+        "0x00080abc": {
+            "original": "serialEvent3",
+            "predicted": "do_nothing_00080abc",
+            "score": 0.042
+        },
+        "0x00080aba": {
+            "original": "serialEvent2",
+            "predicted": "do_nothing_00080aba",
+            "score": 0.042
+        },
+        "0x00080ab8": {
+            "original": "serialEvent1",
+            "predicted": "do_nothing_00080ab8",
+            "score": 0.042
+        },
+        "0x000811b4": {
+            "original": "_fstat",
+            "predicted": "set_memory_permissions_000811b4",
+            "score": 0.14285714285714285
+        },
+        "0x0008105c": {
+            "original": "adc_disable_channel",
+            "predicted": "set_bit_at_position_0008105c",
+            "score": 0.21052631578947367
+        },
+        "0x00081894": {
+            "original": "__floatunsisf",
+            "predicted": "calculate_00081894",
+            "score": 0.2727272727272727
+        },
+        "0x000845bc": {
+            "original": "__ascii_wctomb",
+            "predicted": "write_byte_to_memory_000845bc",
+            "score": 0.29411764705882354
+        },
+        "0x000811be": {
+            "original": "_isatty",
+            "predicted": "return_one_000811be",
+            "score": 0.11764705882352941
+        },
+        "0x000847e0": {
+            "original": "__divdi3",
+            "predicted": "FUNC_000847e0",
+            "score": 0.0
+        },
+        "0x0008106e": {
+            "original": "adc_disable_interrupt",
+            "predicted": "set_parameter_0008106e",
+            "score": 0.35294117647058826
+        },
+        "0x00080d7a": {
+            "original": "PIO_SetOutput",
+            "predicted": "set_params_00080d7a",
+            "score": 1.0
+        },
+        "0x000815f8": {
+            "original": "makeWord",
+            "predicted": "combine_values_000815f8",
+            "score": 0.2727272727272727
+        },
+        "0x0008234c": {
+            "original": "memcpy",
+            "predicted": "copy_memory_aligned_0008234c",
+            "score": 1.0
+        },
+        "0x00084384": {
+            "original": "memchr",
+            "predicted": "search_uint_00084384",
+            "score": 0.17142857142857143
+        },
+        "0x00085858": {
+            "original": "_init",
+            "predicted": "do_nothing_00085858",
+            "score": 0.042
+        },
+        "0x000813e4": {
+            "original": "available",
+            "predicted": "calculate_difference_000813e4",
+            "score": 0.27586206896551724
+        },
+        "0x00082598": {
+            "original": "__malloc_lock",
+            "predicted": "do_nothing_00082598",
+            "score": 0.042
+        },
+        "0x0008021c": {
+            "original": "calcCRC",
+            "predicted": "calculate_checksum_0008021c",
+            "score": 1.0
+        },
+        "0x00081cd0": {
+            "original": "__aeabi_f2iz",
+            "predicted": "calculate_value_00081cd0",
+            "score": 0.2222222222222222
+        },
+        "0x00082a50": {
+            "original": "strlen",
+            "predicted": "count_bytes_with_padding_00082a50",
+            "score": 0.2702702702702703
+        },
+        "0x000814e4": {
+            "original": "UARTClass",
+            "predicted": "initialize_params_000814e4",
+            "score": 0.3076923076923077
+        },
+        "0x00080d54": {
+            "original": "PIO_SetInput",
+            "predicted": "assignValuesToPointerArray_00080d54",
+            "score": 0.2631578947368421
+        },
+        "0x000816a6": {
+            "original": "initVariant",
+            "predicted": "do_nothing_000816a6",
+            "score": 0.042
+        },
+        "0x000811c2": {
+            "original": "_lseek",
+            "predicted": "returnZero_000811c2",
+            "score": 0.25
+        },
+        "0x00084290": {
+            "original": "__locale_charset",
+            "predicted": "get_data_00084290",
+            "score": 0.16666666666666666
+        },
+        "0x00080e04": {
+            "original": "PIO_GetOutputDataStatus",
+            "predicted": "check_flag_00080e04",
+            "score": 0.12121212121212122
+        },
+        "0x00082504": {
+            "original": "memset",
+            "predicted": "write_to_memory_00082504",
+            "score": 1.0
+        },
+        "0x00081944": {
+            "original": "__aeabi_fmul",
+            "predicted": "FUNC_00081944",
+            "score": 0.25
+        },
+        "0x00082438": {
+            "original": "memmove",
+            "predicted": "reverse_copy_00082438",
+            "score": 0.43478260869565216
+        },
+        "0x000816d4": {
+            "original": "_watchdogDefaultSetup",
+            "predicted": "set_dat_value_to_0x8000_000816d4",
+            "score": 1.0
+        },
+        "0x00081714": {
+            "original": "GetTickCount",
+            "predicted": "get_value_from_pointer_00081714",
+            "score": 1.0
+        },
+        "0x00080d2e": {
+            "original": "PIO_SetPeripheral",
+            "predicted": "update_status_00080d2e",
+            "score": 0.3333333333333333
+        },
+        "0x00080f9c": {
+            "original": "adc_init",
+            "predicted": "calculate_value_00080f9c",
+            "score": 0.2608695652173913
+        },
+        "0x0008118c": {
+            "original": "_sbrk",
+            "predicted": "calculateSum_0008118c",
+            "score": 0.11764705882352941
+        },
+        "0x00080e9c": {
+            "original": "SystemInit",
+            "predicted": "initialize_device_00080e9c",
+            "score": 1.0
+        },
+        "0x00081734": {
+            "original": "__addsf3",
+            "predicted": "FUNC_00081734",
+            "score": 0.16666666666666666
+        },
+        "0x00081d5c": {
+            "original": "__aeabi_atexit",
+            "predicted": "add_to_buffer_00081d5c",
+            "score": 0.2222222222222222
+        },
+        "0x00081066": {
+            "original": "adc_disable_all_channel",
+            "predicted": "set_default_value_00081066",
+            "score": 0.4
+        },
+        "0x00084298": {
+            "original": "__locale_mb_cur_max",
+            "predicted": "get_value_from_dat_a0_00084298",
+            "score": 0.45
+        },
+        "0x0008189c": {
+            "original": "__floatsisf",
+            "predicted": "leading_zero_bits_0008189c",
+            "score": 0.2857142857142857
+        },
+        "0x000800f4": {
+            "original": "__do_global_dtors_aux",
+            "predicted": "check_if_flag_set_and_return_value_000800f4",
+            "score": 0.2545454545454545
+        },
+        "0x0008259c": {
+            "original": "__malloc_unlock",
+            "predicted": "do_nothing_0008259c",
+            "score": 0.042
+        },
+        "0x00081042": {
+            "original": "adc_configure_timing",
+            "predicted": "update_parameter_00081042",
+            "score": 0.2222222222222222
+        }
+    }
+}

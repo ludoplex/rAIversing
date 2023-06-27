@@ -1,0 +1,876 @@
+{
+    "hfl": {
+        "0x080027f4": {
+            "original": "I2C_RequestMemoryRead",
+            "predicted": "check_and_update_flags_080027f4",
+            "score": 0.18604651162790697
+        },
+        "0x080096e0": {
+            "original": "frexp",
+            "predicted": "calculate_value_from_params_080096e0",
+            "score": 0.1875
+        },
+        "0x08001714": {
+            "original": "HAL_NVIC_SetPriorityGrouping",
+            "predicted": "update_bits_of_uint_08001714",
+            "score": 0.3404255319148936
+        },
+        "0x08000fd0": {
+            "original": "__aeabi_cfcmpeq",
+            "predicted": "concatenate_integers_08000fd0",
+            "score": 0.17142857142857143
+        },
+        "0x08002640": {
+            "original": "I2C_RequestMemoryWrite",
+            "predicted": "check_and_update_pointer_08002640",
+            "score": 0.21739130434782608
+        },
+        "0x08000134": {
+            "original": "frame_dummy",
+            "predicted": "concatenate_params_08000134",
+            "score": 0.20689655172413793
+        },
+        "0x080009e8": {
+            "original": "__aeabi_dcmpgt",
+            "predicted": "validate_input_and_return_null_terminator_080009e8",
+            "score": 0.21818181818181817
+        },
+        "0x08003540": {
+            "original": "HAL_RCC_GetPCLK2Freq",
+            "predicted": "get_value_from_pointer_and_shift_08003540",
+            "score": 1.0
+        },
+        "0x0800151c": {
+            "original": "HAL_InitTick",
+            "predicted": "check_and_set_memory_value_0800151c",
+            "score": 0.15789473684210525
+        },
+        "0x08004e74": {
+            "original": "startForkserver",
+            "predicted": "check_trigger_system_interrupt_08004e74",
+            "score": 0.26666666666666666
+        },
+        "0x0800172a": {
+            "original": "HAL_NVIC_SetPriority",
+            "predicted": "set_byte_in_memory_0800172a",
+            "score": 1.0
+        },
+        "0x08001030": {
+            "original": "__aeabi_fcmpgt",
+            "predicted": "isEndOfString_08001030",
+            "score": 0.2222222222222222
+        },
+        "0x080093a4": {
+            "original": "__pow5mult",
+            "predicted": "hash_table_lookup_080093a4",
+            "score": 0.2222222222222222
+        },
+        "0x08005714": {
+            "original": "TIM2_IRQHandler",
+            "predicted": "process_data_wrapper_08005714",
+            "score": 0.34285714285714286
+        },
+        "0x08003a94": {
+            "original": "HAL_TIM_ConfigClockSource",
+            "predicted": "set_permissions_and_flags_08003a94",
+            "score": 0.28
+        },
+        "0x08003640": {
+            "original": "HAL_TIM_PWM_Init",
+            "predicted": "check_parameter_values_08003640",
+            "score": 0.15789473684210525
+        },
+        "0x08009120": {
+            "original": "__multadd",
+            "predicted": "calculate_hash_08009120",
+            "score": 0.34782608695652173
+        },
+        "0x08004f78": {
+            "original": "HAL_TIM_PeriodElapsedCallback",
+            "predicted": "hash_and_store_pitch_08004f78",
+            "score": 0.32653061224489793
+        },
+        "0x080079e8": {
+            "original": "_dtoa_r",
+            "predicted": "FUNC_080079e8",
+            "score": 0.0
+        },
+        "0x08000988": {
+            "original": "__aeabi_cdcmpeq",
+            "predicted": "validate_inputs_08000988",
+            "score": 0.2
+        },
+        "0x08004f3c": {
+            "original": "uart_print",
+            "predicted": "validate_and_process_input_08004f3c",
+            "score": 0.4444444444444444
+        },
+        "0x08005598": {
+            "original": "MX_USART1_UART_Init",
+            "predicted": "initialize_data_08005598",
+            "score": 1.0
+        },
+        "0x08000978": {
+            "original": "__aeabi_cdrcmple",
+            "predicted": "validate_inputs_and_return_08000978",
+            "score": 0.23809523809523808
+        },
+        "0x08001f6c": {
+            "original": "HAL_I2C_Mem_Read",
+            "predicted": "FUNC_08001f6c",
+            "score": 0.1
+        },
+        "0x080090a8": {
+            "original": "__malloc_lock",
+            "predicted": "do_nothing_with_pointer_080090a8",
+            "score": 0.042
+        },
+        "0x08005dfc": {
+            "original": "sprintf",
+            "predicted": "clear_first_byte_of_string_08005dfc",
+            "score": 0.24242424242424243
+        },
+        "0x08002c2e": {
+            "original": "I2C_WaitOnBTFFlagUntilTimeout",
+            "predicted": "check_and_update_flag_08002c2e",
+            "score": 1.0
+        },
+        "0x08009630": {
+            "original": "__d2b",
+            "predicted": "calculate_buffer_size_08009630",
+            "score": 0.15384615384615385
+        },
+        "0x080078c0": {
+            "original": "quorem",
+            "predicted": "calculate_quotient_080078c0",
+            "score": 0.3333333333333333
+        },
+        "0x08009744": {
+            "original": "_sbrk_r",
+            "predicted": "add_value_to_pointer_08009744",
+            "score": 0.14814814814814814
+        },
+        "0x08005d20": {
+            "original": "__libc_init_array",
+            "predicted": "execute_functions_08005d20",
+            "score": 0.17647058823529413
+        },
+        "0x0800491c": {
+            "original": "mpu6050_init",
+            "predicted": "initialize_params_and_calculate_hashes_0800491c",
+            "score": 1.0
+        },
+        "0x08009980": {
+            "original": "_calloc_r",
+            "predicted": "allocate_buffer_08009980",
+            "score": 1.0
+        },
+        "0x08003518": {
+            "original": "HAL_RCC_GetPCLK1Freq",
+            "predicted": "get_value_from_pointer_and_shift_08003518",
+            "score": 1.0
+        },
+        "0x080098c0": {
+            "original": "__register_exitproc",
+            "predicted": "addOrUpdateRecord_080098c0",
+            "score": 0.3333333333333333
+        },
+        "0x0800884c": {
+            "original": "_malloc_trim_r",
+            "predicted": "allocate_memory_0800884c",
+            "score": 1.0
+        },
+        "0x08001ccc": {
+            "original": "HAL_I2C_Mem_Write",
+            "predicted": "process_input_08001ccc",
+            "score": 0.2
+        },
+        "0x080057e8": {
+            "original": "Reset_Handler",
+            "predicted": "copy_and_clear_memory_080057e8",
+            "score": 0.4117647058823529
+        },
+        "0x080090c0": {
+            "original": "_Balloc",
+            "predicted": "allocate_or_get_buffer_080090c0",
+            "score": 1.0
+        },
+        "0x08005348": {
+            "original": "MX_I2C1_Init",
+            "predicted": "initialize_data_08005348",
+            "score": 1.0
+        },
+        "0x08005728": {
+            "original": "_sbrk",
+            "predicted": "add_value_to_pointer_08005728",
+            "score": 0.16
+        },
+        "0x08000998": {
+            "original": "__aeabi_dcmpeq",
+            "predicted": "validate_inputs_and_return_status_08000998",
+            "score": 0.2127659574468085
+        },
+        "0x080046ec": {
+            "original": "UART_SetConfig",
+            "predicted": "calculate_values_080046ec",
+            "score": 0.3333333333333333
+        },
+        "0x080009d4": {
+            "original": "__aeabi_dcmpge",
+            "predicted": "validate_input_and_return_080009d4",
+            "score": 0.20512820512820512
+        },
+        "0x080049cc": {
+            "original": "mpu6050_calibrate",
+            "predicted": "calculate_hashes_and_store_080049cc",
+            "score": 0.27906976744186046
+        },
+        "0x08003260": {
+            "original": "HAL_RCC_ClockConfig",
+            "predicted": "process_data_08003260",
+            "score": 0.1935483870967742
+        },
+        "0x080090b4": {
+            "original": "__malloc_unlock",
+            "predicted": "do_nothing_with_pointer_080090b4",
+            "score": 0.042
+        },
+        "0x080078a0": {
+            "original": "register_fini",
+            "predicted": "checkAndUpdateRecord_080078a0",
+            "score": 0.24242424242424243
+        },
+        "0x0800071c": {
+            "original": "__divdf3",
+            "predicted": "FUNC_0800071c",
+            "score": 0.16666666666666666
+        },
+        "0x08004ee8": {
+            "original": "_i2c_read_reg",
+            "predicted": "process_data_08004ee8",
+            "score": 0.16
+        },
+        "0x08004bd8": {
+            "original": "mpu6050_calc_pitch",
+            "predicted": "reverse_and_calculate_08004bd8",
+            "score": 1.0
+        },
+        "0x08005834": {
+            "original": "atan2",
+            "predicted": "calculate_result_thunk_08005838",
+            "score": 0.16666666666666666
+        },
+        "0x08001762": {
+            "original": "HAL_SYSTICK_Config",
+            "predicted": "is_address_valid_08001762",
+            "score": 0.17647058823529413
+        },
+        "0x080016d0": {
+            "original": "SysTick_Config",
+            "predicted": "is_valid_address_080016d0",
+            "score": 0.13333333333333333
+        },
+        "0x08002bb4": {
+            "original": "I2C_WaitOnTXEFlagUntilTimeout",
+            "predicted": "check_and_update_08002bb4",
+            "score": 0.2222222222222222
+        },
+        "0x08005704": {
+            "original": "SysTick_Handler",
+            "predicted": "calculate_pitch_and_store_08005704",
+            "score": 0.4
+        },
+        "0x080004c8": {
+            "original": "__muldf3",
+            "predicted": "FUNC_080004c8",
+            "score": 0.16666666666666666
+        },
+        "0x0800438a": {
+            "original": "HAL_UART_Init",
+            "predicted": "check_parameter_validity_0800438a",
+            "score": 0.32432432432432434
+        },
+        "0x080053b0": {
+            "original": "MX_TIM1_Init",
+            "predicted": "initialize_and_decode_data_080053b0",
+            "score": 1.0
+        },
+        "0x08004d78": {
+            "original": "mpu6050_calc_acc_pitch_roll",
+            "predicted": "calculate_float_bits_from_params_08004d78",
+            "score": 1.0
+        },
+        "0x08001ab0": {
+            "original": "HAL_I2C_Init",
+            "predicted": "calculate_value_08001ab0",
+            "score": 0.2222222222222222
+        },
+        "0x080097cc": {
+            "original": "__ssprint_r",
+            "predicted": "reverse_copy_and_update_080097cc",
+            "score": 0.23529411764705882
+        },
+        "0x08004f60": {
+            "original": "flush_strbuf",
+            "predicted": "clearBuffer_08004f60",
+            "score": 0.43478260869565216
+        },
+        "0x08004ea4": {
+            "original": "_i2c_write_reg",
+            "predicted": "process_input_wrapper_08004ea4",
+            "score": 0.4
+        },
+        "0x080011ec": {
+            "original": "__aeabi_uldivmod",
+            "predicted": "get_concatenated_values_080011ec",
+            "score": 0.20512820512820512
+        },
+        "0x080055f4": {
+            "original": "MX_GPIO_Init",
+            "predicted": "set_flags_and_decode_080055f4",
+            "score": 0.1875
+        },
+        "0x08002ad8": {
+            "original": "I2C_WaitOnMasterAddressFlagUntilTimeout",
+            "predicted": "check_if_bit_is_set_08002ad8",
+            "score": 0.20689655172413793
+        },
+        "0x080009c0": {
+            "original": "__aeabi_dcmple",
+            "predicted": "validate_inputs_and_return_true_if_any_input_is_invalid_080009c0",
+            "score": 0.2318840579710145
+        },
+        "0x08005680": {
+            "original": "HAL_TIM_MspPostInit",
+            "predicted": "decode_flags_08005680",
+            "score": 0.12903225806451613
+        },
+        "0x08000fc8": {
+            "original": "__aeabi_cfrcmple",
+            "predicted": "concatenate_integers_08000fc8",
+            "score": 0.16666666666666666
+        },
+        "0x08004436": {
+            "original": "HAL_UART_Transmit",
+            "predicted": "validate_input_and_process_08004436",
+            "score": 0.4186046511627907
+        },
+        "0x08005224": {
+            "original": "main",
+            "predicted": "initialize_and_run_system_08005224",
+            "score": 0.13793103448275862
+        },
+        "0x080088ec": {
+            "original": "_free_r",
+            "predicted": "FUNC_080088ec",
+            "score": 0.18181818181818182
+        },
+        "0x08005838": {
+            "original": "__ieee754_atan2",
+            "predicted": "calculate_value_08005838",
+            "score": 0.2
+        },
+        "0x080059f0": {
+            "original": "atan",
+            "predicted": "FUNC_080059f0",
+            "score": 0.25
+        },
+        "0x08009258": {
+            "original": "__multiply",
+            "predicted": "calculate_hash_08009258",
+            "score": 0.25
+        },
+        "0x08002ca8": {
+            "original": "I2C_WaitOnRXNEFlagUntilTimeout",
+            "predicted": "check_pointer_08002ca8",
+            "score": 0.18604651162790697
+        },
+        "0x08000ff4": {
+            "original": "__aeabi_fcmplt",
+            "predicted": "check_input_string_08000ff4_08000ff4",
+            "score": 0.1875
+        },
+        "0x080036f8": {
+            "original": "HAL_TIM_IRQHandler",
+            "predicted": "process_data_080036f8",
+            "score": 0.2
+        },
+        "0x08009444": {
+            "original": "__lshift",
+            "predicted": "encode_08009444",
+            "score": 0.0
+        },
+        "0x08009530": {
+            "original": "__mdiff",
+            "predicted": "calculate_hash_08009530",
+            "score": 0.09523809523809523
+        },
+        "0x080014f0": {
+            "original": "HAL_Init",
+            "predicted": "set_memory_value_and_update_bits_080014f0",
+            "score": 0.3
+        },
+        "0x080017b4": {
+            "original": "HAL_SYSTICK_IRQHandler",
+            "predicted": "hash_and_store_pitch_080017b4",
+            "score": 0.3333333333333333
+        },
+        "0x08002d98": {
+            "original": "HAL_RCC_OscConfig",
+            "predicted": "FUNC_08002d98",
+            "score": 0.09523809523809523
+        },
+        "0x080009ac": {
+            "original": "__aeabi_dcmplt",
+            "predicted": "is_end_of_input_080009ac",
+            "score": 0.3448275862068966
+        },
+        "0x08004ae0": {
+            "original": "mpu6050_update",
+            "predicted": "calculate_hashes_and_store_08004ae0",
+            "score": 0.2
+        },
+        "0x08008af8": {
+            "original": "_malloc_r",
+            "predicted": "FUNC_08008af8",
+            "score": 0.15384615384615385
+        },
+        "0x08009244": {
+            "original": "__i2b",
+            "predicted": "initialize_buffer_08009244",
+            "score": 0.18181818181818182
+        },
+        "0x08003908": {
+            "original": "HAL_TIM_PWM_ConfigChannel",
+            "predicted": "update_flags_and_values_08003908",
+            "score": 0.125
+        },
+        "0x08004f2c": {
+            "original": "_get_ms_tick",
+            "predicted": "get_pointer_value_08004f2c",
+            "score": 1.0
+        },
+        "0x08005500": {
+            "original": "MX_TIM2_Init",
+            "predicted": "set_permissions_and_flags_08005500",
+            "score": 0.16216216216216217
+        },
+        "0x080035a4": {
+            "original": "HAL_TIM_Base_Init",
+            "predicted": "check_values_set_080035a4",
+            "score": 0.42424242424242425
+        },
+        "0x08009adc": {
+            "original": "_realloc_r",
+            "predicted": "FUNC_08009adc",
+            "score": 0.14285714285714285
+        },
+        "0x080036a8": {
+            "original": "HAL_TIM_PWM_Start",
+            "predicted": "set_bit_and_update_080036a8",
+            "score": 1.0
+        },
+        "0x080052a0": {
+            "original": "SystemClock_Config",
+            "predicted": "process_data_and_set_flag_if_four_080052a0",
+            "score": 0.1568627450980392
+        },
+        "0x08005e9c": {
+            "original": "_svfprintf_r",
+            "predicted": "FUNC_08005e9c",
+            "score": 0.25
+        },
+        "0x08000110": {
+            "original": "__do_global_dtors_aux",
+            "predicted": "check_and_return_param_08000110",
+            "score": 0.13953488372093023
+        }
+    },
+    "lfl": {
+        "0x08004104": {
+            "original": "TIM_TI2_ConfigInputStage",
+            "predicted": "update_flags_08004104",
+            "score": 0.2777777777777778
+        },
+        "0x08003440": {
+            "original": "HAL_RCC_GetSysClockFreq",
+            "predicted": "calculate_value_08003440",
+            "score": 0.21052631578947367
+        },
+        "0x08001618": {
+            "original": "NVIC_SetPriority",
+            "predicted": "set_byte_in_memory_08001618",
+            "score": 1.0
+        },
+        "0x0800166c": {
+            "original": "NVIC_EncodePriority",
+            "predicted": "apply_mask_0800166c",
+            "score": 0.06896551724137931
+        },
+        "0x080094f8": {
+            "original": "__mcmp",
+            "predicted": "compare_arrays_080094f8",
+            "score": 0.3
+        },
+        "0x08004378": {
+            "original": "HAL_TIMEx_BreakCallback",
+            "predicted": "do_nothing_08004378",
+            "score": 0.042
+        },
+        "0x08003696": {
+            "original": "HAL_TIM_PWM_MspInit",
+            "predicted": "do_nothing_08003696",
+            "score": 0.042
+        },
+        "0x08001044": {
+            "original": "__fixunssfsi",
+            "predicted": "decode_uint_08001044",
+            "score": 0.2608695652173913
+        },
+        "0x08003504": {
+            "original": "HAL_RCC_GetHCLKFreq",
+            "predicted": "get_value_from_pointer_08003504",
+            "score": 1.0
+        },
+        "0x08000418": {
+            "original": "__aeabi_f2d",
+            "predicted": "reverseBits_08000418",
+            "score": 0.2727272727272727
+        },
+        "0x08000f68": {
+            "original": "__cmpsf2",
+            "predicted": "calculate_result_08000f68",
+            "score": 0.16666666666666666
+        },
+        "0x08000aa4": {
+            "original": "__aeabi_fsub",
+            "predicted": "FUNC_08000aa4",
+            "score": 0.25
+        },
+        "0x08001cb8": {
+            "original": "HAL_I2C_MspInit",
+            "predicted": "do_nothing_08001cb8",
+            "score": 0.042
+        },
+        "0x08003c80": {
+            "original": "HAL_TIM_TriggerCallback",
+            "predicted": "do_nothing_08003c80",
+            "score": 0.042
+        },
+        "0x08000e20": {
+            "original": "__aeabi_fdiv",
+            "predicted": "FUNC_08000e20",
+            "score": 0.125
+        },
+        "0x080035fa": {
+            "original": "HAL_TIM_Base_MspInit",
+            "predicted": "do_nothing_080035fa",
+            "score": 0.042
+        },
+        "0x0800157c": {
+            "original": "HAL_IncTick",
+            "predicted": "add_byte_to_int_and_store_result_0800157c",
+            "score": 0.23255813953488372
+        },
+        "0x08005d0c": {
+            "original": "fabs",
+            "predicted": "do_nothing_08005d0c",
+            "score": 0.042
+        },
+        "0x08008af0": {
+            "original": "__retarget_lock_acquire_recursive",
+            "predicted": "do_nothing_08008af0",
+            "score": 0.042
+        },
+        "0x08002d8a": {
+            "original": "HAL_MspInit",
+            "predicted": "do_nothing_08002d8a",
+            "score": 0.042
+        },
+        "0x08001170": {
+            "original": "__unorddf2",
+            "predicted": "is_valid_input_08001170",
+            "score": 0.25
+        },
+        "0x08003c4a": {
+            "original": "HAL_TIM_OC_DelayElapsedCallback",
+            "predicted": "do_nothing_08003c4a",
+            "score": 0.042
+        },
+        "0x08001084": {
+            "original": "memcpy",
+            "predicted": "copyMemoryImproved_08001084",
+            "score": 1.0
+        },
+        "0x0800360c": {
+            "original": "HAL_TIM_Base_Start_IT",
+            "predicted": "set_flags_0800360c",
+            "score": 1.0
+        },
+        "0x08009e68": {
+            "original": "_init",
+            "predicted": "do_nothing_08009e68",
+            "score": 0.042
+        },
+        "0x080015fc": {
+            "original": "NVIC_GetPriorityGrouping",
+            "predicted": "extract_bits_from_uint_080015fc",
+            "score": 0.391304347826087
+        },
+        "0x0800015c": {
+            "original": "__aeabi_dadd",
+            "predicted": "FUNC_0800015c",
+            "score": 0.0
+        },
+        "0x08005e40": {
+            "original": "strlen",
+            "predicted": "find_first_set_bit_08005e40",
+            "score": 0.25806451612903225
+        },
+        "0x080015a0": {
+            "original": "HAL_GetTick",
+            "predicted": "get_pointer_value_080015a0",
+            "score": 1.0
+        },
+        "0x080041ea": {
+            "original": "TIM_CCxChannelCmd",
+            "predicted": "set_bit_080041ea",
+            "score": 0.16666666666666666
+        },
+        "0x08000cb8": {
+            "original": "__aeabi_fmul",
+            "predicted": "FUNC_08000cb8",
+            "score": 0.25
+        },
+        "0x08004e6c": {
+            "original": "aflCall",
+            "predicted": "trigger_system_interrupt_08004e6c",
+            "score": 0.0
+        },
+        "0x0800422e": {
+            "original": "HAL_TIMEx_ConfigBreakDeadTime",
+            "predicted": "set_param_0800422e",
+            "score": 0.10526315789473684
+        },
+        "0x08003ff8": {
+            "original": "TIM_OC4_SetConfig",
+            "predicted": "set_data_08003ff8",
+            "score": 1.0
+        },
+        "0x08008ad4": {
+            "original": "_localeconv_r",
+            "predicted": "get_default_value_08008ad4",
+            "score": 0.3333333333333333
+        },
+        "0x0800177c": {
+            "original": "HAL_SYSTICK_CLKSourceConfig",
+            "predicted": "set_flag_if_four_0800177c",
+            "score": 0.32558139534883723
+        },
+        "0x0800119c": {
+            "original": "__aeabi_d2iz",
+            "predicted": "convert_to_int_0800119c",
+            "score": 0.23076923076923078
+        },
+        "0x080006a4": {
+            "original": "FUN_080006a4",
+            "predicted": "calculate_result_080006a4",
+            "score": 0.10526315789473684
+        },
+        "0x08004424": {
+            "original": "HAL_UART_MspInit",
+            "predicted": "do_nothing_08004424",
+            "score": 0.042
+        },
+        "0x08005780": {
+            "original": "SystemInit",
+            "predicted": "set_bit_and_clear_flags_08005780",
+            "score": 0.24242424242424243
+        },
+        "0x080091e4": {
+            "original": "__lo0bits",
+            "predicted": "count_trailing_zeros_080091e4",
+            "score": 0.27586206896551724
+        },
+        "0x08000aa8": {
+            "original": "__addsf3",
+            "predicted": "FUNC_08000aa8",
+            "score": 0.16666666666666666
+        },
+        "0x08003c6e": {
+            "original": "HAL_TIM_PWM_PulseFinishedCallback",
+            "predicted": "do_nothing_08003c6e",
+            "score": 0.042
+        },
+        "0x08003e38": {
+            "original": "TIM_OC2_SetConfig",
+            "predicted": "update_data_08003e38",
+            "score": 0.21428571428571427
+        },
+        "0x080003d4": {
+            "original": "__floatunsidf",
+            "predicted": "shift_bits_and_concatenate_080003d4",
+            "score": 0.3076923076923077
+        },
+        "0x08008af4": {
+            "original": "__retarget_lock_release_recursive",
+            "predicted": "do_nothing_08008af4",
+            "score": 0.042
+        },
+        "0x08005674": {
+            "original": "_Error_Handler",
+            "predicted": "infinite_loop_08005674",
+            "score": 0.14814814814814814
+        },
+        "0x08003c5c": {
+            "original": "HAL_TIM_IC_CaptureCallback",
+            "predicted": "do_nothing_08003c5c",
+            "score": 0.042
+        },
+        "0x08003d60": {
+            "original": "TIM_OC1_SetConfig",
+            "predicted": "set_flags_and_values_08003d60",
+            "score": 1.0
+        },
+        "0x080008fc": {
+            "original": "__nedf2",
+            "predicted": "check_inputs_080008fc",
+            "score": 0.21052631578947367
+        },
+        "0x080009fc": {
+            "original": "__truncdfsf2",
+            "predicted": "calculate_float_bits_080009fc",
+            "score": 0.25
+        },
+        "0x08003568": {
+            "original": "RCC_Delay",
+            "predicted": "count_down_08003568",
+            "score": 0.3157894736842105
+        },
+        "0x0800121c": {
+            "original": "__udivmoddi4",
+            "predicted": "FUNC_0800121c",
+            "score": 0.125
+        },
+        "0x0800910c": {
+            "original": "_Bfree",
+            "predicted": "extract_value_from_array_0800910c",
+            "score": 0.2
+        },
+        "0x08003c94": {
+            "original": "TIM_Base_SetConfig",
+            "predicted": "set_values_08003c94",
+            "score": 1.0
+        },
+        "0x08000158": {
+            "original": "__subdf3",
+            "predicted": "FUNC_08000158",
+            "score": 0.16666666666666666
+        },
+        "0x080042de": {
+            "original": "HAL_TIMEx_MasterConfigSynchronization",
+            "predicted": "set_param_and_flag_080042de",
+            "score": 0.14545454545454545
+        },
+        "0x08005d14": {
+            "original": "__errno",
+            "predicted": "get_value_from_pointer_array_08005d14",
+            "score": 0.2857142857142857
+        },
+        "0x08000c08": {
+            "original": "__floatunsisf",
+            "predicted": "calculateHash_08000c08",
+            "score": 0.3076923076923077
+        },
+        "0x080041a8": {
+            "original": "TIM_ETR_SetConfig",
+            "predicted": "set_param_080041a8",
+            "score": 1.0
+        },
+        "0x08003f18": {
+            "original": "TIM_OC3_SetConfig",
+            "predicted": "set_values_08003f18",
+            "score": 1.0
+        },
+        "0x08002d3c": {
+            "original": "I2C_IsAcknowledgeFailed",
+            "predicted": "check_flag_08002d3c",
+            "score": 0.30303030303030304
+        },
+        "0x0800901c": {
+            "original": "memchr",
+            "predicted": "find_byte_0800901c",
+            "score": 1.0
+        },
+        "0x080015b4": {
+            "original": "NVIC_SetPriorityGrouping",
+            "predicted": "update_bits_of_uint_080015b4",
+            "score": 0.32558139534883723
+        },
+        "0x080091a4": {
+            "original": "__hi0bits",
+            "predicted": "count_leading_zero_bits_080091a4",
+            "score": 0.375
+        },
+        "0x080040a0": {
+            "original": "TIM_TI1_ConfigInputStage",
+            "predicted": "set_bits_and_shift_left_080040a0",
+            "score": 0.2553191489361702
+        },
+        "0x080003f4": {
+            "original": "__aeabi_i2d",
+            "predicted": "calculate_shifted_value_080003f4",
+            "score": 0.23529411764705882
+        },
+        "0x080017c4": {
+            "original": "HAL_GPIO_Init",
+            "predicted": "decode_flags_080017c4",
+            "score": 0.16
+        },
+        "0x0800088a": {
+            "original": "FUN_0800088a",
+            "predicted": "extract_bits_0800088a",
+            "score": 0.0
+        },
+        "0x08005d68": {
+            "original": "memset",
+            "predicted": "fill_buffer_with_value_08005d68",
+            "score": 0.25
+        },
+        "0x08004366": {
+            "original": "HAL_TIMEx_CommutationCallback",
+            "predicted": "do_nothing_08004366",
+            "score": 0.042
+        },
+        "0x08009a18": {
+            "original": "memmove",
+            "predicted": "reverse_copy_08009a18",
+            "score": 0.43478260869565216
+        },
+        "0x08001a80": {
+            "original": "HAL_GPIO_WritePin",
+            "predicted": "set_param_value_08001a80",
+            "score": 0.1875
+        },
+        "0x0800416a": {
+            "original": "TIM_ITRx_SetConfig",
+            "predicted": "set_permissions_0800416a",
+            "score": 1.0
+        },
+        "0x08000c10": {
+            "original": "__floatsisf",
+            "predicted": "calculate_hash_08000c10",
+            "score": 0.32
+        },
+        "0x08009768": {
+            "original": "strncpy",
+            "predicted": "copy_string_08009768",
+            "score": 0.4444444444444444
+        },
+        "0x08009e74": {
+            "original": "_fini",
+            "predicted": "do_nothing_08009e74",
+            "score": 0.042
+        }
+    }
+}

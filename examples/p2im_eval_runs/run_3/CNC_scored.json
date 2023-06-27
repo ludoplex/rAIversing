@@ -1,0 +1,1336 @@
+{
+    "hfl": {
+        "0x0800525c": {
+            "original": "spindle_run",
+            "predicted": "checkAndUpdateStatus_0800525c",
+            "score": 0.25806451612903225
+        },
+        "0x08002e08": {
+            "original": "planner_recalculate_trapezoids",
+            "predicted": "calculate_hash_and_shift_08002e08",
+            "score": 1.0
+        },
+        "0x0800375c": {
+            "original": "print_uint16_base2",
+            "predicted": "print_binary_representation_0800375c",
+            "score": 1.0
+        },
+        "0x08007e08": {
+            "original": "timers_init",
+            "predicted": "initialize_and_set_device_flags_08007e08",
+            "score": 1.0
+        },
+        "0x08006ce0": {
+            "original": "HAL_NVIC_SetPriorityGrouping",
+            "predicted": "set_bits_of_uint_at_offset_08006ce0",
+            "score": 1.0
+        },
+        "0x08009204": {
+            "original": "__aeabi_cfcmpeq",
+            "predicted": "concatenate_32bit_to_64bit_08009204",
+            "score": 0.1951219512195122
+        },
+        "0x080058a0": {
+            "original": "st_cycle_reinitialize",
+            "predicted": "calculate_and_set_result_if_input_valid_080058a0",
+            "score": 0.36666666666666664
+        },
+        "0x08005790": {
+            "original": "st_wake_up",
+            "predicted": "execute_if_flags_set_08005790",
+            "score": 0.2
+        },
+        "0x08002ef0": {
+            "original": "plan_reset_buffer",
+            "predicted": "copy_and_reset_value_08002ef0",
+            "score": 1.0
+        },
+        "0x080001ac": {
+            "original": "frame_dummy",
+            "predicted": "concatenate_pointers_080001ac",
+            "score": 0.1935483870967742
+        },
+        "0x08008b60": {
+            "original": "__aeabi_dcmpgt",
+            "predicted": "is_end_of_string_08008b60",
+            "score": 0.26666666666666666
+        },
+        "0x080066cc": {
+            "original": "HAL_RCC_GetPCLK2Freq",
+            "predicted": "calculate_shift_amount_080066cc",
+            "score": 0.23809523809523808
+        },
+        "0x08006628": {
+            "original": "HAL_RCC_GetHCLKFreq",
+            "predicted": "calculate_result_08006628",
+            "score": 0.34285714285714286
+        },
+        "0x08006dc4": {
+            "original": "HAL_NVIC_SetPendingIRQ",
+            "predicted": "set_bit_in_array_08006dc4",
+            "score": 1.0
+        },
+        "0x08005984": {
+            "original": "startForkserver",
+            "predicted": "check_interrupt_08005984",
+            "score": 0.26666666666666666
+        },
+        "0x080002b6": {
+            "original": "_delay_us",
+            "predicted": "calculate_value_and_wait_until_greater_than_080002b6",
+            "score": 0.15384615384615385
+        },
+        "0x08006cf6": {
+            "original": "HAL_NVIC_SetPriority",
+            "predicted": "set_byte_at_offset_08006cf6",
+            "score": 1.0
+        },
+        "0x08009264": {
+            "original": "__aeabi_fcmpgt",
+            "predicted": "is_input_empty_08009264",
+            "score": 0.42857142857142855
+        },
+        "0x08004d2c": {
+            "original": "settings_read_startup_line",
+            "predicted": "validate_input_08004d2c",
+            "score": 0.2
+        },
+        "0x08004e30": {
+            "original": "settings_store_global_setting",
+            "predicted": "FUNC_08004e30",
+            "score": 0.06060606060606061
+        },
+        "0x08009250": {
+            "original": "__aeabi_fcmpge",
+            "predicted": "check_concatenation_result_08009250",
+            "score": 0.15
+        },
+        "0x08002f40": {
+            "original": "plan_discard_current_block",
+            "predicted": "check_and_reset_value_08002f40",
+            "score": 0.3829787234042553
+        },
+        "0x08007ad0": {
+            "original": "step_timer_init",
+            "predicted": "initialize_registers_08007ad0",
+            "score": 1.0
+        },
+        "0x08006d66": {
+            "original": "HAL_NVIC_SystemReset",
+            "predicted": "synchronize_data_and_return_08006d66",
+            "score": 0.2553191489361702
+        },
+        "0x08004148": {
+            "original": "report_alarm_message",
+            "predicted": "display_alarm_message_08004148",
+            "score": 1.0
+        },
+        "0x08005238": {
+            "original": "spindle_init",
+            "predicted": "reset_pointer_and_return_08005238",
+            "score": 0.3888888888888889
+        },
+        "0x08004940": {
+            "original": "report_realtime_status",
+            "predicted": "print_float_values_08004940",
+            "score": 0.35
+        },
+        "0x08007c7c": {
+            "original": "TIM2_IRQHandler",
+            "predicted": "check_and_set_params_08007c7c",
+            "score": 0.34285714285714286
+        },
+        "0x08004250": {
+            "original": "report_grbl_settings",
+            "predicted": "print_configuration_settings_08004250",
+            "score": 1.0
+        },
+        "0x080051b4": {
+            "original": "settings_init",
+            "predicted": "validate_inputs_and_print_configuration_settings_080051b4",
+            "score": 1.0
+        },
+        "0x0800981c": {
+            "original": "hypot",
+            "predicted": "calculate_hypotenuse_and_set_sign_bit_to_one_and_shift_right_0800981c",
+            "score": 1.0
+        },
+        "0x08004c2a": {
+            "original": "write_global_settings",
+            "predicted": "store_data_and_process_input_08004c2a",
+            "score": 0.2857142857142857
+        },
+        "0x080095b8": {
+            "original": "lround",
+            "predicted": "calculate_080095b8",
+            "score": 0.26666666666666666
+        },
+        "0x08008b00": {
+            "original": "__aeabi_cdcmpeq",
+            "predicted": "compare_and_return_08008b00",
+            "score": 0.18181818181818182
+        },
+        "0x08005778": {
+            "original": "step_delay_isr",
+            "predicted": "set_param_from_pointer_08005778",
+            "score": 0.2222222222222222
+        },
+        "0x080004ac": {
+            "original": "gc_init",
+            "predicted": "initialize_data_and_validate_input_080004ac",
+            "score": 1.0
+        },
+        "0x0800a1bc": {
+            "original": "__ieee754_sqrt",
+            "predicted": "calculate_0800a1bc",
+            "score": 0.08695652173913043
+        },
+        "0x08008af0": {
+            "original": "__aeabi_cdrcmple",
+            "predicted": "compare_and_return_08008af0",
+            "score": 0.23529411764705882
+        },
+        "0x08003740": {
+            "original": "print_uint8_base2",
+            "predicted": "print_binary_representation_08003740",
+            "score": 1.0
+        },
+        "0x08005760": {
+            "original": "step_pulse_isr",
+            "predicted": "set_param_from_pointer_08005760",
+            "score": 0.2222222222222222
+        },
+        "0x08009214": {
+            "original": "__aeabi_fcmpeq",
+            "predicted": "check_input_is_not_null_08009214_08009214",
+            "score": 0.21621621621621623
+        },
+        "0x080039a0": {
+            "original": "protocol_init",
+            "predicted": "initialize_and_print_help_message_080039a0",
+            "score": 1.0
+        },
+        "0x08006de0": {
+            "original": "HAL_NVIC_GetPendingIRQ",
+            "predicted": "is_bit_set_08006de0",
+            "score": 0.3125
+        },
+        "0x080001f8": {
+            "original": "coolant_init",
+            "predicted": "clear_pointer_and_do_nothing_twice_080001f8",
+            "score": 0.042
+        },
+        "0x08000374": {
+            "original": "memcpy_to_eeprom_with_checksum",
+            "predicted": "process_input_08000374",
+            "score": 0.27906976744186046
+        },
+        "0x0800640c": {
+            "original": "HAL_RCC_MCOConfig",
+            "predicted": "update_registers_0800640c",
+            "score": 0.24242424242424243
+        },
+        "0x08000340": {
+            "original": "eeprom_put_char",
+            "predicted": "store_data_in_memory_08000340",
+            "score": 0.17142857142857143
+        },
+        "0x080041a0": {
+            "original": "report_feedback_message",
+            "predicted": "display_message_080041a0",
+            "score": 1.0
+        },
+        "0x08008190": {
+            "original": "usart_init",
+            "predicted": "set_shift_and_value_08008190",
+            "score": 0.3448275862068966
+        },
+        "0x080059f8": {
+            "original": "HAL_DeInit",
+            "predicted": "initialize_data_buffer_080059f8",
+            "score": 1.0
+        },
+        "0x08003f34": {
+            "original": "protocol_process",
+            "predicted": "handle_user_input_08003f34",
+            "score": 0.12121212121212122
+        },
+        "0x08004228": {
+            "original": "report_init_message",
+            "predicted": "print_help_message_08004228",
+            "score": 1.0
+        },
+        "0x08004bc0": {
+            "original": "settings_store_startup_line",
+            "predicted": "process_input_from_byte_08004bc0",
+            "score": 0.24
+        },
+        "0x08005324": {
+            "original": "set_step_events_per_minute",
+            "predicted": "calculate_and_set_value_08005324",
+            "score": 1.0
+        },
+        "0x08001e98": {
+            "original": "mc_line",
+            "predicted": "checkAndUpdateStatus_08001e98",
+            "score": 0.2222222222222222
+        },
+        "0x0800adf0": {
+            "original": "__kernel_sin",
+            "predicted": "calculate_hash_0800adf0",
+            "score": 0.15384615384615385
+        },
+        "0x0800b3e8": {
+            "original": "__libc_init_array",
+            "predicted": "execute_functions_0800b3e8",
+            "score": 0.17647058823529413
+        },
+        "0x08002a94": {
+            "original": "planner_reverse_pass",
+            "predicted": "process_input_and_calculate_result_08002a94",
+            "score": 0.2962962962962963
+        },
+        "0x08009d78": {
+            "original": "__ieee754_rem_pio2",
+            "predicted": "FUNC_08009d78",
+            "score": 0.0
+        },
+        "0x08006680": {
+            "original": "HAL_RCC_GetPCLK1Freq",
+            "predicted": "get_shift_amount_08006680",
+            "score": 1.0
+        },
+        "0x08004d7c": {
+            "original": "settings_read_coord_data",
+            "predicted": "validate_input_08004d7c",
+            "score": 0.21052631578947367
+        },
+        "0x0800b524": {
+            "original": "__register_exitproc",
+            "predicted": "add_to_list_0800b524",
+            "score": 0.3333333333333333
+        },
+        "0x0800738e": {
+            "original": "HAL_GPIO_EXTI_IRQHandler",
+            "predicted": "set_and_do_nothing_if_bit_set_0800738e",
+            "score": 0.042
+        },
+        "0x08000220": {
+            "original": "coolant_run",
+            "predicted": "check_and_update_status_08000220",
+            "score": 0.35294117647058826
+        },
+        "0x080092c4": {
+            "original": "Reset_Handler",
+            "predicted": "copy_data_and_initialize_080092c4",
+            "score": 0.3783783783783784
+        },
+        "0x080044e8": {
+            "original": "report_gcode_parameters",
+            "predicted": "process_input_and_print_results_080044e8",
+            "score": 0.14814814814814814
+        },
+        "0x08002fd4": {
+            "original": "plan_synchronize",
+            "predicted": "display_alarm_and_update_status_until_complete_08002fd4",
+            "score": 0.3225806451612903
+        },
+        "0x0800778c": {
+            "original": "gpio_init",
+            "predicted": "update_registers_and_set_param_values_0800778c",
+            "score": 0.13043478260869565
+        },
+        "0x080096e8": {
+            "original": "sin",
+            "predicted": "calculate_hash_from_data_080096e8",
+            "score": 0.07407407407407407
+        },
+        "0x08002edc": {
+            "original": "planner_recalculate",
+            "predicted": "process_input_and_calculate_result_08002edc",
+            "score": 1.0
+        },
+        "0x080037fc": {
+            "original": "printInteger",
+            "predicted": "print_absolute_value_080037fc",
+            "score": 1.0
+        },
+        "0x080036c6": {
+            "original": "printPgmString",
+            "predicted": "process_string_080036c6",
+            "score": 1.0
+        },
+        "0x08008b10": {
+            "original": "__aeabi_dcmpeq",
+            "predicted": "compare_and_return_result_08008b10",
+            "score": 0.2564102564102564
+        },
+        "0x08006d98": {
+            "original": "HAL_NVIC_GetPriority",
+            "predicted": "extract_bits_from_shifted_value_08006d98",
+            "score": 0.1568627450980392
+        },
+        "0x0800583c": {
+            "original": "st_init",
+            "predicted": "set_parameters_and_execute_if_flags_set_0800583c",
+            "score": 0.21739130434782608
+        },
+        "0x08001ddc": {
+            "original": "grbl_main",
+            "predicted": "run_application_08001ddc",
+            "score": 0.4166666666666667
+        },
+        "0x080057e4": {
+            "original": "st_go_idle",
+            "predicted": "clear_bits_and_check_condition_080057e4",
+            "score": 0.1
+        },
+        "0x08008b4c": {
+            "original": "__aeabi_dcmpge",
+            "predicted": "should_return_true_08008b4c",
+            "score": 0.1875
+        },
+        "0x0800618c": {
+            "original": "HAL_RCC_ClockConfig",
+            "predicted": "process_data_0800618c",
+            "score": 0.1935483870967742
+        },
+        "0x08002408": {
+            "original": "mc_dwell",
+            "predicted": "decode_and_display_alarm_08002408",
+            "score": 0.3125
+        },
+        "0x0800a5a0": {
+            "original": "__kernel_rem_pio2",
+            "predicted": "FUNC_0800a5a0",
+            "score": 0.09523809523809523
+        },
+        "0x080036f0": {
+            "original": "print_base2",
+            "predicted": "print_binary_representation_080036f0",
+            "score": 1.0
+        },
+        "0x08009b24": {
+            "original": "__ieee754_hypot",
+            "predicted": "FUNC_08009b24",
+            "score": 0.0
+        },
+        "0x08004900": {
+            "original": "report_startup_line",
+            "predicted": "print_absolute_value_and_process_string_08004900",
+            "score": 0.3448275862068966
+        },
+        "0x08003a18": {
+            "original": "buttons_isr",
+            "predicted": "set_flag_08003a18",
+            "score": 0.21052631578947367
+        },
+        "0x0800b4d0": {
+            "original": "register_fini",
+            "predicted": "check_data_presence_0800b4d0",
+            "score": 0.3125
+        },
+        "0x08005814": {
+            "original": "st_reset",
+            "predicted": "initialize_values_08005814",
+            "score": 0.32
+        },
+        "0x08002908": {
+            "original": "intersection_distance",
+            "predicted": "calculate_result_08002908",
+            "score": 0.2702702702702703
+        },
+        "0x08008894": {
+            "original": "__divdf3",
+            "predicted": "FUNC_08008894",
+            "score": 0.16666666666666666
+        },
+        "0x08005900": {
+            "original": "serial_rx_hook",
+            "predicted": "check_special_chars_08005900",
+            "score": 0.42424242424242425
+        },
+        "0x080004fc": {
+            "original": "gc_set_current_position",
+            "predicted": "convert_params_to_big_endian_and_store_in_data_section_080004fc",
+            "score": 0.23376623376623376
+        },
+        "0x08006d8a": {
+            "original": "HAL_NVIC_GetPriorityGrouping",
+            "predicted": "get_bits_08006d8a",
+            "score": 1.0
+        },
+        "0x08001994": {
+            "original": "homing_cycle",
+            "predicted": "FUNC_08001994",
+            "score": 0.25
+        },
+        "0x08000268": {
+            "original": "get_current_usecs",
+            "predicted": "calculate_value_08000268",
+            "score": 0.375
+        },
+        "0x080098d0": {
+            "original": "sqrt",
+            "predicted": "calculate_result_and_store_in_memory_080098d0",
+            "score": 0.1
+        },
+        "0x080053a0": {
+            "original": "step_period_isr",
+            "predicted": "FUNC_080053a0",
+            "score": 0.0
+        },
+        "0x080025e8": {
+            "original": "mc_reset",
+            "predicted": "set_flag_if_condition_met_080025e8",
+            "score": 1.0
+        },
+        "0x08009818": {
+            "original": "atan2",
+            "predicted": "calculate_result_thunk_08009990",
+            "score": 0.16666666666666666
+        },
+        "0x08006d72": {
+            "original": "HAL_SYSTICK_Config",
+            "predicted": "is_param_valid_08006d72",
+            "score": 0.1875
+        },
+        "0x08006c9c": {
+            "original": "SysTick_Config",
+            "predicted": "check_param_is_valid_08006c9c",
+            "score": 0.23529411764705882
+        },
+        "0x08005250": {
+            "original": "spindle_stop",
+            "predicted": "do_nothing_and_return_08005250",
+            "score": 0.042
+        },
+        "0x08007756": {
+            "original": "SysTick_Handler",
+            "predicted": "check_data_and_increment_pointer_08007756",
+            "score": 0.3404255319148936
+        },
+        "0x08002f24": {
+            "original": "plan_init",
+            "predicted": "reset_and_fill_memory_08002f24",
+            "score": 0.26666666666666666
+        },
+        "0x08009318": {
+            "original": "ceil",
+            "predicted": "check_string_08009318",
+            "score": 0.375
+        },
+        "0x08007884": {
+            "original": "debounce_input",
+            "predicted": "get_bits_08007884",
+            "score": 0.36363636363636365
+        },
+        "0x0800195c": {
+            "original": "limits_isr",
+            "predicted": "check_condition_and_set_flag_if_met_0800195c",
+            "score": 0.2222222222222222
+        },
+        "0x08008640": {
+            "original": "__muldf3",
+            "predicted": "FUNC_08008640",
+            "score": 0.16666666666666666
+        },
+        "0x08002978": {
+            "original": "max_allowable_speed",
+            "predicted": "calculate_result_from_parameters_08002978",
+            "score": 0.39215686274509803
+        },
+        "0x08009798": {
+            "original": "trunc",
+            "predicted": "calculate_number_08009798",
+            "score": 0.19047619047619047
+        },
+        "0x080079c0": {
+            "original": "debounce_init",
+            "predicted": "initializeMemory_080079c0",
+            "score": 1.0
+        },
+        "0x0800369c": {
+            "original": "printString",
+            "predicted": "process_string_0800369c",
+            "score": 1.0
+        },
+        "0x080002f0": {
+            "original": "eeprom_init",
+            "predicted": "initialize_memory_and_set_flag_080002f0",
+            "score": 1.0
+        },
+        "0x080046d0": {
+            "original": "report_gcode_modes",
+            "predicted": "print_info_080046d0",
+            "score": 0.2857142857142857
+        },
+        "0x080029d8": {
+            "original": "planner_reverse_pass_kernel",
+            "predicted": "process_input_and_calculate_result_080029d8",
+            "score": 0.29508196721311475
+        },
+        "0x080002a0": {
+            "original": "_delay_ms",
+            "predicted": "wait_until_sum_exceeds_param_plus_initial_value_080002a0",
+            "score": 0.10714285714285714
+        },
+        "0x08002afc": {
+            "original": "planner_forward_pass_kernel",
+            "predicted": "process_input_08002afc",
+            "score": 0.3
+        },
+        "0x08003826": {
+            "original": "printFloat",
+            "predicted": "print_float_08003826",
+            "score": 1.0
+        },
+        "0x0800a348": {
+            "original": "__kernel_cos",
+            "predicted": "FUNC_0800a348",
+            "score": 0.25
+        },
+        "0x08004bf4": {
+            "original": "settings_write_coord_data",
+            "predicted": "process_input_08004bf4",
+            "score": 0.21052631578947367
+        },
+        "0x08006dfe": {
+            "original": "HAL_NVIC_ClearPendingIRQ",
+            "predicted": "set_bit_in_array_08006dfe",
+            "score": 0.3
+        },
+        "0x080039bc": {
+            "original": "protocol_execute_startup",
+            "predicted": "validate_and_process_strings_080039bc",
+            "score": 0.34615384615384615
+        },
+        "0x08005a98": {
+            "original": "HAL_Delay",
+            "predicted": "wait_until_sum_exceeds_param_plus_initial_value_08005a98",
+            "score": 0.14285714285714285
+        },
+        "0x08007a70": {
+            "original": "enable_tim_interrupt",
+            "predicted": "set_local_c_08007a70",
+            "score": 0.25806451612903225
+        },
+        "0x08001d4c": {
+            "original": "limits_go_home",
+            "predicted": "execute_function_08001d4c",
+            "score": 0.13333333333333333
+        },
+        "0x080005b4": {
+            "original": "gc_execute_line",
+            "predicted": "FUNC_080005b4",
+            "score": 0.10526315789473684
+        },
+        "0x08002ba8": {
+            "original": "planner_forward_pass",
+            "predicted": "process_input_data_08002ba8",
+            "score": 0.21052631578947367
+        },
+        "0x08007f54": {
+            "original": "set_baud_rate",
+            "predicted": "calculate_shift_amount_and_set_value_08007f54",
+            "score": 1.0
+        },
+        "0x08003618": {
+            "original": "plan_cycle_reinitialize",
+            "predicted": "calculate_result_and_process_input_08003618",
+            "score": 0.3157894736842105
+        },
+        "0x08002c18": {
+            "original": "calculate_trapezoid_for_block",
+            "predicted": "calculate_hash_and_shift_08002c18",
+            "score": 1.0
+        },
+        "0x08007930": {
+            "original": "debounce_isr",
+            "predicted": "process_data_08007930",
+            "score": 0.3333333333333333
+        },
+        "0x08007d08": {
+            "original": "g540_timer_init",
+            "predicted": "initialize_device_08007d08",
+            "score": 1.0
+        },
+        "0x08003a74": {
+            "original": "protocol_execute_runtime",
+            "predicted": "display_alarm_and_update_status_if_needed_08003a74",
+            "score": 0.3076923076923077
+        },
+        "0x08004030": {
+            "original": "report_status_message",
+            "predicted": "print_error_message_08004030",
+            "score": 1.0
+        },
+        "0x0800423c": {
+            "original": "report_grbl_help",
+            "predicted": "print_grbl_settings_0800423c",
+            "score": 1.0
+        },
+        "0x08008286": {
+            "original": "serial_read",
+            "predicted": "check_for_special_chars_08008286",
+            "score": 0.4117647058823529
+        },
+        "0x080091fc": {
+            "original": "__aeabi_cfrcmple",
+            "predicted": "concatenate_32bit_to_64bit_080091fc",
+            "score": 0.19047619047619047
+        },
+        "0x08009410": {
+            "original": "cos",
+            "predicted": "calculate_hash_08009410",
+            "score": 0.23529411764705882
+        },
+        "0x08007540": {
+            "original": "main",
+            "predicted": "main_08007540",
+            "score": 1.0
+        },
+        "0x08009990": {
+            "original": "__ieee754_atan2",
+            "predicted": "calculate_value_08009990",
+            "score": 0.2
+        },
+        "0x0800af78": {
+            "original": "atan",
+            "predicted": "FUNC_0800af78",
+            "score": 0.25
+        },
+        "0x080003ec": {
+            "original": "memcpy_from_eeprom_with_checksum",
+            "predicted": "check_values_080003ec",
+            "score": 1.0
+        },
+        "0x08002638": {
+            "original": "read_float",
+            "predicted": "parse_and_convert_input_08002638",
+            "score": 0.42424242424242425
+        },
+        "0x08000210": {
+            "original": "coolant_stop",
+            "predicted": "do_nothing_twice_08000210",
+            "score": 0.042
+        },
+        "0x08009228": {
+            "original": "__aeabi_fcmplt",
+            "predicted": "is_end_of_string_reached_08009228",
+            "score": 0.2631578947368421
+        },
+        "0x0800056c": {
+            "original": "to_millimeters",
+            "predicted": "reverse_and_convert_0800056c",
+            "score": 0.24242424242424243
+        },
+        "0x08004c48": {
+            "original": "settings_reset",
+            "predicted": "store_data_and_process_input_08004c48",
+            "score": 0.2857142857142857
+        },
+        "0x0800923c": {
+            "original": "__aeabi_fcmple",
+            "predicted": "check_for_zero_or_carry_flag_0800923c",
+            "score": 0.23809523809523808
+        },
+        "0x080059b4": {
+            "original": "HAL_Init",
+            "predicted": "set_flags_and_call_functions_080059b4",
+            "score": 0.2777777777777778
+        },
+        "0x08005cec": {
+            "original": "HAL_RCC_OscConfig",
+            "predicted": "FUNC_08005cec",
+            "score": 0.09523809523809523
+        },
+        "0x08008b24": {
+            "original": "__aeabi_dcmplt",
+            "predicted": "is_end_of_input_08008b24",
+            "score": 0.3448275862068966
+        },
+        "0x0800826a": {
+            "original": "__io_putchar",
+            "predicted": "wait_and_return_zero_0800826a",
+            "score": 0.1875
+        },
+        "0x08001f00": {
+            "original": "mc_arc",
+            "predicted": "FUNC_08001f00",
+            "score": 0.2
+        },
+        "0x08008250": {
+            "original": "serial_write",
+            "predicted": "wait_for_flag_and_return_08008250",
+            "score": 0.2222222222222222
+        },
+        "0x080028bc": {
+            "original": "estimate_acceleration_distance",
+            "predicted": "calculate_result_080028bc",
+            "score": 0.30434782608695654
+        },
+        "0x08003778": {
+            "original": "print_uint32_base10",
+            "predicted": "print_digits_of_number_08003778",
+            "score": 1.0
+        },
+        "0x08004dd2": {
+            "original": "read_global_settings",
+            "predicted": "check_input_values_08004dd2",
+            "score": 0.2631578947368421
+        },
+        "0x0800b2e8": {
+            "original": "scalbn",
+            "predicted": "calculate_0800b2e8",
+            "score": 0.4
+        },
+        "0x08003b98": {
+            "original": "protocol_execute_line",
+            "predicted": "parse_input_and_execute_command_08003b98",
+            "score": 1.0
+        },
+        "0x08006d4a": {
+            "original": "HAL_NVIC_DisableIRQ",
+            "predicted": "set_bit_08006d4a",
+            "score": 0.15384615384615385
+        },
+        "0x080094c0": {
+            "original": "floor",
+            "predicted": "decode_string_080094c0",
+            "score": 0.2222222222222222
+        },
+        "0x08000310": {
+            "original": "eeprom_get_char",
+            "predicted": "get_value_from_array_08000310",
+            "score": 1.0
+        },
+        "0x08007436": {
+            "original": "SystemClock_Config",
+            "predicted": "initialize_system_08007436",
+            "score": 0.34285714285714286
+        },
+        "0x0800585c": {
+            "original": "st_cycle_start",
+            "predicted": "execute_if_flags_set_0800585c",
+            "score": 0.29411764705882354
+        },
+        "0x080024c4": {
+            "original": "mc_go_home",
+            "predicted": "checkAndUpdateStatus_080024c4",
+            "score": 0.2
+        },
+        "0x08009654": {
+            "original": "round",
+            "predicted": "calculate_double_precision_number_08009654",
+            "score": 0.15789473684210525
+        },
+        "0x08003004": {
+            "original": "plan_buffer_line",
+            "predicted": "FUNC_08003004",
+            "score": 0.1
+        },
+        "0x08000188": {
+            "original": "__do_global_dtors_aux",
+            "predicted": "check_and_return_value_if_not_null_08000188",
+            "score": 0.32727272727272727
+        },
+        "0x08006e1a": {
+            "original": "HAL_NVIC_GetActive",
+            "predicted": "is_bit_set_08006e1a",
+            "score": 0.35714285714285715
+        },
+        "0x0800283a": {
+            "original": "sys_sync_current_position",
+            "predicted": "save_and_convert_params_0800283a",
+            "score": 0.4166666666666667
+        },
+        "0x08006d2e": {
+            "original": "HAL_NVIC_EnableIRQ",
+            "predicted": "set_bit_in_array_08006d2e",
+            "score": 1.0
+        },
+        "0x0800184c": {
+            "original": "next_statement",
+            "predicted": "check_and_convert_input_0800184c",
+            "score": 0.2702702702702703
+        }
+    },
+    "lfl": {
+        "0x08007bf0": {
+            "original": "set_step_period",
+            "predicted": "set_lowest_value_08007bf0",
+            "score": 1.0
+        },
+        "0x08007c5e": {
+            "original": "set_step_pulse_time",
+            "predicted": "set_global_variable_08007c5e",
+            "score": 1.0
+        },
+        "0x08008244": {
+            "original": "serial_init",
+            "predicted": "do_nothing_08008244",
+            "score": 0.042
+        },
+        "0x080064ec": {
+            "original": "HAL_RCC_GetSysClockFreq",
+            "predicted": "calculate_result_080064ec",
+            "score": 0.3076923076923077
+        },
+        "0x08006b00": {
+            "original": "NVIC_SetPriority",
+            "predicted": "set_byte_at_offset_08006b00",
+            "score": 1.0
+        },
+        "0x08002f74": {
+            "original": "plan_get_current_block",
+            "predicted": "get_pointer_if_not_equal_08002f74",
+            "score": 1.0
+        },
+        "0x080052ac": {
+            "original": "step_wr",
+            "predicted": "set_param_080052ac",
+            "score": 0.5
+        },
+        "0x08006ba0": {
+            "original": "NVIC_EncodePriority",
+            "predicted": "apply_mask_08006ba0",
+            "score": 0.06896551724137931
+        },
+        "0x0800522c": {
+            "original": "spindle_rev",
+            "predicted": "do_nothing_0800522c",
+            "score": 0.042
+        },
+        "0x08002fac": {
+            "original": "plan_check_full_buffer",
+            "predicted": "are_pointers_equal_08002fac",
+            "score": 0.2
+        },
+        "0x08005360": {
+            "original": "iterate_trapezoid_cycle_counter",
+            "predicted": "check_if_threshold_exceeded_08005360",
+            "score": 0.3793103448275862
+        },
+        "0x08008590": {
+            "original": "__aeabi_f2d",
+            "predicted": "reverseBits_08008590",
+            "score": 0.2727272727272727
+        },
+        "0x08007402": {
+            "original": "gpio_set",
+            "predicted": "set_bit_in_short_array_08007402",
+            "score": 1.0
+        },
+        "0x0800919c": {
+            "original": "__cmpsf2",
+            "predicted": "check_overflow_and_return_result_0800919c",
+            "score": 0.15
+        },
+        "0x08008cd8": {
+            "original": "__aeabi_fsub",
+            "predicted": "FUNC_08008cd8",
+            "score": 0.25
+        },
+        "0x08007e84": {
+            "original": "usart_getc",
+            "predicted": "get_dat_value_08007e84",
+            "score": 1.0
+        },
+        "0x08009054": {
+            "original": "__aeabi_fdiv",
+            "predicted": "FUNC_08009054",
+            "score": 0.125
+        },
+        "0x08002870": {
+            "original": "next_block_index",
+            "predicted": "increment_and_reset_08002870",
+            "score": 0.4
+        },
+        "0x08008bf0": {
+            "original": "__aeabi_d2uiz",
+            "predicted": "calculate_shifted_value_08008bf0",
+            "score": 0.2222222222222222
+        },
+        "0x08008a02": {
+            "original": "FUN_08008a02",
+            "predicted": "calculate_result_08008a02",
+            "score": 0.10526315789473684
+        },
+        "0x080078f4": {
+            "original": "debounce_rd",
+            "predicted": "calculate_sum_of_four_values_080078f4",
+            "score": 0.20512820512820512
+        },
+        "0x08005a68": {
+            "original": "HAL_IncTick",
+            "predicted": "increment_pointer_value_08005a68",
+            "score": 0.29411764705882354
+        },
+        "0x0800b2cc": {
+            "original": "fabs",
+            "predicted": "do_nothing_0800b2cc",
+            "score": 0.042
+        },
+        "0x0800b51c": {
+            "original": "__retarget_lock_acquire_recursive",
+            "predicted": "do_nothing_0800b51c",
+            "score": 0.042
+        },
+        "0x08005a50": {
+            "original": "HAL_MspInit",
+            "predicted": "do_nothing_08005a50",
+            "score": 0.042
+        },
+        "0x08006b54": {
+            "original": "NVIC_GetPriority",
+            "predicted": "get_shifted_value_08006b54",
+            "score": 1.0
+        },
+        "0x08008b74": {
+            "original": "__unorddf2",
+            "predicted": "is_valid_input_08008b74",
+            "score": 0.25
+        },
+        "0x08006a18": {
+            "original": "NVIC_GetPendingIRQ",
+            "predicted": "is_bit_set_in_array_08006a18",
+            "score": 0.3783783783783784
+        },
+        "0x08007430": {
+            "original": "Error_Handler",
+            "predicted": "loop_forever_08007430",
+            "score": 0.16
+        },
+        "0x08002828": {
+            "original": "delay_us",
+            "predicted": "do_nothing_08002828",
+            "score": 0.042
+        },
+        "0x0800b5b0": {
+            "original": "_init",
+            "predicted": "do_nothing_0800b5b0",
+            "score": 0.042
+        },
+        "0x080035ec": {
+            "original": "plan_set_current_position",
+            "predicted": "save_params_to_memory_080035ec",
+            "score": 0.2608695652173913
+        },
+        "0x08006998": {
+            "original": "NVIC_GetPriorityGrouping",
+            "predicted": "get_bits_from_uint_08006998",
+            "score": 1.0
+        },
+        "0x080079e0": {
+            "original": "NVIC_EnableIRQ",
+            "predicted": "set_bit_at_index_080079e0",
+            "score": 1.0
+        },
+        "0x080082d4": {
+            "original": "__aeabi_dadd",
+            "predicted": "FUNC_080082d4",
+            "score": 0.0
+        },
+        "0x080069e4": {
+            "original": "NVIC_DisableIRQ",
+            "predicted": "set_bit_at_position_080069e4",
+            "score": 0.058823529411764705
+        },
+        "0x08007e58": {
+            "original": "usart_tstc",
+            "predicted": "is_bit_set_08007e58",
+            "score": 0.4
+        },
+        "0x08007e1c": {
+            "original": "usart_putc",
+            "predicted": "wait_for_flag_08007e1c",
+            "score": 0.2608695652173913
+        },
+        "0x0800b2d4": {
+            "original": "finite",
+            "predicted": "set_sign_bit_to_one_and_shift_right_0800b2d4",
+            "score": 0.24390243902439024
+        },
+        "0x08006ac0": {
+            "original": "NVIC_GetActive",
+            "predicted": "is_bit_set_08006ac0",
+            "score": 0.3333333333333333
+        },
+        "0x08006c70": {
+            "original": "NVIC_SystemReset",
+            "predicted": "synchronize_data_08006c70",
+            "score": 0.1875
+        },
+        "0x08006c04": {
+            "original": "NVIC_DecodePriority",
+            "predicted": "extract_bits_08006c04",
+            "score": 0.25806451612903225
+        },
+        "0x08005a84": {
+            "original": "HAL_GetTick",
+            "predicted": "get_value_08005a84",
+            "score": 1.0
+        },
+        "0x08008eec": {
+            "original": "__aeabi_fmul",
+            "predicted": "FUNC_08008eec",
+            "score": 0.25
+        },
+        "0x0800597c": {
+            "original": "aflCall",
+            "predicted": "print_interrupt_message_0800597c",
+            "score": 0.06666666666666667
+        },
+        "0x08000478": {
+            "original": "select_plane",
+            "predicted": "set_params_and_return_08000478",
+            "score": 0.48484848484848486
+        },
+        "0x08005208": {
+            "original": "spindle_on",
+            "predicted": "do_nothing_08005208",
+            "score": 0.042
+        },
+        "0x08008ba0": {
+            "original": "__aeabi_d2iz",
+            "predicted": "convert_to_int_08008ba0",
+            "score": 0.23076923076923078
+        },
+        "0x0800756c": {
+            "original": "SystemInit",
+            "predicted": "set_flag_and_initialize_data_0800756c",
+            "score": 1.0
+        },
+        "0x08008cdc": {
+            "original": "__addsf3",
+            "predicted": "FUNC_08008cdc",
+            "score": 0.16666666666666666
+        },
+        "0x080073c0": {
+            "original": "HAL_GPIO_EXTI_Callback",
+            "predicted": "do_nothing_080073c0",
+            "score": 0.042
+        },
+        "0x080001d4": {
+            "original": "coolant_flood_off",
+            "predicted": "do_nothing_080001d4",
+            "score": 0.042
+        },
+        "0x0800854c": {
+            "original": "__floatunsidf",
+            "predicted": "reverseBits_0800854c",
+            "score": 0.16666666666666666
+        },
+        "0x0800b520": {
+            "original": "__retarget_lock_release_recursive",
+            "predicted": "do_nothing_0800b520",
+            "score": 0.042
+        },
+        "0x080001ec": {
+            "original": "coolant_mist_off",
+            "predicted": "do_nothing_080001ec",
+            "score": 0.042
+        },
+        "0x08007bc2": {
+            "original": "step_isr_disable",
+            "predicted": "clear_bits_08007bc2",
+            "score": 1.0
+        },
+        "0x08007854": {
+            "original": "gpio_rd",
+            "predicted": "get_bit_08007854",
+            "score": 0.2857142857142857
+        },
+        "0x08005a5c": {
+            "original": "HAL_MspDeInit",
+            "predicted": "do_nothing_08005a5c",
+            "score": 0.042
+        },
+        "0x080001c8": {
+            "original": "coolant_flood_on",
+            "predicted": "do_nothing_080001c8",
+            "score": 0.042
+        },
+        "0x08005214": {
+            "original": "spindle_off",
+            "predicted": "do_nothing_08005214",
+            "score": 0.042
+        },
+        "0x08008a74": {
+            "original": "__nedf2",
+            "predicted": "compare_uints_08008a74",
+            "score": 0.2
+        },
+        "0x08008c30": {
+            "original": "__truncdfsf2",
+            "predicted": "convert_float_to_uint32_08008c30",
+            "score": 0.34285714285714286
+        },
+        "0x08002814": {
+            "original": "delay_ms",
+            "predicted": "do_nothing_08002814",
+            "score": 0.042
+        },
+        "0x080082d0": {
+            "original": "__subdf3",
+            "predicted": "FUNC_080082d0",
+            "score": 0.16666666666666666
+        },
+        "0x080076c8": {
+            "original": "gpio_toggle",
+            "predicted": "set_bit_at_position_080076c8",
+            "score": 0.2
+        },
+        "0x08007ea4": {
+            "original": "enable_usart_clock",
+            "predicted": "set_bit_08007ea4",
+            "score": 1.0
+        },
+        "0x0800b3dc": {
+            "original": "__errno",
+            "predicted": "get_value_from_pointer_array_0800b3dc",
+            "score": 0.2857142857142857
+        },
+        "0x08007da8": {
+            "original": "g540_timer_start",
+            "predicted": "set_flag_and_bit_08007da8",
+            "score": 1.0
+        },
+        "0x08008e3c": {
+            "original": "__floatunsisf",
+            "predicted": "calculate_hash_08008e3c",
+            "score": 0.2962962962962963
+        },
+        "0x08002896": {
+            "original": "prev_block_index",
+            "predicted": "replace_null_with_0x12_and_decrement_08002896",
+            "score": 0.34615384615384615
+        },
+        "0x08005220": {
+            "original": "spindle_fwd",
+            "predicted": "do_nothing_08005220",
+            "score": 0.042
+        },
+        "0x080001e0": {
+            "original": "coolant_mist_on",
+            "predicted": "do_nothing_080001e0",
+            "score": 0.042
+        },
+        "0x080073d4": {
+            "original": "gpio_clr",
+            "predicted": "set_short_at_address_080073d4",
+            "score": 0.21428571428571427
+        },
+        "0x08007a10": {
+            "original": "enable_tim_clock",
+            "predicted": "set_bit_08007a10",
+            "score": 1.0
+        },
+        "0x0800b2e0": {
+            "original": "matherr",
+            "predicted": "get_zero_0800b2e0",
+            "score": 0.4
+        },
+        "0x08006a58": {
+            "original": "NVIC_SetPendingIRQ",
+            "predicted": "set_bit_in_array_08006a58",
+            "score": 1.0
+        },
+        "0x08006950": {
+            "original": "NVIC_SetPriorityGrouping",
+            "predicted": "set_bits_of_uint_at_offset_08006950",
+            "score": 1.0
+        },
+        "0x0800856c": {
+            "original": "__aeabi_i2d",
+            "predicted": "reverse_bits_0800856c",
+            "score": 0.2608695652173913
+        },
+        "0x08009278": {
+            "original": "__aeabi_f2iz",
+            "predicted": "convert_to_signed_int_08009278",
+            "score": 0.24242424242424243
+        },
+        "0x08006e88": {
+            "original": "HAL_GPIO_Init",
+            "predicted": "update_registers_08006e88",
+            "score": 0.3448275862068966
+        },
+        "0x08006a8c": {
+            "original": "NVIC_ClearPendingIRQ",
+            "predicted": "set_bit_in_array_08006a8c",
+            "score": 0.2777777777777778
+        },
+        "0x08005318": {
+            "original": "stepper_motor_enable",
+            "predicted": "do_nothing_08005318",
+            "score": 0.042
+        },
+        "0x08007c40": {
+            "original": "set_step_pulse_delay",
+            "predicted": "set_global_variable_08007c40",
+            "score": 1.0
+        },
+        "0x0800b430": {
+            "original": "memset",
+            "predicted": "fill_memory_with_value_0800b430",
+            "score": 1.0
+        },
+        "0x0800881c": {
+            "original": "FUN_0800881c",
+            "predicted": "calculate_result_0800881c",
+            "score": 0.10526315789473684
+        },
+        "0x0800192c": {
+            "original": "limits_init",
+            "predicted": "check_flag_status_0800192c",
+            "score": 0.21428571428571427
+        },
+        "0x080052dc": {
+            "original": "dirn_wr",
+            "predicted": "set_param_080052dc",
+            "score": 0.125
+        },
+        "0x0800587c": {
+            "original": "st_feed_hold",
+            "predicted": "update_data_if_condition_met_0800587c",
+            "score": 0.2
+        },
+        "0x08003980": {
+            "original": "protocol_reset_line_buffer",
+            "predicted": "initialize_pointers_to_zero_08003980",
+            "score": 0.11320754716981132
+        },
+        "0x0800733e": {
+            "original": "HAL_GPIO_WritePin",
+            "predicted": "set_param_value_0800733e",
+            "score": 0.1875
+        },
+        "0x0800530c": {
+            "original": "stepper_motor_disable",
+            "predicted": "do_nothing_0800530c",
+            "score": 0.042
+        },
+        "0x08007b70": {
+            "original": "step_isr_enable",
+            "predicted": "set_flags_based_on_globals_08007b70",
+            "score": 1.0
+        },
+        "0x08008e44": {
+            "original": "__floatsisf",
+            "predicted": "convert_to_big_endian_08008e44",
+            "score": 0.1875
+        },
+        "0x0800b5bc": {
+            "original": "_fini",
+            "predicted": "do_nothing_0800b5bc",
+            "score": 0.042
+        },
+        "0x080082ba": {
+            "original": "serial_reset_read_buffer",
+            "predicted": "do_nothing_080082ba",
+            "score": 0.042
+        }
+    }
+}
