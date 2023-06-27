@@ -4,6 +4,7 @@ from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.Engine import rAIverseEngine
 from rAIversing.Ghidra_Custom_API import *
 from rAIversing.evaluator.EvaluationManager import EvaluationManager
+from rAIversing.evaluator.LayeredEvaluator import LayeredEvaluator
 from rAIversing.evaluator.utils import make_run_path
 from rAIversing.pathing import *
 from rAIversing.AI_modules.openAI_core.PromptEngine import PromptEngine
@@ -16,11 +17,18 @@ def testbench(ai_module):
 
 
 def evaluation(ai_module=None, parallel=1):
-    #ai_modules = [chatGPT.api_key(PromptMode.HYBRID)]
     ai_modules = [ai_module]
-    eval_man = EvaluationManager(P2IM_BINS_ROOT, ai_modules, 1, connections=parallel)
+    #ai_modules = [chatGPT.api_key(engine=PromptEngine.GPT_4)]
+    source_dirs = [P2IM_BINS_ROOT]
+    runs = 5
+    layering = True
+
+    eval_man = EvaluationManager(source_dirs, ai_modules, runs, connections=parallel)
     eval_man.run()
     eval_man.evaluate()
+
+    if layering:
+        eval_man.evaluate(LayeredEvaluator)
 
 
 def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=None, custom_headless_binary=None,
