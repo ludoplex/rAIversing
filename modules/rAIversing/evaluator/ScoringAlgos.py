@@ -66,7 +66,7 @@ def calc_score_v1(original, predicted, entrypoint):
             score = 1.0
             break
         elif "nothing" in predicted:
-            score = 1.0
+            score = 0.042
             break
     if score == 0.0:
         score = calc_group_similarity(original, predicted)
@@ -81,7 +81,7 @@ def calc_score_v1(original, predicted, entrypoint):
                 score = 1.0
                 break
             elif "nothing" in predicted:
-                score = 1.0
+                score = 0.042
                 break
 
     if score == 0.0:
