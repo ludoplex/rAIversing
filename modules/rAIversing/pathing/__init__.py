@@ -2,6 +2,7 @@ import os
 
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 MODULES_ROOT = os.path.join(REPO_ROOT, "modules")
+EXPANDERS_ROOT = os.path.join(MODULES_ROOT,"rAIversing", "evaluator", "expanders")
 PROJECTS_ROOT = os.path.join(REPO_ROOT, "projects")
 EVALUATION_ROOT = os.path.join(PROJECTS_ROOT, "Evaluation")
 EVAL_P2IM = os.path.join(EVALUATION_ROOT, "p2im")

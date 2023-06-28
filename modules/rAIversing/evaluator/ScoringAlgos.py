@@ -1,7 +1,10 @@
 import difflib, re
+import json
+import os
 
 from rAIversing.evaluator.utils import tokenize_name_v1
 from rAIversing.utils import to_snake_case
+from rAIversing.pathing import EXPANDERS_ROOT
 
 # This is a list of mostly verbs that, if present, describe the intended functionality of a function.
 # If two functions share the same verb, they are highly likely to be similar.
@@ -42,6 +45,15 @@ replacement_dict = {"strchr": "find_character_in_string", "strrchr": "find_last_
                     "memset": "set_memory", "memmove": "move_memory", "div": "divide", "toInt": "convert_to_integer"
 
                     }
+
+for file in os.listdir(EXPANDERS_ROOT):
+    with open(os.path.join(EXPANDERS_ROOT, file)) as f:
+        replacement_dict_part = json.load(f)
+        replacement_dict.update(replacement_dict_part)
+
+
+
+
 
 
 def calc_score_v1(original, predicted, entrypoint):
@@ -92,7 +104,11 @@ def calc_score_v1(original, predicted, entrypoint):
     return score
 
 
-def calc_score_v2(original,predicted,entrypoint):
+def calc_score(original, predicted, entrypoint):
+    return calc_score_v3(original, predicted, entrypoint)
+
+
+def calc_score_v2(original, predicted, entrypoint):
     original = original.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
     predicted = predicted.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
 
@@ -104,6 +120,46 @@ def calc_score_v2(original,predicted,entrypoint):
     else:
         #return 0.0
         return calc_score_v1(original, predicted, entrypoint)
+
+def calc_score_v3(original, predicted, entrypoint):
+    if "FUNC" in predicted:
+        return 0.0
+
+    original = to_snake_case(original).replace(f"_{entrypoint.replace('0x', '')}", "")
+    predicted = to_snake_case(predicted).replace(f"_{entrypoint.replace('0x', '')}", "")
+
+    if "do_nothing" in predicted:
+        return 0.0
+
+    if "reverse" in predicted and "engineer" in predicted:
+        return 0.0
+
+    if "improve" in predicted and "function" in predicted:
+        return 0.0
+
+
+    for old, new in replacement_dict.items():
+        if new not in original and old == original:
+            original = original.replace(old, new)
+            break
+
+    original_tokens = set(tokenize_name_v1(original))
+    predicted_tokens = set(tokenize_name_v1(predicted))
+
+    if len(original_tokens.intersection(predicted_tokens)) > 0:
+        return 1.0
+
+    if original in predicted or predicted in original:
+        return 1.0
+
+    score = calc_group_similarity(original, predicted)
+
+    if score == 0.0:
+        score = difflib.SequenceMatcher(None, original, predicted).ratio()
+    return score
+
+
+
 
 
 

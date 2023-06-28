@@ -1,0 +1,7 @@
+{
+"I2C_RequestMemoryRead": "master_send_memory_read_request",
+"I2C_RequestMemoryWrite": "master_send_memory_write_request",
+"I2C_WaitOnMasterAddressFlagUntilTimeout": "handle_I2C_master_address_timeout",
+"I2C_WaitOnRXNEFlagUntilTimeout": "handle_I2C_RXNE_timeout",
+"I2C_IsAcknowledgeFailed": "handle_I2C_acknowledge_failed_detection"
+}

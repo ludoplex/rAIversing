@@ -6,13 +6,13 @@ from rich.console import Console, CONSOLE_SVG_FORMAT
 from rich.table import Table, Column
 
 from rAIversing.evaluator.EvaluatorInterface import EvaluatorInterface
-from rAIversing.evaluator.ScoringAlgos import calc_score_v2
+from rAIversing.evaluator.ScoringAlgos import calc_score
 from rAIversing.evaluator.utils import *
 from rAIversing.utils import save_to_json
 
 
 class LayeredEvaluator(EvaluatorInterface):
-    def __init__(self, ai_modules, source_dirs, runs=1, calculation_function=calc_score_v2):
+    def __init__(self, ai_modules, source_dirs, runs=1, calculation_function=calc_score):
         super().__init__(ai_modules, source_dirs, runs)
         self.calculator = calculation_function
         self.results = {}
