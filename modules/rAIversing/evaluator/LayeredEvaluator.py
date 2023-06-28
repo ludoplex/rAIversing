@@ -1,11 +1,7 @@
 import statistics
 
-import pandas as pd
-from matplotlib import pyplot as plt
 from rich.console import Console, CONSOLE_SVG_FORMAT
-from rich.table import Table, Column
 
-from rAIversing.evaluator import build_scoring_args, score_parallel
 from rAIversing.evaluator.EvaluatorInterface import EvaluatorInterface
 from rAIversing.evaluator.ScoringAlgos import calc_score
 from rAIversing.evaluator.utils import *
@@ -19,7 +15,7 @@ class LayeredEvaluator(EvaluatorInterface):
         super().__init__(ai_modules, source_dirs, runs, pool_size)
         self.calculator = calculation_function
         self.results = {}
-        self.save_all = True
+        self.save_all = False
         self.console = Console(soft_wrap=True)
         setup_results(self.ai_modules, self.results, self.source_dirs, self.runs)
 
@@ -66,20 +62,102 @@ class LayeredEvaluator(EvaluatorInterface):
         for ai_module in self.ai_modules:
             model_name = ai_module.get_model_name()
             for source_dir in self.source_dirs:
-                self.create_median_results(model_name, source_dir)
-                self.create_average_results(model_name, source_dir)
+
+                self.create_all_results(model_name, source_dir)
+                #self.create_layered_median_results(model_name, source_dir)
+                #self.create_layered_average_results(model_name, source_dir)
                 # self.create_run_results(model_name, source_dir)
 
-    def create_average_results(self, model_name, source_dir):
+
+
+    def create_all_results(self, model_name, source_dir):
+        source_dir_name = os.path.basename(source_dir)
+        usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
+        avg_table = create_table(f"Average {model_name} on {source_dir_name} ({self.runs} runs)")
+        median_table = create_table(f"Median {model_name} on {source_dir_name} ({self.runs} runs)")
+        #todo add csv table
+
+        for binary in usable_binaries:
+            avg_title = f"Average {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
+            median_title = f"Median {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
+
+            avg_layered_table = self.create_layered_table(avg_title)
+            median_layered_table = self.create_layered_table(median_title)
+
+            avg_df_table = self.create_layered_csv_table()
+            median_df_table = self.create_layered_csv_table()
+
+            avg_scores = self.get_average_results(model_name, source_dir_name, binary)
+            median_scores = self.get_median_results(model_name, source_dir_name, binary)
+
+            fill_layered_table(avg_layered_table, avg_scores)
+            fill_layered_table(median_layered_table, median_scores)
+            fill_layered_table(avg_df_table, avg_scores, do_csv=True)
+            fill_layered_table(median_df_table, median_scores, do_csv=True)
+
+            fill_table(avg_table, avg_scores,binary)
+            fill_table(median_table, median_scores,binary)
+
+            avg_export_console = Console(record=True, width=100)
+            median_export_console = Console(record=True, width=100)
+
+            avg_export_console.print(avg_layered_table)
+            median_export_console.print(median_layered_table)
+
+            export_prefix = make_run_path(model_name, source_dir, "0", binary)
+            export_name = f"Layered_Eval_Avg_{model_name}_{source_dir_name}_{binary}_{self.runs}_runs"
+            export_path = os.path.join(export_prefix, export_name)
+            avg_export_console.save_svg(export_path + ".svg",
+                                    clear=False,
+                                    title="",
+                                    code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
+            avg_df_table.to_csv(export_path + ".csv")
+            export_name = f"Layered_Eval_Median_{model_name}_{source_dir_name}_{binary}_{self.runs}_runs"
+            median_export_console.save_svg(export_path + ".svg",
+                                    clear=False,
+                                    title="",
+                                    code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
+            median_df_table.to_csv(export_path + ".csv")
+
+            self.plot_dataframe(avg_df_table,avg_title,export_path)
+            self.plot_dataframe(median_df_table,median_title,export_path)
+
+        avg_export_console = Console(record=True, width=165)
+        median_export_console = Console(record=True, width=165)
+
+        avg_export_console.print(avg_table)
+        median_export_console.print(median_table)
+
+        export_path = make_run_path(model_name, source_dir, "0", "")
+
+        avg_export_console.save_svg(
+            os.path.join(export_path, f"Eval_Avg_{model_name}_{source_dir_name}_{self.runs}_runs.svg"), clear=False,
+            title="",
+            code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
+        median_export_console.save_svg(
+            os.path.join(export_path, f"Eval_Median_{model_name}_{source_dir_name}_{self.runs}_runs.svg"), clear=False,
+            title="",
+            code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
+
+
+
+
+
+
+
+
+
+
+    def create_layered_average_results(self, model_name, source_dir):
         source_dir_name = os.path.basename(source_dir)
         usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
         for binary in usable_binaries:
             title = f"Average {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
-            table = self.create_table(title)
-            df_table = self.create_csv_table()
+            table = self.create_layered_table(title)
+            df_table = self.create_layered_csv_table()
             scores = self.get_average_results(model_name, source_dir_name, binary)
-            self.fill_table(table, scores)
-            self.fill_table(df_table, scores, do_csv=True)
+            fill_layered_table(table, scores)
+            fill_layered_table(df_table, scores, do_csv=True)
 
             export_console = Console(record=True, width=100)
             export_console.print(table)
@@ -94,17 +172,18 @@ class LayeredEvaluator(EvaluatorInterface):
 
             self.plot_dataframe(df_table,title,export_path)
 
-    def create_median_results(self, model_name, source_dir):
+    def create_layered_median_results(self, model_name, source_dir):
         source_dir_name = os.path.basename(source_dir)
         usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
+
         for binary in usable_binaries:
             title = f"Median {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
-            table = self.create_table(title)
-            df_table = self.create_csv_table()
+            table = self.create_layered_table(title)
+            df_table = self.create_layered_csv_table()
             scores = self.get_median_results(model_name, source_dir_name, binary)
 
-            self.fill_table(table, scores)
-            self.fill_table(df_table, scores, do_csv=True)
+            fill_layered_table(table, scores)
+            fill_layered_table(df_table, scores, do_csv=True)
             export_console = Console(record=True, width=100)
             export_console.print(table)
             export_path = make_run_path(model_name, source_dir, "0", binary)
@@ -181,19 +260,25 @@ class LayeredEvaluator(EvaluatorInterface):
         self.progress.remove_task(task_gen_comp)
 
 
-        self.insert_result(run_path, collect_layered_partial_scores(predict_scored), "pred")
-        self.insert_result(run_path, collect_layered_partial_scores(best_scored), "best")
-        self.insert_result(run_path, collect_layered_partial_scores(worst_scored), "worst")
-        self.insert_result(run_path, collect_layered_partial_scores(best_vs_predict_scored), "best_vs_pred")
+        self.insert_result(run_path, collect_layered_partial_scores(predict_scored), "pred-layered")
+        self.insert_result(run_path, collect_layered_partial_scores(best_scored), "best-layered")
+        self.insert_result(run_path, collect_layered_partial_scores(worst_scored), "worst-layered")
+        self.insert_result(run_path, collect_layered_partial_scores(best_vs_predict_scored), "best_vs_pred-layered")
+
+        self.insert_result(run_path, collect_partial_scores(predict_scored), "pred")
+        self.insert_result(run_path, collect_partial_scores(best_scored), "best")
+        self.insert_result(run_path, collect_partial_scores(worst_scored), "worst")
+        self.insert_result(run_path, collect_partial_scores(best_vs_predict_scored), "best_vs_pred")
+
         self.insert_result(run_path, {"original": {"score": 0, "count": len(original_fn)},
                                       "predicted": {"score": 0, "count": len(predicted_fn)}}, "total_count")
 
         save_to_json(predict_direct, os.path.join(run_path, f"{binary}_comp.json"))
         save_to_json(predict_scored, os.path.join(run_path, f"{binary}_scored.json"))
-        save_to_json(best_direct, os.path.join(run_path, f"{binary}_best-comp.json"))
-        save_to_json(worst_direct, os.path.join(run_path, f"{binary}_worst-comp.json"))
 
         if self.save_all:
+            save_to_json(best_direct, os.path.join(run_path, f"{binary}_best-comp.json"))
+            save_to_json(worst_direct, os.path.join(run_path, f"{binary}_worst-comp.json"))
             save_to_json(worst_scored, os.path.join(run_path, f"{binary}_worst-scored.json"))
             save_to_json(best_scored, os.path.join(run_path, f"{binary}_best-scored.json"))
             save_to_json(best_vs_predict_direct, os.path.join(run_path, f"{binary}_best_vs_pred-comp.json"))
@@ -265,64 +350,9 @@ class LayeredEvaluator(EvaluatorInterface):
         # self.console.log(f"Inserting {result} for {compare_type} in {run_path}")
         self.results[model_name][source_dir_name][run][binary][compare_type] = result
 
-    def fill_table(self, table, scores, do_csv=False):
-        score_previous_layer = 0
-        for layer_name, layer in scores["pred"].items():
-            score_pred = scores["pred"][layer_name]["score"]
-            count_pred = scores["pred"][layer_name]["count"]
-
-            score_best = scores["best"][layer_name]["score"]
-            count_best = scores["best"][layer_name]["count"]
-
-            score_worst = scores["worst"][layer_name]["score"]
-            count_worst = scores["worst"][layer_name]["count"]
-
-            score_best_vs_pred_direct = scores["best_vs_pred"][layer_name]["score"]
-
-            total_orig = scores["total_count"]["original"]["count"]
-            total_pred = scores["total_count"]["predicted"]["count"]
-
-            try:
-                score_best_vs_pred = score_pred / score_best
-            except ZeroDivisionError:
-                if score_pred == 0:
-                    score_best_vs_pred = 0
-
-            if score_previous_layer != 0:
-                score_change = (score_pred - score_previous_layer) / score_previous_layer
-            else:
-                score_change = score_pred
-
-            if not do_csv:
-                table.add_row(f"{layer_name}",
-                              f"{score_pred * 100:.2f}%",
-                              f"{score_best * 100:.2f}%",
-                              f"{score_worst * 100:.2f}%",
-                              f"{score_best_vs_pred * 100:.2f}%",
-                              f"{score_best_vs_pred_direct * 100:.2f}%",
-                              f"{score_change * 100:.2f}%",
-                              f"{count_pred}",
-                              f"{count_best}",
-                              f"{count_worst}"
-                              )
-            else:
-                table.loc[int(layer_name)]=pd.Series({
-                    "Layer": int(layer_name),
-                    "Actual": float(f"{score_pred * 100:.2f}"),
-                    "Best Case": float(f"{score_best * 100:.2f}"),
-                    "Worst Case": float(f"{score_worst * 100:.2f}"),
-                    "Act/Best": float(f"{score_best_vs_pred * 100:.2f}"),
-                    "Act vs Best (direct)": float(f"{score_best_vs_pred_direct * 100:.2f}"),
-                    "Change": float(f"{score_change * 100:.2f}"),
-                    "Counted Actual": float(f"{count_pred}"),
-                    "Counted Best": float(f"{count_best}"),
-                    "Counted Worst": float(f"{count_worst}")
-                })
-
-            score_previous_layer = score_pred
 
 
-    def create_table(self, title):
+    def create_layered_table(self, title):
         result_table = Table(Column(header="Layer", style="bold bright_yellow on grey23"),
                              Column(header="Actual", style="bold cyan1 on grey23", justify="center"),
                              Column(header="Best\nCase", style="bold green on grey23", justify="center"),
@@ -336,6 +366,8 @@ class LayeredEvaluator(EvaluatorInterface):
                              title_style="bold bright_red on grey23 ", style="on grey23",
                              border_style="bold bright_green", header_style="bold yellow1 on grey23", )
         return result_table
+
+
 
     def get_median_results(self, model_name, source_dir_name, binary):
         scores = dict(self.results[model_name][source_dir_name][0][binary].copy())
@@ -351,7 +383,7 @@ class LayeredEvaluator(EvaluatorInterface):
     def get_average_results(self, model_name, source_dir, binary):
         return self.results[model_name][source_dir][0][binary]
 
-    def create_csv_table(self):
+    def create_layered_csv_table(self):
         csv_table = pd.DataFrame(columns=["Layer",
                                           "Actual",
                                           "Best Case",

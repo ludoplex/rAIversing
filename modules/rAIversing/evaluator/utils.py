@@ -1,6 +1,9 @@
 import json
 import os
 
+import pandas as pd
+from rich.table import Table, Column
+
 from rAIversing.pathing import PROJECTS_ROOT, EVALUATION_ROOT
 from rAIversing.utils import to_snake_case, locator
 
@@ -150,17 +153,20 @@ def collect_partial_scores(scored):
     lfl_count = 0
     hfl_sum = 0
     hfl_count = 0
+
+    layer=0
     for group, scores in scored.items():
         for entrypoint, entry in scores.items():
             pred_name = entry["predicted"]
             if "nothing" in pred_name.lower() or "FUNC_" in pred_name:
                 continue
-            if group == "hfl":
+            if layer == 0:
                 hfl_sum += entry["score"]
                 hfl_count += 1
             else:
                 lfl_sum += entry["score"]
                 lfl_count += 1
+        layer += 1
     return {"all": {"score": (hfl_sum + lfl_sum) / (hfl_count + lfl_count), "count": hfl_count + lfl_count},
             "hfl": {"score": hfl_sum / hfl_count, "count": hfl_count},
             "lfl": {"score": lfl_sum / lfl_count, "count": lfl_count}}
@@ -226,3 +232,157 @@ def setup_results(ai_modules, results, source_dirs, runs):
                 results[model_name][source_dir_name][run] = {}
                 for binary in os.listdir(os.path.join(source_dir, "stripped")):
                     results[model_name][source_dir_name][run][binary] = {}
+
+
+
+
+
+def build_scoring_args(calculator, direct, original, scoring_args):
+    for group, layer in direct.items():
+        for orig_name, pred_name in layer.items():
+            entrypoint = find_entrypoint(original, orig_name, pred_name)
+            scoring_args.append((calculator, orig_name, pred_name, entrypoint, group))
+
+
+def score_parallel(scoring_args, result_queue):
+    try:
+        for calculator, orig_name, pred_name, entrypoint, group in scoring_args:
+            score = calculator(orig_name, pred_name, entrypoint)
+            result_queue.put((group, entrypoint, orig_name, pred_name, score))
+    except KeyboardInterrupt:
+        return
+
+
+def calc_relative_percentage_difference(best, worst, actual):
+    try:
+        range_ = (best * 100) - (worst * 100)
+        difference = (actual * 100) - (worst * 100)
+        return (difference / range_) * 100
+    except ZeroDivisionError:
+        print("Division by zero!!!!! @ calc_relative_percentage_difference")
+        return 0
+
+
+def fill_table(table, scores, binary):
+    # self.console.print(scores)
+
+    score_pred = scores["pred"]["all"]["score"]
+    score_pred_hfl = scores["pred"]["hfl"]["score"]
+    score_pred_lfl = scores["pred"]["lfl"]["score"]
+    counted_pred = scores["pred"]["all"]["count"]
+
+    score_best = scores["best"]["all"]["score"]
+    score_best_hfl = scores["best"]["hfl"]["score"]
+    score_best_lfl = scores["best"]["lfl"]["score"]
+    counted_best = scores["best"]["all"]["count"]
+
+    score_worst = scores["worst"]["all"]["score"]
+    score_worst_hfl = scores["worst"]["hfl"]["score"]
+    score_worst_lfl = scores["worst"]["lfl"]["score"]
+    counted_worst = scores["worst"]["all"]["count"]
+
+    score_best_vs_pred_direct = scores["best_vs_pred"]["all"]["score"]
+    score_best_vs_pred_direct_hfl = scores["best_vs_pred"]["hfl"]["score"]
+    score_best_vs_pred_direct_lfl = scores["best_vs_pred"]["lfl"]["score"]
+
+    total_orig = scores["total_count"]["original"]["count"]
+    total_pred = scores["total_count"]["predicted"]["count"]
+
+    score_best_vs_pred = score_pred / score_best
+    score_best_vs_pred_hfl = score_pred_hfl / score_best_hfl
+
+    # self.console.print(f"score_best_hfl: {score_best_hfl}, score_worst_hfl: {score_worst_hfl}, score_pred_hfl: {score_pred_hfl}")
+    # self.console.print(f"score_best_lfl: {score_best_lfl}, score_worst_lfl: {score_worst_lfl}, score_pred_lfl: {score_pred_lfl}")
+    score_rpd_hfl = calc_relative_percentage_difference(score_best_hfl, score_worst_hfl, score_pred_hfl)
+    score_rdp_lfl = calc_relative_percentage_difference(score_best_lfl, score_worst_lfl, score_pred_lfl)
+    score_rpd = calc_relative_percentage_difference(score_best, score_worst, score_pred)
+
+    table.add_row(binary, f"{score_pred * 100:.2f}%",
+                  f"{score_pred_hfl * 100:.2f}%",
+                  f"{score_pred_lfl * 100:.2f}%",
+                  f"{score_best_hfl * 100:.2f}%",
+                  f"{score_worst_hfl * 100:.2f}%",
+                  f"{score_best_vs_pred * 100:.1f}%|{score_best_vs_pred_hfl * 100:.1f}%",
+                  f"{score_best_vs_pred_direct * 100:.2f}%|{score_best_vs_pred_direct_hfl * 100:.2f}%",
+                  f"{score_rpd :.1f}%|{score_rpd_hfl :.1f}%|{score_rdp_lfl :.1f}%",
+                  f"{total_orig:.0f}[bold magenta1]|[/bold magenta1]{total_pred:.0f}",
+                  f"{counted_pred:.0f}",
+                  f"{counted_best:.0f}",
+                  f"{counted_worst:.0f}")
+
+
+def fill_layered_table( table, scores, do_csv=False):
+    score_previous_layer = 0
+    for layer_name, layer in scores["pred-layered"].items():
+        score_pred = scores["pred-layered"][layer_name]["score"]
+        count_pred = scores["pred-layered"][layer_name]["count"]
+
+        score_best = scores["best-layered"][layer_name]["score"]
+        count_best = scores["best-layered"][layer_name]["count"]
+
+        score_worst = scores["worst-layered"][layer_name]["score"]
+        count_worst = scores["worst-layered"][layer_name]["count"]
+
+        score_best_vs_pred_direct = scores["best_vs_pred-layered"][layer_name]["score"]
+
+        total_orig = scores["total_count"]["original"]["count"]
+        total_pred = scores["total_count"]["predicted"]["count"]
+
+        try:
+            score_best_vs_pred = score_pred / score_best
+        except ZeroDivisionError:
+            if score_pred == 0:
+                score_best_vs_pred = 0
+
+        if score_previous_layer != 0:
+            score_change = (score_pred - score_previous_layer) / score_previous_layer
+        else:
+            score_change = score_pred
+
+        if not do_csv:
+            table.add_row(f"{layer_name}",
+                          f"{score_pred * 100:.2f}%",
+                          f"{score_best * 100:.2f}%",
+                          f"{score_worst * 100:.2f}%",
+                          f"{score_best_vs_pred * 100:.2f}%",
+                          f"{score_best_vs_pred_direct * 100:.2f}%",
+                          f"{score_change * 100:.2f}%",
+                          f"{count_pred}",
+                          f"{count_best}",
+                          f"{count_worst}"
+                          )
+        else:
+            table.loc[int(layer_name)] = pd.Series({
+                "Layer": int(layer_name),
+                "Actual": float(f"{score_pred * 100:.2f}"),
+                "Best Case": float(f"{score_best * 100:.2f}"),
+                "Worst Case": float(f"{score_worst * 100:.2f}"),
+                "Act/Best": float(f"{score_best_vs_pred * 100:.2f}"),
+                "Act vs Best (direct)": float(f"{score_best_vs_pred_direct * 100:.2f}"),
+                "Change": float(f"{score_change * 100:.2f}"),
+                "Counted Actual": float(f"{count_pred}"),
+                "Counted Best": float(f"{count_best}"),
+                "Counted Worst": float(f"{count_worst}")
+            })
+
+        score_previous_layer = score_pred
+
+
+def create_table(title):
+    result_table = Table(Column(header="Binary", style="bold bright_yellow on grey23"),
+                         Column(header="Actual\nAll", style="bold cyan1 on grey23", justify="center"),
+                         Column(header="Actual\nHigher", style="bold cyan2 on grey23", justify="center"),
+                         Column(header="Actual\nLowest", style="bold cyan3 on grey23", justify="center"),
+                         Column(header="Best\nCase", style="bold green on grey23", justify="center"),
+                         Column(header=" Worst\nCase", style="bold red on grey23", justify="center"),
+                         Column(header="Act/Best\nAll|Hfl", style="bold green1 on grey23", justify="center"),
+                         Column(header="Act vs Best\n(direct)\nAll|Hfl", style="bold green1 on grey23",
+                                justify="center"),
+                         Column(header="RPD\nAll|Hfl|Lfl", style="bold spring_green2 on grey23", justify="center"),
+                         Column(header="Total\nOrig|Act", style="magenta on grey23", justify="center"),
+                         Column(header="Counted\nActual", style="magenta1 on grey23"),
+                         Column(header="Counted\nBest", style="blue on grey23"),
+                         Column(header="Counted\nWorst", style="magenta3 on grey23"), title=title,
+                         title_style="bold bright_red on grey23 ", style="on grey23",
+                         border_style="bold bright_green", header_style="bold yellow1 on grey23", )
+    return result_table

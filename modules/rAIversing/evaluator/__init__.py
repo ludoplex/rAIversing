@@ -1,23 +1,23 @@
-from rich.console import Console, CONSOLE_SVG_FORMAT
-from rich.table import Table, Column
-
 from rAIversing.Engine import rAIverseEngine
-from rAIversing.Ghidra_Custom_API import binary_to_c_code, import_changes_to_existing_project, existing_project_to_c_code
+from rAIversing.Ghidra_Custom_API import binary_to_c_code, import_changes_to_existing_project, \
+    existing_project_to_c_code
 from rAIversing.evaluator.ScoringAlgos import calc_score_v1
+from rAIversing.evaluator.utils import load_funcs_data, find_entrypoint, calc_relative_percentage_difference
 from rAIversing.pathing import *
-from rAIversing.utils import save_to_json
-from rAIversing.evaluator.utils import load_funcs_data, find_entrypoint
 
 # This is a list of mostly verbs that, if present, describe the intended functionality of a function.
 # If two functions share the same verb, they are highly likely to be similar.
 # For example, if two functions have "send" in their name, they are likely to both send data.
 # Or if two functions have "encrypt" in their name, they are likely to both encrypt data.
 similarity_indicators = ["send", "get", "encode", "decode", "set", "init", "process", "time", "device", "memory",
-    "hash", "checksum", "check", "verify", "update", "convert", "combine"
-                                                                "execute", "calculate", "calc", "encrypt", "decrypt",
-    "parse", "print", "setup", "alarm", "alloc", "error", "write", "read", "find", "string", "free", "flag", "message",
-    "call", "seek", "loop", "execute", "run", "main", "start", "stop", "exit", "return", "check", "verify", "update",
-    "convert", "combine", "clear", "list", "char"]
+                         "hash", "checksum", "check", "verify", "update", "convert", "combine"
+                                                                                     "execute", "calculate", "calc",
+                         "encrypt", "decrypt",
+                         "parse", "print", "setup", "alarm", "alloc", "error", "write", "read", "find", "string",
+                         "free", "flag", "message",
+                         "call", "seek", "loop", "execute", "run", "main", "start", "stop", "exit", "return", "check",
+                         "verify", "update",
+                         "convert", "combine", "clear", "list", "char"]
 
 # The following are groups of similarity indicators that are likely to be used together,
 # and regarding that the modell (chatGPT) currently produces rather natural language as function names,
@@ -35,38 +35,19 @@ similarity_indicators = ["send", "get", "encode", "decode", "set", "init", "proc
 # main -> run ... ???
 # validate -> check... ???
 similarity_indicator_groups = [[r"^(.*(stop|disable|end).*)+$", r"^(.*(clear){1}.*(bit|flag|memory).*)+$"],
-    [r'^(?!.*deactivate).*(?:activate|enable|start).*$',
-     r"^(?!.*deactivate).*((set){1}.*?(bit|flag|memory)|(?:activate|enable|start)).*$"]]
+                               [r'^(?!.*deactivate).*(?:activate|enable|start).*$',
+                                r"^(?!.*deactivate).*((set){1}.*?(bit|flag|memory)|(?:activate|enable|start)).*$"]]
 
 # As library functions usually use shorted names (strchr,strrchr), we need to map the common ones
 # to their full / natural language styled names (find_character_in_string, find_last_character_in_string).
 replacement_dict = {"strchr": "find_character_in_string", "strrchr": "find_last_character_in_string",
-    "memcpy": "copy_memory", "memset": "set_memory", "malloc": "allocate_memory", "strcpy": "copy_string",
-    "strlen": "string_length", "strcat": "concatenate_strings", "strncat": "concatenate_strings",
-    "strcmp": "compare_strings", "strncmp": "compare_strings", "memchr": "find_character_in_memory",
-    "memset": "set_memory", "memmove": "move_memory", "div": "divide", "toInt": "convert_to_integer"
+                    "memcpy": "copy_memory", "memset": "set_memory", "malloc": "allocate_memory",
+                    "strcpy": "copy_string",
+                    "strlen": "string_length", "strcat": "concatenate_strings", "strncat": "concatenate_strings",
+                    "strcmp": "compare_strings", "strncmp": "compare_strings", "memchr": "find_character_in_memory",
+                    "memset": "set_memory", "memmove": "move_memory", "div": "divide", "toInt": "convert_to_integer"
 
-}
-
-
-
-def create_table():
-    result_table = Table(Column(header="Binary", style="bold bright_yellow on grey23"),
-        Column(header="Actual\nAll", style="bold cyan1 on grey23", justify="center"),
-        Column(header="Actual\nHigher", style="bold cyan2 on grey23", justify="center"),
-        Column(header="Actual\nLowest", style="bold cyan3 on grey23", justify="center"),
-        Column(header="Best\nCase", style="bold green on grey23", justify="center"),
-        Column(header=" Worst\nCase", style="bold red on grey23", justify="center"),
-        Column(header="Act/Best", style="bold green1 on grey23", justify="center"),
-        Column(header="Actual vs Best (direct)\nAll|hfl", style="bold green1 on grey23", justify="center"),
-        Column(header="RPD\nAll|Hfl", style="bold spring_green2 on grey23", justify="center"),
-        Column(header="Total\nOrig|Act", style="magenta on grey23", justify="center"),
-        Column(header="Counted\nActual", style="magenta1 on grey23"),
-        Column(header="Counted\nBest", style="blue on grey23"),
-        Column(header="Counted\nWorst", style="magenta3 on grey23"), title="Evaluation Results",
-        title_style="bold bright_red on grey23 ", style="on grey23", border_style="bold bright_green",
-        header_style="bold yellow1 on grey23", )
-    return result_table
+                    }
 
 
 def evaluate_p2im(ai_module, console, parallel, usable_binaries):
@@ -83,12 +64,12 @@ def evaluate_p2im(ai_module, console, parallel, usable_binaries):
 
         if raie.is_import_needed():
             import_changes_to_existing_project(project_location=f"{PROJECTS_ROOT}/Evaluation",
-                project_name="Evaluation", binary_name=binary)
+                                               project_name="Evaluation", binary_name=binary)
     for binary in usable_binaries:
         binary_path = f"{BINARIES_ROOT}/p2im/original/{binary}_original"
         binary_to_c_code(binary_path, processor_id="ARM:LE:32:Cortex", project_name="Evaluation")
         existing_project_to_c_code(project_location=f"{PROJECTS_ROOT}/Evaluation", binary_name=f"{binary}_original",
-            project_name="Evaluation", export_with_stripped_names=True)
+                                   project_name="Evaluation", export_with_stripped_names=True)
     for binary in usable_binaries:
         binary_path = f"{BINARIES_ROOT}/p2im/original/{binary}_original"
         console.log(f"[bold green]Processing Ground Truth for {binary}[/bold green]")
@@ -108,7 +89,7 @@ def evaluate_p2im(ai_module, console, parallel, usable_binaries):
         raie.run_parallel_rev(no_propagation=True)
         if raie.is_import_needed():
             import_changes_to_existing_project(project_location=f"{PROJECTS_ROOT}/Evaluation",
-                project_name="Evaluation", binary_name=f"{binary}_no_propagation")
+                                               project_name="Evaluation", binary_name=f"{binary}_no_propagation")
 
 
 def run_comparison(include_all, original_functions, reversed_functions, dc_dict=None, evaluation_dict=None,
@@ -158,28 +139,4 @@ def run_comparison(include_all, original_functions, reversed_functions, dc_dict=
         overall_score += score
     return overall_score, regarded_functions
 
-def build_scoring_args(calculator,direct,original,scoring_args):
-    for group, layer in direct.items():
-        for orig_name, pred_name in layer.items():
-            entrypoint = find_entrypoint(original, orig_name, pred_name)
-            scoring_args.append((calculator, orig_name, pred_name, entrypoint, group))
-
-
-def score_parallel(scoring_args,result_queue):
-    try:
-        for calculator, orig_name, pred_name, entrypoint, group in scoring_args:
-            score = calculator(orig_name, pred_name, entrypoint)
-            result_queue.put((group,entrypoint, orig_name, pred_name, score))
-    except KeyboardInterrupt:
-        return
-
-
-def calc_relative_percentage_difference(best, worst, actual):
-    try:
-        range_ = (best*100) - (worst*100)
-        difference = (actual*100) - (worst*100)
-        return (difference / range_) * 100
-    except ZeroDivisionError:
-        print("Division by zero!!!!! @ calc_relative_percentage_difference")
-        return 0
 

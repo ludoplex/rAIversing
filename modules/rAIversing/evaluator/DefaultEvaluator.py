@@ -5,9 +5,9 @@ from rich.table import Table, Column
 from rAIversing.evaluator.EvaluatorInterface import EvaluatorInterface
 from rAIversing.evaluator.ScoringAlgos import calc_score
 from rAIversing.evaluator.utils import *
-from rAIversing.evaluator import load_funcs_data, calc_relative_percentage_difference, build_scoring_args, \
-    score_parallel
-from rAIversing.evaluator.utils import setup_results
+from rAIversing.evaluator import load_funcs_data
+from rAIversing.evaluator.utils import setup_results, create_table, build_scoring_args, score_parallel, \
+    calc_relative_percentage_difference, fill_table
 from rAIversing.utils import save_to_json
 import multiprocessing as mp
 from rich.progress import Progress
@@ -17,7 +17,6 @@ class DefaultEvaluator(EvaluatorInterface):
         super().__init__(ai_modules, source_dirs, runs, pool_size)
         self.task_binary = None
         self.calculator = calculation_function
-        print(self.calculator)
         self.results = {}
         self.save_all = True
         self.console = Console(soft_wrap=True)
@@ -230,10 +229,10 @@ class DefaultEvaluator(EvaluatorInterface):
         usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
         # usable_binaries = ["CNC"]  # TODO remove
         for run in range(1, self.runs + 1):
-            table = self.create_table(f"{model_name} on {source_dir_name} (Run {run})")
+            table = create_table(f"{model_name} on {source_dir_name} (Run {run})")
             for binary in usable_binaries:
                 scores = self.get_results(model_name, source_dir_name, run, binary)
-                self.fill_table(table, scores, binary)
+                fill_table(table, scores, binary)
             export_console = Console(record=True, width=160)
             export_console.print(table)
             run_path = make_run_path(model_name, source_dir, run, "")
@@ -243,11 +242,11 @@ class DefaultEvaluator(EvaluatorInterface):
 
     def create_average_results(self, model_name, source_dir):
         source_dir_name = os.path.basename(source_dir)
-        table = self.create_table(f"Average {model_name} on {source_dir_name} ({self.runs} runs)")
+        table = create_table(f"Average {model_name} on {source_dir_name} ({self.runs} runs)")
         usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
         for binary in usable_binaries:
             scores = self.get_average_results(model_name, source_dir_name, binary)
-            self.fill_table(table, scores, binary)
+            fill_table(table, scores, binary)
         export_console = Console(record=True, width=165)
         export_console.print(table)
         export_path = make_run_path(model_name, source_dir, "0", "")
@@ -258,12 +257,12 @@ class DefaultEvaluator(EvaluatorInterface):
 
     def create_median_results(self, model_name, source_dir):
         source_dir_name = os.path.basename(source_dir)
-        table = self.create_table(f"Median {model_name} on {source_dir_name} ({self.runs} runs)")
+        table = create_table(f"Median {model_name} on {source_dir_name} ({self.runs} runs)")
         usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
         for binary in usable_binaries:
             scores = self.get_median_results(model_name, source_dir_name, binary)
 
-            self.fill_table(table, scores, binary)
+            fill_table(table, scores, binary)
         export_console = Console(record=True, width=165)
         export_console.print(table)
         export_path = make_run_path(model_name, source_dir, "0", "")
@@ -272,24 +271,6 @@ class DefaultEvaluator(EvaluatorInterface):
             title="",
             code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
 
-    def create_table(self, title):
-        result_table = Table(Column(header="Binary", style="bold bright_yellow on grey23"),
-                             Column(header="Actual\nAll", style="bold cyan1 on grey23", justify="center"),
-                             Column(header="Actual\nHigher", style="bold cyan2 on grey23", justify="center"),
-                             Column(header="Actual\nLowest", style="bold cyan3 on grey23", justify="center"),
-                             Column(header="Best\nCase", style="bold green on grey23", justify="center"),
-                             Column(header=" Worst\nCase", style="bold red on grey23", justify="center"),
-                             Column(header="Act/Best\nAll|Hfl", style="bold green1 on grey23", justify="center"),
-                             Column(header="Act vs Best\n(direct)\nAll|Hfl", style="bold green1 on grey23",
-                                    justify="center"),
-                             Column(header="RPD\nAll|Hfl|Lfl", style="bold spring_green2 on grey23", justify="center"),
-                             Column(header="Total\nOrig|Act", style="magenta on grey23", justify="center"),
-                             Column(header="Counted\nActual", style="magenta1 on grey23"),
-                             Column(header="Counted\nBest", style="blue on grey23"),
-                             Column(header="Counted\nWorst", style="magenta3 on grey23"), title=title,
-                             title_style="bold bright_red on grey23 ", style="on grey23",
-                             border_style="bold bright_green", header_style="bold yellow1 on grey23", )
-        return result_table
 
     def fill_table(self, table, scores, binary):
         # self.console.print(scores)
@@ -319,21 +300,3 @@ class DefaultEvaluator(EvaluatorInterface):
         score_best_vs_pred = score_pred / score_best
         score_best_vs_pred_hfl = score_pred_hfl / score_best_hfl
 
-        # self.console.print(f"score_best_hfl: {score_best_hfl}, score_worst_hfl: {score_worst_hfl}, score_pred_hfl: {score_pred_hfl}")
-        # self.console.print(f"score_best_lfl: {score_best_lfl}, score_worst_lfl: {score_worst_lfl}, score_pred_lfl: {score_pred_lfl}")
-        score_rpd_hfl = calc_relative_percentage_difference(score_best_hfl, score_worst_hfl, score_pred_hfl)
-        score_rdp_lfl = calc_relative_percentage_difference(score_best_lfl, score_worst_lfl, score_pred_lfl)
-        score_rpd = calc_relative_percentage_difference(score_best, score_worst, score_pred)
-
-        table.add_row(binary, f"{score_pred * 100:.2f}%",
-                      f"{score_pred_hfl * 100:.2f}%",
-                      f"{score_pred_lfl * 100:.2f}%",
-                      f"{score_best_hfl * 100:.2f}%",
-                      f"{score_worst_hfl * 100:.2f}%",
-                      f"{score_best_vs_pred * 100:.1f}%|{score_best_vs_pred_hfl * 100:.1f}%",
-                      f"{score_best_vs_pred_direct * 100:.2f}%|{score_best_vs_pred_direct_hfl * 100:.2f}%",
-                      f"{score_rpd :.1f}%|{score_rpd_hfl :.1f}%|{score_rdp_lfl :.1f}%",
-                      f"{total_orig:.0f}[bold magenta1]|[/bold magenta1]{total_pred:.0f}",
-                      f"{counted_pred:.0f}",
-                      f"{counted_best:.0f}",
-                      f"{counted_worst:.0f}")

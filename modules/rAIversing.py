@@ -25,8 +25,9 @@ def evaluation(ai_module=None, parallel=1):
 
     eval_man = EvaluationManager(source_dirs, ai_modules, runs, connections=parallel)
     eval_man.run()
-    eval_man.evaluate()
 
+    if not layering:
+        eval_man.evaluate()
     if layering:
         eval_man.evaluate(LayeredEvaluator)
 
