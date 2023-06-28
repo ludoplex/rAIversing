@@ -72,6 +72,7 @@ class EvaluationManager:
                         run_path = make_run_path(model_name, source_dir, run, binary)
 
     def extract_code(self):
+        debug=False
         for ai_module in self.ai_modules:
             model_name = ai_module.get_model_name()
             for source_dir in self.source_dirs:
@@ -88,16 +89,16 @@ class EvaluationManager:
                     binary_to_c_code(binary_path, processor_id=proc_id,
                                      project_name=f"eval_{model_name}_{source_dir_name}",
                                      project_location=project_location,
-                                     export_path=os.path.join(project_location, binary))
+                                     export_path=os.path.join(project_location, binary),debug=debug)
                 for binary_path in Path(os.path.join(source_dir, "original")).rglob("*"):
                     binary = os.path.basename(binary_path).replace("_original", "")
                     export_path = os.path.join(project_location, binary)
                     binary_to_c_code(binary_path, processor_id=proc_id,
                                      project_name=f"eval_{model_name}_{source_dir_name}",
-                                     project_location=project_location, export_path=export_path)
+                                     project_location=project_location, export_path=export_path,debug=debug)
                     existing_project_to_c_code(project_location=project_location, binary_name=f"{binary}_original",
                                                project_name=f"eval_{model_name}_{source_dir_name}",
-                                               export_with_stripped_names=True, export_path=export_path)
+                                               export_with_stripped_names=True, export_path=export_path,debug=debug)
 
                 for binary_path in Path(os.path.join(source_dir, "no_propagation")).rglob("*"):
                     binary = os.path.basename(binary_path).replace("_no_propagation", "")

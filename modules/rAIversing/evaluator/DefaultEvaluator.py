@@ -50,12 +50,12 @@ class DefaultEvaluator(EvaluatorInterface):
                         for binary in usable_binaries:
                             self.evaluate_atomic(make_run_path(model_name, source_dir_name, run, binary), binary)
 
-                            progress.advance(task_runs, advance=((1/self.runs)/len(usable_binaries)))
+                            progress.advance(task_runs, advance=(1/len(usable_binaries)))
                         progress.remove_task(task_binary)
+                        progress.advance(task_source_dirs, advance=(1/self.runs))
                     progress.remove_task(task_runs)
-                    progress.advance(task_source_dirs)
+                    progress.advance(task_ai_modules, advance=(1/len(self.source_dirs)))
                 progress.remove_task(task_source_dirs)
-                progress.advance(task_ai_modules)
             progress.stop()
 
             self.collect_cumulative_results()
