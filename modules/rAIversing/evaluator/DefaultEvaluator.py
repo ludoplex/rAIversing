@@ -1,38 +1,55 @@
-import os
 import statistics
 
 from rich.console import Console, CONSOLE_SVG_FORMAT
 from rich.table import Table, Column
 from rAIversing.evaluator.EvaluatorInterface import EvaluatorInterface
-from rAIversing.evaluator.ScoringAlgos import calc_score_v2
+from rAIversing.evaluator.ScoringAlgos import calc_score
 from rAIversing.evaluator.utils import *
 from rAIversing.evaluator import load_funcs_data, calc_relative_percentage_difference
 from rAIversing.evaluator.utils import setup_results
 from rAIversing.utils import save_to_json
 
+from rich.progress import Progress
 
 class DefaultEvaluator(EvaluatorInterface):
-    def __init__(self, ai_modules, source_dirs, runs=1, calculation_function=calc_score_v2):
+    def __init__(self, ai_modules, source_dirs, runs=1, calculation_function=calc_score):
         super().__init__(ai_modules, source_dirs, runs)
         self.calculator = calculation_function
         self.results = {}
-        self.save_all = False
+        self.save_all = True
         self.console = Console(soft_wrap=True)
+        self.progress = None
         setup_results(self.ai_modules, self.results, self.source_dirs, self.runs)
 
     def set_calculator(self, calculation_function):
         self.calculator = calculation_function
 
     def evaluate(self):
-        for ai_module in self.ai_modules:
-            model_name = ai_module.get_model_name()
-            for source_dir in self.source_dirs:
-                source_dir_name = os.path.basename(source_dir)
-                for run in range(1, self.runs + 1):
-                    for binary in os.listdir(os.path.join(source_dir, "stripped")):
-                        self.evaluate_atomic(make_run_path(model_name, source_dir_name, run, binary), binary)
-        self.collect_cumulative_results()
-        self.display_results()
+
+        with Progress(transient=True) as progress:
+            task_ai_modules = progress.add_task(f"[red]Evaluating {len(self.ai_modules)} AI modules", total=len(self.ai_modules))
+            task_source_dirs = progress.add_task(f"[red]Evaluating {len(self.source_dirs)} source directories", total=len(self.source_dirs))
+            task_runs = progress.add_task(f"[red]Evaluating {self.runs} runs", total=self.runs)
+            self.progress = progress
+            for ai_module in self.ai_modules:
+                model_name = ai_module.get_model_name()
+                for source_dir in self.source_dirs:
+                    source_dir_name = os.path.basename(source_dir)
+                    for run in range(1, self.runs + 1):
+                        usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
+                        task_binary = progress.add_task(f"[red]Evaluating {len(usable_binaries)} binaries", total=len(usable_binaries))
+                        for binary in usable_binaries:
+                            self.evaluate_atomic(make_run_path(model_name, source_dir_name, run, binary), binary)
+                            progress.advance(task_binary)
+                        progress.remove_task(task_binary)
+                        progress.advance(task_runs)
+                    progress.advance(task_source_dirs)
+                progress.advance(task_ai_modules)
+
+
+            self.collect_cumulative_results()
+            self.display_results()
+            progress.stop()
 
     def evaluate_atomic(self, run_path, binary):
 
@@ -41,15 +58,30 @@ class DefaultEvaluator(EvaluatorInterface):
         best_fn = load_funcs_data(os.path.join(run_path, f"{binary}_original_stripped.json"))
         worst_fn = load_funcs_data(os.path.join(run_path, f"{binary}_no_propagation.json"))
 
+        task_gen_comp = self.progress.add_task(f"[red]Generating 4 comparisons", total=4)
+
         predict_direct, predict_scored = self.generate_comparison(original_fn, predicted_fn)
+        self.progress.advance(task_gen_comp)
         best_direct, best_scored = self.generate_comparison(original_fn, best_fn)
+        self.progress.advance(task_gen_comp)
         worst_direct, worst_scored = self.generate_comparison(original_fn, worst_fn)
+        self.progress.advance(task_gen_comp)
         best_vs_predict_direct, best_vs_predict_scored = self.generate_comparison(best_fn, predicted_fn)
+        self.progress.advance(task_gen_comp)
+        self.progress.remove_task(task_gen_comp)
+
+        task_coll_part = self.progress.add_task(f"[red]Collecting 4 Partial Scores", total=4)
 
         self.insert_result(run_path, collect_partial_scores(predict_scored), "pred")
+        self.progress.advance(task_coll_part)
         self.insert_result(run_path, collect_partial_scores(best_scored), "best")
+        self.progress.advance(task_coll_part)
         self.insert_result(run_path, collect_partial_scores(worst_scored), "worst")
+        self.progress.advance(task_coll_part)
         self.insert_result(run_path, collect_partial_scores(best_vs_predict_scored), "best_vs_pred")
+        self.progress.advance(task_coll_part)
+        self.progress.remove_task(task_coll_part)
+
         self.insert_result(run_path, {"original": {"score": 0, "count": len(original_fn)},
                                       "predicted": {"score": 0, "count": len(predicted_fn)}}, "total_count")
 
@@ -67,13 +99,18 @@ class DefaultEvaluator(EvaluatorInterface):
     def generate_comparison(self, original, predicted):
         direct = collect_pairs(original, predicted)
         scored = {"hfl": {}, "lfl": {}}
+        total = 0
+        for layer in direct.values():
+            total += len(layer)
+        task_score = self.progress.add_task(f"[red]Scoring {total} functions", total=total)
         for group, layer in direct.items():
             for orig_name, pred_name in layer.items():
                 entrypoint = find_entrypoint(original, orig_name, pred_name)
                 score = self.calculator(orig_name, pred_name, entrypoint)
                 scored[group][entrypoint] = {"original": orig_name, "predicted": pred_name,
                                              "score": score}
-                # Had to change this format as otherwise it could break if original name is "score"  # and this allows for easier access to the data when collecting lfl/hfl
+                self.progress.advance(task_score)
+        self.progress.remove_task(task_score)
         return direct, scored
 
     def insert_result(self, run_path, result, group):
