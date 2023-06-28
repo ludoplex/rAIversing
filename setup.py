@@ -45,6 +45,12 @@ def setup_xfl():
     else:
         os.system(f"cd {MODULES_ROOT}/xfl && git pull")
 
+def setup_eval_repo():
+    if not os.path.exists(f"{EVALUATION_ROOT}"):
+        os.system(f"git clone https://github.com/MrMatch246/rAiversingEvaluation.git {EVALUATION_ROOT}")
+    else:
+        os.system(f"cd {EVALUATION_ROOT} && git pull")
+
 
 def main():
     nltk.download('wordnet')
