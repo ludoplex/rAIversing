@@ -6,7 +6,7 @@ from rAIversing.Ghidra_Custom_API import binary_to_c_code, import_changes_to_exi
 from rAIversing.evaluator.ScoringAlgos import calc_score_v1
 from rAIversing.pathing import *
 from rAIversing.utils import save_to_json
-from rAIversing.evaluator.utils import load_funcs_data
+from rAIversing.evaluator.utils import load_funcs_data, find_entrypoint
 
 # This is a list of mostly verbs that, if present, describe the intended functionality of a function.
 # If two functions share the same verb, they are highly likely to be similar.
@@ -157,6 +157,21 @@ def run_comparison(include_all, original_functions, reversed_functions, dc_dict=
             continue
         overall_score += score
     return overall_score, regarded_functions
+
+def build_scoring_args(calculator,direct,original,scoring_args):
+    for group, layer in direct.items():
+        for orig_name, pred_name in layer.items():
+            entrypoint = find_entrypoint(original, orig_name, pred_name)
+            scoring_args.append((calculator, orig_name, pred_name, entrypoint, group))
+
+
+def score_parallel(scoring_args,result_queue):
+    try:
+        for calculator, orig_name, pred_name, entrypoint, group in scoring_args:
+            score = calculator(orig_name, pred_name, entrypoint)
+            result_queue.put((group,entrypoint, orig_name, pred_name, score))
+    except KeyboardInterrupt:
+        return
 
 
 def calc_relative_percentage_difference(best, worst, actual):
