@@ -58,6 +58,7 @@ def main():
     nltk.download('stopwords')
     setup_xfl()
     setup_test_binaries_p2im()
+    setup_eval_repo()
 
 
 if __name__ == "__main__":
