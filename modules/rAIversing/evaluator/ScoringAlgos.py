@@ -125,6 +125,11 @@ def calc_score_v3(original, predicted, entrypoint):
     if "FUNC" in predicted:
         return 0.0
 
+    for old, new in replacement_dict.items():
+        if new not in original and old == original:
+            original = original.replace(old, new)
+            break
+
     original = to_snake_case(original).replace(f"_{entrypoint.replace('0x', '')}", "")
     predicted = to_snake_case(predicted).replace(f"_{entrypoint.replace('0x', '')}", "")
 
@@ -138,10 +143,7 @@ def calc_score_v3(original, predicted, entrypoint):
         return 0.0
 
 
-    for old, new in replacement_dict.items():
-        if new not in original and old == original:
-            original = original.replace(old, new)
-            break
+
 
     original_tokens = set(tokenize_name_v1(original))
     predicted_tokens = set(tokenize_name_v1(predicted))
