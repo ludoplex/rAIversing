@@ -37,7 +37,7 @@ def split_run_path(run_path):
     return model_name, source_dir, int(run.replace("run_", "")), binary
 
 
-def collect_pairs(original, predicted, ):
+def collect_pairs(original, predicted ):
     """
     finds the corresponding function names between two lists of functions
     :param original: list of functions

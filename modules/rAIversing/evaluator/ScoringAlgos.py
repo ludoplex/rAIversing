@@ -5,6 +5,8 @@ import os
 from rAIversing.evaluator.utils import tokenize_name_v1
 from rAIversing.utils import to_snake_case
 from rAIversing.pathing import EXPANDERS_ROOT
+from xfl.xfl.src.symbolnlp import SymbolNLP
+
 
 # This is a list of mostly verbs that, if present, describe the intended functionality of a function.
 # If two functions share the same verb, they are highly likely to be similar.
@@ -51,10 +53,17 @@ for file in os.listdir(EXPANDERS_ROOT):
         replacement_dict_part = json.load(f)
         replacement_dict.update(replacement_dict_part)
 
+nlp = SymbolNLP()
 
 
 
 
+def calc_score(original, predicted, entrypoint):
+
+    if "FUNC" in predicted:
+        return 0.0
+    return calc_score_v3(original, predicted, entrypoint)
+    #return calc_score_punstrip(original, predicted, entrypoint)
 
 def calc_score_v1(original, predicted, entrypoint):
     #original = original.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
@@ -104,10 +113,6 @@ def calc_score_v1(original, predicted, entrypoint):
     return score
 
 
-def calc_score(original, predicted, entrypoint):
-    return calc_score_v3(original, predicted, entrypoint)
-
-
 def calc_score_v2(original, predicted, entrypoint):
     original = original.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
     predicted = predicted.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
@@ -122,8 +127,6 @@ def calc_score_v2(original, predicted, entrypoint):
         return calc_score_v1(original, predicted, entrypoint)
 
 def calc_score_v3(original, predicted, entrypoint):
-    if "FUNC" in predicted:
-        return 0.0
 
     for old, new in replacement_dict.items():
         if new not in original and old == original:
@@ -158,6 +161,39 @@ def calc_score_v3(original, predicted, entrypoint):
 
     if score == 0.0:
         score = difflib.SequenceMatcher(None, original, predicted).ratio()
+    return score
+
+
+
+def calc_score_punstrip(original, predicted, entrypoint):
+
+    for old, new in replacement_dict.items():
+        if new not in original and old == original:
+            original = original.replace(old, new)
+            break
+
+    original = to_snake_case(original).replace(f"_{entrypoint.replace('0x', '')}", "")
+    predicted = to_snake_case(predicted).replace(f"_{entrypoint.replace('0x', '')}", "")
+
+    if "do_nothing" in predicted:
+        return 0.0
+
+    if "reverse" in predicted and "engineer" in predicted:
+        return 0.0
+
+    if "improve" in predicted and "function" in predicted:
+        return 0.0
+
+
+    lhs = nlp.canonical_set(original)
+    rhs = nlp.canonical_set(predicted)
+
+    score = nlp.wordnet_similarity(original, predicted)
+    assert 0.0 <= score <= 1.0
+    # eq = nlp.check_word_similarity(old, new)
+    # sm = SmithWaterman()
+    # smd = sm.distance(nlp.canonical_name(old), nlp.canonical_name(new))
+    # print(old, new, eq, score, smd)
     return score
 
 
