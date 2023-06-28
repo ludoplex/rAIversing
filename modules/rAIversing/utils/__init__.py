@@ -224,6 +224,10 @@ def prompt_parallel(ai_module, result_queue, name, code, retries):
         print(f"Error in {name}")
         result_queue.put((name, "SKIP"))
 
+    except OutOfTriesException as e:
+        print(f"YOUR HARDLIMIT IS REACHED IN {name} , EXITING")
+        result_queue.put((name, "EXIT"))
+
     except Exception as e:
 
         print(f"Error in {name}: {e} " + locator())

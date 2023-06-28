@@ -331,6 +331,9 @@ class rAIverseEngine:
                         self.skip_function(name)
                         handle_spawn_worker(processes, prompting_args, started)
                         continue
+                    elif result == "EXIT":
+                        self.console.print("Exiting... HardLimit reached")
+                        exit(-1)
                     else:
                         current_cost = self.handle_result_processing(name, result, no_propagation=no_propagation)
                         self.used_tokens += current_cost
