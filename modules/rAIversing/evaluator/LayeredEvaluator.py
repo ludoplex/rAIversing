@@ -5,15 +5,18 @@ from matplotlib import pyplot as plt
 from rich.console import Console, CONSOLE_SVG_FORMAT
 from rich.table import Table, Column
 
+from rAIversing.evaluator import build_scoring_args, score_parallel
 from rAIversing.evaluator.EvaluatorInterface import EvaluatorInterface
 from rAIversing.evaluator.ScoringAlgos import calc_score
 from rAIversing.evaluator.utils import *
 from rAIversing.utils import save_to_json
+from rich.progress import Progress
+import multiprocessing as mp
 
 
 class LayeredEvaluator(EvaluatorInterface):
-    def __init__(self, ai_modules, source_dirs, runs=1, calculation_function=calc_score):
-        super().__init__(ai_modules, source_dirs, runs)
+    def __init__(self, ai_modules, source_dirs, runs=1, calculation_function=calc_score, pool_size=1):
+        super().__init__(ai_modules, source_dirs, runs, pool_size)
         self.calculator = calculation_function
         self.results = {}
         self.save_all = True
@@ -24,16 +27,40 @@ class LayeredEvaluator(EvaluatorInterface):
         self.calculator = calculation_function
 
     def evaluate(self):
-        for ai_module in self.ai_modules:
-            model_name = ai_module.get_model_name()
-            for source_dir in self.source_dirs:
-                source_dir_name = os.path.basename(source_dir)
-                for run in range(1, self.runs + 1):
-                    for binary in os.listdir(os.path.join(source_dir, "stripped")):
-                        self.evaluate_atomic(make_run_path(model_name, source_dir_name, run, binary), binary)
-        self.collect_cumulative_results()
-        # self.console.print(self.results)
-        self.display_results()
+
+        with Progress(transient=True) as progress:
+            task_ai_modules = progress.add_task(f"[bold bright_yellow]Evaluating {len(self.ai_modules)} AI modules", total=len(self.ai_modules))
+
+            self.progress = progress
+
+            for ai_module in self.ai_modules:
+                model_name = ai_module.get_model_name()
+
+                task_source_dirs = progress.add_task(f"[bold bright_yellow]Evaluating {len(self.source_dirs)} source directories", total=len(self.source_dirs))
+
+                for source_dir in self.source_dirs:
+                    source_dir_name = os.path.basename(source_dir)
+                    task_runs = progress.add_task(f"[bold bright_yellow]Evaluating {self.runs} runs", total=self.runs)
+                    for run in range(1, self.runs + 1):
+                        usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
+
+                        task_binary = progress.add_task(f"[bold bright_yellow]Evaluating {len(usable_binaries)} binaries", total=len(usable_binaries))
+                        self.task_binary = task_binary
+
+                        for binary in usable_binaries:
+                            self.evaluate_atomic(make_run_path(model_name, source_dir_name, run, binary), binary)
+
+                            progress.advance(task_runs, advance=((1/self.runs)/len(usable_binaries)))
+                        progress.remove_task(task_binary)
+                    progress.remove_task(task_runs)
+                    progress.advance(task_source_dirs)
+                progress.remove_task(task_source_dirs)
+                progress.advance(task_ai_modules)
+            progress.stop()
+
+            self.collect_cumulative_results()
+            # self.console.print(self.results)
+            self.display_results()
 
     def display_results(self):
         for ai_module in self.ai_modules:
@@ -131,20 +158,32 @@ class LayeredEvaluator(EvaluatorInterface):
         worst_fn, worst_layers = load_funcs_data(os.path.join(run_path, f"{binary}_no_propagation.json"),
                                                  get_layers=True)
 
+        task_gen_comp = self.progress.add_task(f"[bold bright_yellow]Generating 4 comparisons", total=4)
+        self.task_gen_comp = task_gen_comp
+
         predict_direct, predict_scored = self.generate_comparison(original_fn, original_layers, predicted_fn,
                                                                   predicted_layers)
+
+        self.progress.advance(self.task_binary,advance=(1/4))
+
         best_direct, best_scored = self.generate_comparison(original_fn, original_layers, best_fn, predicted_layers)
+
+        self.progress.advance(self.task_binary,advance=(1/4))
+
         worst_direct, worst_scored = self.generate_comparison(original_fn, original_layers, worst_fn, predicted_layers)
+
+        self.progress.advance(self.task_binary,advance=(1/4))
+
         best_vs_predict_direct, best_vs_predict_scored = self.generate_comparison(best_fn, best_layers, predicted_fn,
                                                                                   predicted_layers)
 
-        # self.console.log(f"Inserting prediction results for {binary} in {run_path}")
+        self.progress.advance(self.task_binary,advance=(1/4))
+        self.progress.remove_task(task_gen_comp)
+
+
         self.insert_result(run_path, collect_layered_partial_scores(predict_scored), "pred")
-        # self.console.log(f"Inserting best results for {binary} in {run_path}")
         self.insert_result(run_path, collect_layered_partial_scores(best_scored), "best")
-        # self.console.log(f"Inserting worst results for {binary} in {run_path}")
         self.insert_result(run_path, collect_layered_partial_scores(worst_scored), "worst")
-        # self.console.log(f"Inserting best vs prediction results for {binary} in {run_path}")
         self.insert_result(run_path, collect_layered_partial_scores(best_vs_predict_scored), "best_vs_pred")
         self.insert_result(run_path, {"original": {"score": 0, "count": len(original_fn)},
                                       "predicted": {"score": 0, "count": len(predicted_fn)}}, "total_count")
@@ -165,12 +204,61 @@ class LayeredEvaluator(EvaluatorInterface):
         scored = {}
         for layer_index, layer in direct.items():
             scored[layer_index] = {}
-            for orig_name, pred_name in layer.items():
-                entrypoint = find_entrypoint(original_fn, orig_name, pred_name)
-                score = self.calculator(orig_name, pred_name, entrypoint)
-                scored[layer_index][entrypoint] = {"original": orig_name, "predicted": pred_name,
-                                                   "score": score}  # Had to change this format as otherwise it could break if original name is "score"  # and this allows for easier access to the data when collecting lfl/hfl
-        return direct, scored
+        total = 0
+        for layer in direct.values():
+            total += len(layer)
+        task_score = self.progress.add_task(f"[bold bright_yellow]Scoring {total} functions", total=total)
+
+        if self.pool_size >1 and True:
+            processed_pairs = 0
+            scoring_args = []
+            processes = []
+            started = 0
+            m = mp.Manager()
+            result_queue = m.Queue()
+
+            build_scoring_args(self.calculator,direct,original_fn,scoring_args)
+            total = len(scoring_args)
+            num_workers = min(self.pool_size,total)
+            chunk_size = int(total/num_workers)
+            last_chunk_size = total - chunk_size*(num_workers-1)
+
+            for i in range(0,num_workers):
+                if i == num_workers-1:
+                    chunk_size = last_chunk_size
+                p = mp.Process(target=score_parallel,args=(scoring_args[started:started+chunk_size],result_queue))
+                processes.append(p)
+                p.start()
+                started += chunk_size
+
+            while processed_pairs < total:
+                try:
+                    group,entrypoint,orig_name,pred_name,score = result_queue.get()
+                    scored[group][entrypoint] = {"original": orig_name, "predicted": pred_name,
+                                                 "score": score}
+                    processed_pairs += 1
+                    self.progress.advance(task_score)
+
+                    if processed_pairs % 20 == 0:
+                        self.progress.advance(self.task_gen_comp,advance=((20/total)))
+
+                except KeyboardInterrupt:
+                    for p in processes:
+                        p.terminate()
+                    exit(0)
+            self.progress.advance(self.task_gen_comp,advance=((total//20)/total))
+            self.progress.remove_task(task_score)
+            return direct, scored
+        else:
+            for group, layer in direct.items():
+                for orig_name, pred_name in layer.items():
+                    entrypoint = find_entrypoint(original_fn, orig_name, pred_name)
+                    score = self.calculator(orig_name, pred_name, entrypoint)
+                    scored[group][entrypoint] = {"original": orig_name, "predicted": pred_name,
+                                                 "score": score}
+                    self.progress.advance(task_score)
+            self.progress.remove_task(task_score)
+            return direct, scored
 
     def insert_result(self, run_path, result, compare_type):
         model_name, source_dir_name, run, binary = split_run_path(run_path)
@@ -200,9 +288,9 @@ class LayeredEvaluator(EvaluatorInterface):
                 if score_pred == 0:
                     score_best_vs_pred = 0
 
-            try:
+            if score_previous_layer != 0:
                 score_change = (score_pred - score_previous_layer) / score_previous_layer
-            except ZeroDivisionError:
+            else:
                 score_change = score_pred
 
             if not do_csv:
