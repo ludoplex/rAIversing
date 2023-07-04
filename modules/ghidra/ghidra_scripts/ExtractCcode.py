@@ -77,6 +77,10 @@ def main(export_path=None, export_with_stripped_names=False):
         else:
             code = fdapi.decompile(func)
 
+        code = code.replace("/* WARNING: Unknown calling convention -- yet parameter storage is locked */", "")
+        code = code.replace("/* WARNING: Control flow encountered bad instruction data */", "")
+        code = code.replace("/* WARNING: Subroutine does not return */", "")
+
         function_metadata[function_name] = {}
         function_metadata[function_name]["entrypoint"] = entrypoint
         function_metadata[function_name]["current_name"] = function_name
@@ -84,7 +88,7 @@ def main(export_path=None, export_with_stripped_names=False):
         function_metadata[function_name]["renaming"] = {}
         function_metadata[function_name]["calling"] = []
         function_metadata[function_name]["called"] = []
-        function_metadata[function_name]["improved"] = "FUN_" not in function_name
+        function_metadata[function_name]["improved"] = "FUN_" not in function_name or (function_name not in code and "FUN_" in function_name)
         function_metadata[function_name]["skipped"] = False
         function_metadata[function_name]["imported"] = False
         function_metadata[function_name]["tags"] = []

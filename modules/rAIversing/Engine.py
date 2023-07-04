@@ -376,7 +376,7 @@ class rAIverseEngine:
             for p in processes:
                 p.join()
             self.save_functions()
-            self.console.print(f"{processed_functions}/{total} | Saved functions!")
+            #self.console.print(f"{processed_functions}/{total} | Saved functions!")
             overall_processed_functions += processed_functions
         self.save_functions()
 
