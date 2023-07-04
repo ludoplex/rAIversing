@@ -64,6 +64,7 @@ def calc_score(original, predicted, entrypoint):
         return 0.0
     return calc_score_v3(original, predicted, entrypoint)
     #return calc_score_punstrip(original, predicted, entrypoint)
+    #return calc_score_dev_hybrid(original, predicted, entrypoint)
 
 def calc_score_v1(original, predicted, entrypoint):
     #original = original.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
@@ -159,6 +160,7 @@ def calc_score_v3(original, predicted, entrypoint):
 
     score = calc_group_similarity(original, predicted)
 
+
     if score == 0.0:
         score = difflib.SequenceMatcher(None, original, predicted).ratio()
     return score
@@ -185,8 +187,8 @@ def calc_score_punstrip(original, predicted, entrypoint):
         return 0.0
 
 
-    lhs = nlp.canonical_set(original)
-    rhs = nlp.canonical_set(predicted)
+    #lhs = nlp.canonical_set(original)
+    #rhs = nlp.canonical_set(predicted)
 
     score = nlp.wordnet_similarity(original, predicted)
     assert 0.0 <= score <= 1.0
@@ -197,7 +199,43 @@ def calc_score_punstrip(original, predicted, entrypoint):
     return score
 
 
+def calc_score_dev_hybrid(original, predicted, entrypoint):
+    original = original.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
+    predicted = predicted.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
 
+    original_string = original
+    predicted_string = predicted
+
+    for old, new in replacement_dict.items():
+        if new not in original and old == original:
+            original = original.replace(old, new)
+            break
+
+    original = to_snake_case(original)
+    predicted = to_snake_case(predicted)
+
+    if "do_nothing" in predicted:
+        return 0.0
+
+    if "reverse" in predicted and "engineer" in predicted:
+        return 0.0
+
+    if "improve" in predicted and "function" in predicted:
+        return 0.0
+
+    original_tokens = set(tokenize_name_v1(original))
+    predicted_tokens = set(tokenize_name_v1(predicted))
+
+    if len(original_tokens.intersection(predicted_tokens)) > 0:
+        return 1.0
+    score = calc_group_similarity(original, predicted)
+    if score != 0.0:
+        return score
+
+    score = nlp.wordnet_similarity(original, predicted)
+    assert 0.0 <= score <= 1.0
+
+    return score
 
 
 
