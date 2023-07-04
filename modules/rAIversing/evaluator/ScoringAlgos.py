@@ -62,9 +62,9 @@ def calc_score(original, predicted, entrypoint):
 
     if "FUNC" in predicted:
         return 0.0
-    return calc_score_v3(original, predicted, entrypoint)
+    #return calc_score_v3(original, predicted, entrypoint)
     #return calc_score_punstrip(original, predicted, entrypoint)
-    #return calc_score_dev_hybrid(original, predicted, entrypoint)
+    return calc_score_dev_hybrid(original, predicted, entrypoint)
 
 def calc_score_v1(original, predicted, entrypoint):
     #original = original.lower().replace(f"_{entrypoint.replace('0x', '')}", "")

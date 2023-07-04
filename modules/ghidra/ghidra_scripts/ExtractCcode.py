@@ -6,13 +6,16 @@
 # @toolbar
 import json
 import sys
-
 from ghidra.app.decompiler.flatapi import FlatDecompilerAPI
 from ghidra.program.flatapi import FlatProgramAPI
+import ghidra.program.model.listing.Function
 from ghidra.util.task import ConsoleTaskMonitor
+from ghidra.app.decompiler import DecompileOptions, DecompInterface
+from ghidra.program.model.pcode import HighFunctionDBUtil
+from pathing import *
 import ghidra.program.model.symbol.SourceType.IMPORTED as IMPORTED
 
-from pathing import *
+# As we import changes from a file, we mark them as imported and not as user defined
 
 try:
     from ghidra.ghidra_builtins import *
@@ -21,7 +24,11 @@ except:
 
 fpapi = FlatProgramAPI(getState().getCurrentProgram())
 fdapi = FlatDecompilerAPI(fpapi)
-
+options = DecompileOptions()
+monitor = ConsoleTaskMonitor()
+ifc = DecompInterface()
+ifc.setOptions(options)
+ifc.openProgram(getState().getCurrentProgram())
 
 def getLowestFunctionLayer(functions):
     lflList = []
@@ -63,6 +70,8 @@ def main(export_path=None, export_with_stripped_names=False):
         if export_with_stripped_names:
             original_name = func.getName()
             func.setName(function_name, IMPORTED)
+            funcs = list(fm.getFunctions(True))
+            func = funcs[i]
             code = fdapi.decompile(func)
             func.setName(original_name, IMPORTED)
         else:
@@ -115,6 +124,17 @@ def main(export_path=None, export_with_stripped_names=False):
     with open(os.path.join(export_path, program_name + ".json"), "w") as f:
         f.write(json.dumps(save_file, indent=4))
         f.close()
+
+def get_high_function(func):
+    res = ifc.decompileFunction(func, 60, monitor)
+    high = res.getHighFunction()
+    return high
+
+
+def get_function_symbols(func):
+    hf = get_high_function(func)
+    lsm = hf.getLocalSymbolMap()
+    return lsm.getSymbols()
 
 
 if __name__ == "__main__":

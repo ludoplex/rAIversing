@@ -13,9 +13,8 @@ class MaxTriesExceeded(Exception):
     """Raised when the max tries is exceeded"""
 
 
-class OutOfTriesException(Exception):
-    """Raised when the max tries is exceeded with an api error. Is your HardLimit reached?"""
-
+class HardLimitReached(Exception):
+    """Raised when the hard limit is definitely reached"""
 
 class NoResponseException(Exception):
     """Raised when no response is received"""
@@ -224,7 +223,7 @@ def prompt_parallel(ai_module, result_queue, name, code, retries):
         print(f"Error in {name}")
         result_queue.put((name, "SKIP"))
 
-    except OutOfTriesException as e:
+    except HardLimitReached as e:
         print(f"YOUR HARDLIMIT IS REACHED IN {name} , EXITING")
         result_queue.put((name, "EXIT"))
 

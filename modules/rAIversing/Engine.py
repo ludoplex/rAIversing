@@ -13,7 +13,7 @@ from rAIversing.AI_modules.openAI_core import chatGPT
 from rAIversing.pathing import PROJECTS_ROOT
 from rAIversing.utils import check_and_fix_bin_path, extract_function_name, generate_function_name, MaxTriesExceeded, \
     check_and_fix_double_function_renaming, check_do_nothing, get_random_string, ptr_escape, prompt_parallel, \
-    handle_spawn_worker, locator, to_snake_case
+    handle_spawn_worker, locator, to_snake_case, HardLimitReached
 
 
 class rAIverseEngine:
@@ -332,15 +332,18 @@ class rAIverseEngine:
                         handle_spawn_worker(processes, prompting_args, started)
                         continue
                     elif result == "EXIT":
-                        self.console.print("Exiting... HardLimit reached")
-                        exit(-1)
+                        self.console.log(f"[bold red]Exiting due to Hard Limit Reached!!![/bold red]")
+                        raise HardLimitReached("Got Hard Limit Reached from prompt_parallel")
+
                     else:
-                        current_cost = self.handle_result_processing(name, result, no_propagation=no_propagation)
+                        current_cost,needed_tries = self.handle_result_processing(name, result, no_propagation=no_propagation)
                         self.used_tokens += current_cost
+
+                    name_color = "blue" if needed_tries < 1 else "bold green"
 
                     renaming_dict = result[1]
                     self.console.print(
-                        f"{processed_functions}/{total} | ({self.used_tokens}|{current_cost}) | [blue]{name}[/blue] -> [blue]{renaming_dict[name]}[/blue]")
+                        f"{processed_functions}/{total} | ({self.used_tokens}|{current_cost}) | [{name_color}]{name}[/{name_color}] -> [blue]{renaming_dict[name]}[/blue]")
 
                     # self.console.print(
                     #   f"{processed_functions}/{total} | Improved function [blue]{name}[/blue] for {current_cost} Tokens | Used tokens: {self.used_tokens}")
@@ -356,6 +359,13 @@ class rAIverseEngine:
                     for p in processes:
                         p.terminate()
                     exit(0)
+                except HardLimitReached as e:
+                    self.console.print(f"[bold red] \nHard limit reached. Saving functions and exiting")
+                    self.save_functions()
+                    for p in processes:
+                        p.terminate()
+                    exit(-1)
+
                 except Exception as e:
                     self.console.print(f"Exception occured: {e}")
                     self.console.print(f"Saving functions")
@@ -394,6 +404,7 @@ class rAIverseEngine:
             improved_code = result[0]
             renaming_dict = result[1]
             total_tokens_used = result[2]
+            needed_tries = result[3]
             to_be_improved_code = self.functions[name]["code"]
             improved_code = self.undo_bad_renaming(renaming_dict, improved_code, to_be_improved_code)
             improved_code = check_and_fix_double_function_renaming(improved_code, renaming_dict, name)
@@ -411,7 +422,7 @@ class rAIverseEngine:
         self.functions[name]["renaming"] = renaming_dict
         if not no_propagation:
             self.rename_for_all_functions(renaming_dict)
-        return total_tokens_used
+        return total_tokens_used, needed_tries
 
     def export_processed(self, all_functions=False, output_file=""):
         if output_file == "":

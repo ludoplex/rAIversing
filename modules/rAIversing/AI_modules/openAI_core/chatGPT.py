@@ -13,8 +13,8 @@ from rAIversing.AI_modules.openAI_core.PromptEngine import PromptEngine
 from rAIversing.pathing import *
 from rAIversing.utils import extract_function_name, NoResponseException, clear_extra_data, check_valid_code, \
     MaxTriesExceeded, InvalidResponseException, format_newlines_in_code, escape_failed_escapes, \
-    check_reverse_engineer_fail_happend, locator, OutOfTriesException, insert_missing_delimiter, do_renaming, \
-    IncompleteResponseException, insert_missing_double_quote
+    check_reverse_engineer_fail_happend, locator, insert_missing_delimiter, do_renaming, \
+    IncompleteResponseException, insert_missing_double_quote, HardLimitReached
 
 
 def assemble_prompt_v1(code):
@@ -328,11 +328,6 @@ class ChatGPTModule(AiModuleInterface):
         total_tokens_used = 0
         for i in range(0, retries):
             e = " " or str(e)
-            if i > 0:
-                self.console.log(f"[blue]{old_func_name}[/blue]:[orange3]Retry {i + 1}/{retries}[/orange3]")
-                with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
-                    f.write(response_string_orig)
-                pass
             try:
                 response_string_orig, used_tokens = self.prompt(full_prompt,try_larger)
                 total_tokens_used += used_tokens
@@ -366,7 +361,7 @@ class ChatGPTModule(AiModuleInterface):
                     improved_code = self.postprocess_code(improved_code)
                     if improved_code == input_code:
                         raise Exception("No change")
-                    return improved_code, renaming_dict, total_tokens_used
+                    return improved_code, renaming_dict, total_tokens_used,i
                 else:
                     self.console.log(
                         f"[blue]{old_func_name}[/blue]:[orange3]Got invalid code from model, Retry  {i + 1}/{retries}[/orange3]")
@@ -412,19 +407,21 @@ class ChatGPTModule(AiModuleInterface):
                     continue
                 else:
                     self.logger.warning(f"Response was: {response_string_orig}")
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                        f.write(response_string_orig)
                     self.logger.exception(e)
                     raise e
             except APIConnectionError as e:
 
                 if i >= retries - 1:
-                    self.logger.exception(e)
-                    raise OutOfTriesException(
-                        f"Out of tries! Is your HardLimit reached? Tokens used:{self.calc_used_tokens(full_prompt)}")
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                        f.write(e)
+                    raise MaxTriesExceeded("Max tries exceeded " + locator())
 
                 if "Too Many Requests" in str(e):
 
                     if "You exceeded your current quota, please check your plan and billing details." in str(e):
-                        raise OutOfTriesException(f"Out of tries! Your HardLimit is reached!!!!")
+                        raise HardLimitReached(f"Your HardLimit is reached!!!!")
                     if "That model is currently overloaded with other requests" in str(e):
                         self.console.log(
                             f"[blue]{old_func_name}[/blue]:[orange3] [red]Model Overloaded!![/red], will sleep now! Retry {i + 1}/{retries}[/orange3]")
@@ -435,6 +432,8 @@ class ChatGPTModule(AiModuleInterface):
                     continue
                 else:
                     self.logger.exception(e)
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                        f.write(e)
                     raise e
 
             except InvalidResponseException as e:
