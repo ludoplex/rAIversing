@@ -5,7 +5,7 @@ from rAIversing.pathing import PROJECTS_ROOT, GHIDRA_SCRIPTS, BINARIES_ROOT
 from rAIversing.utils import check_and_fix_bin_path, check_and_create_project_path, is_already_exported
 
 
-def binary_to_c_code(binary_path, processor_id="", custom_headless_binary=None, project_location=None, project_name=None,debug=False,export_path=None):
+def binary_to_c_code(binary_path, processor_id="", custom_headless_binary=None, project_location=None, project_name=None,debug=False,export_path=None,max_cpu=2):
     import_path = check_and_fix_bin_path(binary_path)
     project_name = os.path.basename(binary_path).replace(".", "_") if project_name is None else project_name
     project_location = f'{os.path.join(PROJECTS_ROOT, project_name)}' if project_location is None else project_location
@@ -20,6 +20,7 @@ def binary_to_c_code(binary_path, processor_id="", custom_headless_binary=None, 
         .postScript(f'ExtractCcode.py "{export_path}"') \
         .scriptPath(f'{GHIDRA_SCRIPTS}') \
         .log(f'{PROJECTS_ROOT}/log') \
+        .max_cpu(max_cpu)\
         .scriptlog(f'{PROJECTS_ROOT}/scriptlog')
 
     if processor_id != "":
@@ -28,7 +29,7 @@ def binary_to_c_code(binary_path, processor_id="", custom_headless_binary=None, 
         ah.print()
     ah.run(debug)
 
-def existing_project_to_c_code(project_location, binary_name=None, project_name=None,custom_headless_binary=None, export_with_stripped_names=False,debug=False,export_path=None):
+def existing_project_to_c_code(project_location, binary_name=None, project_name=None,custom_headless_binary=None, export_with_stripped_names=False,debug=False,export_path=None,max_cpu=2):
     if project_name is None:
         project_name = os.path.basename(project_location)
     if binary_name is None:
@@ -50,7 +51,8 @@ def existing_project_to_c_code(project_location, binary_name=None, project_name=
         .noanalysis()\
         .scriptPath(f'{GHIDRA_SCRIPTS}') \
         .log(f'{PROJECTS_ROOT}/log') \
-        .scriptlog(f'{PROJECTS_ROOT}/scriptlog')
+        .scriptlog(f'{PROJECTS_ROOT}/scriptlog')\
+        .max_cpu(max_cpu)
     if debug:
         ah.print()
     ah.run(debug)
