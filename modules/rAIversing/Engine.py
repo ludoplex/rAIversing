@@ -302,7 +302,7 @@ class rAIverseEngine:
                     self.layers.append(lfl)
 
             function_layer = len(self.layers)
-            self.console.print(
+            self.console.log(
                 f"Starting layer {function_layer} with {len(lfl)} of {len(self.functions)} functions. Overall processed functions: {overall_processed_functions}/{len(self.functions)} Used tokens: {self.used_tokens}")
 
             function_layer += 1
@@ -342,7 +342,7 @@ class rAIverseEngine:
                     name_color = "blue" if needed_tries < 1 else "bold green"
 
                     renaming_dict = result[1]
-                    self.console.print(
+                    self.console.log(
                         f"{processed_functions}/{total} | ({self.used_tokens}|{current_cost}) | [{name_color}]{name}[/{name_color}] -> [blue]{renaming_dict[name]}[/blue]")
 
                     # self.console.print(
@@ -350,7 +350,7 @@ class rAIverseEngine:
 
                     if processed_functions % 5 == 0:
                         self.save_functions()
-                        self.console.print(f"{processed_functions}/{total} | Saved functions!")
+                        #self.console.print(f"{processed_functions}/{total} | Saved functions!")
                     time.sleep(1.5)
                     handle_spawn_worker(processes, prompting_args, started)
                 except KeyboardInterrupt:

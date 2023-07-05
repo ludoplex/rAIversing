@@ -51,6 +51,11 @@ def setup_eval_repo():
     else:
         os.system(f"cd {EVALUATION_ROOT} && git pull")
 
+def setup_datagather_repo():
+    if not os.path.exists(f"{MODULES_ROOT}/DataGather"):
+        os.system(f"git clone https://github.com/MrMatch246/DataGather {MODULES_ROOT}/DataGather")
+    else:
+        os.system(f"cd {MODULES_ROOT}/DataGather && git pull")
 
 def main():
     nltk.download('wordnet')
@@ -59,6 +64,7 @@ def main():
     setup_xfl()
     setup_test_binaries_p2im()
     setup_eval_repo()
+    setup_datagather_repo()
 
 
 if __name__ == "__main__":

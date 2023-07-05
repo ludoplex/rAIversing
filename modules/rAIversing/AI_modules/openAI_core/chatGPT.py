@@ -384,6 +384,8 @@ class ChatGPTModule(AiModuleInterface):
                     try_larger = True
                 self.console.log(
                     f"[blue]{old_func_name}[/blue]:[orange3]Got incomplete response from model, Retry  {i + 1}/{retries}! Is it maybe too long: {self.calc_used_tokens(full_prompt)}[/orange3]")
+                with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                    f.write(response_string_orig)
                 continue
 
             except json.JSONDecodeError as e:
