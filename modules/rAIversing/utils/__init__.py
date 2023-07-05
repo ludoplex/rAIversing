@@ -268,6 +268,7 @@ def save_to_json(data, file):
         json.dump(data, f, indent=4)
 
 
+
 def save_to_csv(data, file):
     """
     if file is not a path to an existing file, it is assumed to be relative to PROJECTS_ROOT
@@ -278,7 +279,10 @@ def save_to_csv(data, file):
         file = os.path.join(PROJECTS_ROOT, file)
     with open(file, "w") as f:
         writer = csv.writer(f)
-        writer.writerows(data)
+        writer.writerow(["layer", "original", "predicted"])
+        for layer_index, layer in data.items():
+            for original, predicted in layer.items():
+                writer.writerow([layer_index, original, predicted])
 
 
 def filename(path):

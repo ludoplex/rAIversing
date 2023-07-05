@@ -5,7 +5,7 @@ from rich.console import Console, CONSOLE_SVG_FORMAT
 from rAIversing.evaluator.EvaluatorInterface import EvaluatorInterface
 from rAIversing.evaluator.ScoringAlgos import calc_score
 from rAIversing.evaluator.utils import *
-from rAIversing.utils import save_to_json
+from rAIversing.utils import save_to_json, save_to_csv
 from rich.progress import Progress
 import multiprocessing as mp
 
@@ -278,6 +278,8 @@ class LayeredEvaluator(EvaluatorInterface):
 
         save_to_json(predict_direct, os.path.join(run_path, f"{binary}_comp.json"))
         save_to_json(predict_scored, os.path.join(run_path, f"{binary}_scored.json"))
+        save_to_csv(predict_direct, os.path.join(run_path, f"{binary}_comp.csv"))
+
 
         if self.save_all:
             save_to_json(best_direct, os.path.join(run_path, f"{binary}_best-comp.json"))
