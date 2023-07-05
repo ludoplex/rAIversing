@@ -63,6 +63,10 @@ def main(export_path=None, export_with_stripped_names=False):
     for i in range(len(funcs)):
         func = funcs[i]
         entrypoint = func.getEntryPoint().toString("0x")
+        if "{\n                    /* WARNING: Bad instruction - Truncating control flow here */\n  halt_baddata();\n}" in fdapi.decompile(func):
+            continue
+
+
         if export_with_stripped_names:
             function_name = "FUN_" + entrypoint.replace("0x", "")
         else:
