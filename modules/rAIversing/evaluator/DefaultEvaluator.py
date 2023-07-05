@@ -5,7 +5,6 @@ from rich.table import Table, Column
 from rAIversing.evaluator.EvaluatorInterface import EvaluatorInterface
 from rAIversing.evaluator.ScoringAlgos import calc_score
 from rAIversing.evaluator.utils import *
-from rAIversing.evaluator import load_funcs_data
 from rAIversing.evaluator.utils import setup_results, create_table, build_scoring_args, score_parallel, \
     calc_relative_percentage_difference, fill_table
 from rAIversing.utils import save_to_json

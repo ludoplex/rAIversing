@@ -1,4 +1,5 @@
 import shutil
+import time
 from pathlib import Path
 
 from rich.progress import Progress, TimeElapsedColumn
@@ -74,7 +75,7 @@ class EvaluationManager:
                         run_path = make_run_path(model_name, source_dir, run, binary)
 
     def extract_code(self):
-        debug = False
+        debug = True
 
         ##########################################################################################################
         with Progress(*Progress.get_default_columns(),TimeElapsedColumn(),transient=True) as progress:
@@ -111,10 +112,13 @@ class EvaluationManager:
                     for binary_path in bin_paths:
                         binary = os.path.basename(binary_path)
                         try:
+                            time.sleep(1)
                             binary_to_c_code(binary_path, processor_id=proc_id,
-                                         project_name=f"eval_{model_name}_{source_dir_name}",
-                                         project_location=project_location,
-                                         export_path=os.path.join(project_location, binary), debug=debug)
+                                             project_name=f"eval_{model_name}_{source_dir_name}",
+                                             project_location=project_location,
+                                             export_path=os.path.join(project_location, binary),
+                                             debug=debug,
+                                             )
                         except KeyboardInterrupt:
                             exit(-1)
 
@@ -125,14 +129,22 @@ class EvaluationManager:
                     for binary_path in Path(os.path.join(source_dir, "original")).rglob("*"):
                         binary = os.path.basename(binary_path).replace("_original", "")
                         export_path = os.path.join(project_location, binary)
+
                         try:
+                            time.sleep(1)
                             binary_to_c_code(binary_path, processor_id=proc_id,
                                          project_name=f"eval_{model_name}_{source_dir_name}",
-                                         project_location=project_location, export_path=export_path, debug=debug)
+                                         project_location=project_location, export_path=export_path,
+                                         debug=debug,max_cpu=self.connections
+                                             )
+                        except KeyboardInterrupt:
+                            exit(-1)
+                        try:
                             existing_project_to_c_code(project_location=project_location, binary_name=f"{binary}_original",
                                                    project_name=f"eval_{model_name}_{source_dir_name}",
                                                    export_with_stripped_names=True, export_path=export_path,
-                                                   debug=debug)
+                                         debug=debug,max_cpu=self.connections
+                                             )
                         except KeyboardInterrupt:
                             exit(-1)
 
@@ -144,9 +156,12 @@ class EvaluationManager:
                         binary = os.path.basename(binary_path).replace("_no_propagation", "")
                         export_path = os.path.join(project_location, binary)
                         try:
+                            time.sleep(1)
                             binary_to_c_code(binary_path, processor_id=proc_id,
                                          project_name=f"eval_{model_name}_{source_dir_name}",
-                                         project_location=project_location, export_path=export_path)
+                                         project_location=project_location, export_path=export_path,
+                                         debug=debug,max_cpu=self.connections
+                                             )
                         except KeyboardInterrupt:
                             exit(-1)
 
