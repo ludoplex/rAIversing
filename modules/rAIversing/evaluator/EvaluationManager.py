@@ -110,10 +110,13 @@ class EvaluationManager:
 
                     for binary_path in bin_paths:
                         binary = os.path.basename(binary_path)
-                        binary_to_c_code(binary_path, processor_id=proc_id,
+                        try:
+                            binary_to_c_code(binary_path, processor_id=proc_id,
                                          project_name=f"eval_{model_name}_{source_dir_name}",
                                          project_location=project_location,
                                          export_path=os.path.join(project_location, binary), debug=debug)
+                        except KeyboardInterrupt:
+                            exit(-1)
 
                         ######################################################################
                         progress.advance(task_extraction)                                    #
@@ -122,13 +125,16 @@ class EvaluationManager:
                     for binary_path in Path(os.path.join(source_dir, "original")).rglob("*"):
                         binary = os.path.basename(binary_path).replace("_original", "")
                         export_path = os.path.join(project_location, binary)
-                        binary_to_c_code(binary_path, processor_id=proc_id,
+                        try:
+                            binary_to_c_code(binary_path, processor_id=proc_id,
                                          project_name=f"eval_{model_name}_{source_dir_name}",
                                          project_location=project_location, export_path=export_path, debug=debug)
-                        existing_project_to_c_code(project_location=project_location, binary_name=f"{binary}_original",
+                            existing_project_to_c_code(project_location=project_location, binary_name=f"{binary}_original",
                                                    project_name=f"eval_{model_name}_{source_dir_name}",
                                                    export_with_stripped_names=True, export_path=export_path,
                                                    debug=debug)
+                        except KeyboardInterrupt:
+                            exit(-1)
 
                         ########################################################################
                         progress.advance(task_extraction)                                      #
@@ -137,9 +143,12 @@ class EvaluationManager:
                     for binary_path in Path(os.path.join(source_dir, "no_propagation")).rglob("*"):
                         binary = os.path.basename(binary_path).replace("_no_propagation", "")
                         export_path = os.path.join(project_location, binary)
-                        binary_to_c_code(binary_path, processor_id=proc_id,
+                        try:
+                            binary_to_c_code(binary_path, processor_id=proc_id,
                                          project_name=f"eval_{model_name}_{source_dir_name}",
                                          project_location=project_location, export_path=export_path)
+                        except KeyboardInterrupt:
+                            exit(-1)
 
                         #########################################################################
                         progress.advance(task_extraction)                                       #
