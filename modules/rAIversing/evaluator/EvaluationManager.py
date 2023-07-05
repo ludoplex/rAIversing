@@ -1,6 +1,8 @@
 import shutil
 from pathlib import Path
 
+from rich.progress import Progress, TimeElapsedColumn
+
 from rAIversing.AI_modules import AiModuleInterface
 from rAIversing.Engine import rAIverseEngine
 from rAIversing.Ghidra_Custom_API import binary_to_c_code, existing_project_to_c_code
@@ -72,40 +74,81 @@ class EvaluationManager:
                         run_path = make_run_path(model_name, source_dir, run, binary)
 
     def extract_code(self):
-        debug=False
-        for ai_module in self.ai_modules:
-            model_name = ai_module.get_model_name()
-            for source_dir in self.source_dirs:
-                source_dir_name = os.path.basename(source_dir)
-                project_location = os.path.join(EVALUATION_ROOT, model_name, source_dir_name, "extraction")
-                try:
-                    with open(os.path.join(source_dir, "proc_id"), "r") as f:
-                        proc_id = f.read()
-                except FileNotFoundError:
-                    proc_id = "ARM:LE:32:Cortex"
+        debug = False
 
-                for binary_path in Path(os.path.join(source_dir, "stripped")).rglob("*"):
-                    binary = os.path.basename(binary_path)
-                    binary_to_c_code(binary_path, processor_id=proc_id,
-                                     project_name=f"eval_{model_name}_{source_dir_name}",
-                                     project_location=project_location,
-                                     export_path=os.path.join(project_location, binary),debug=debug)
-                for binary_path in Path(os.path.join(source_dir, "original")).rglob("*"):
-                    binary = os.path.basename(binary_path).replace("_original", "")
-                    export_path = os.path.join(project_location, binary)
-                    binary_to_c_code(binary_path, processor_id=proc_id,
-                                     project_name=f"eval_{model_name}_{source_dir_name}",
-                                     project_location=project_location, export_path=export_path,debug=debug)
-                    existing_project_to_c_code(project_location=project_location, binary_name=f"{binary}_original",
-                                               project_name=f"eval_{model_name}_{source_dir_name}",
-                                               export_with_stripped_names=True, export_path=export_path,debug=debug)
+        ##########################################################################################################
+        with Progress(*Progress.get_default_columns(),TimeElapsedColumn(),transient=False) as progress:
+            task_ai_modules = progress.add_task(f"[bold bright_yellow]Extracting for {len(self.ai_modules)} AI modules",
+                                                total=len(self.ai_modules)) if len(self.ai_modules) > 1 else None
+            ######################################################################################################
 
-                for binary_path in Path(os.path.join(source_dir, "no_propagation")).rglob("*"):
-                    binary = os.path.basename(binary_path).replace("_no_propagation", "")
-                    export_path = os.path.join(project_location, binary)
-                    binary_to_c_code(binary_path, processor_id=proc_id,
-                                     project_name=f"eval_{model_name}_{source_dir_name}",
-                                     project_location=project_location, export_path=export_path)
+            for ai_module in self.ai_modules:
+                model_name = ai_module.get_model_name()
+
+                ########################################################################################
+                task_source_dirs = progress.add_task(                                                  #
+                    f"[bold bright_yellow]Extracting for {len(self.source_dirs)} source directories",  #
+                    total=len(self.source_dirs)) if len(self.source_dirs) > 1 else None                #
+                ########################################################################################
+
+                for source_dir in self.source_dirs:
+                    source_dir_name = os.path.basename(source_dir)
+                    project_location = os.path.join(EVALUATION_ROOT, model_name, source_dir_name, "extraction")
+                    try:
+                        with open(os.path.join(source_dir, "proc_id"), "r") as f:
+                            proc_id = f.read()
+                    except FileNotFoundError:
+                        proc_id = "ARM:LE:32:Cortex"
+                    bin_paths = list(Path(os.path.join(source_dir, "stripped")).rglob("*"))
+
+                    #####################################################################################
+                    task_extraction = progress.add_task(                                                #
+                        f"[bold bright_yellow]Extracting {len(bin_paths) * 3} binaries/versions",       #
+                        total=(len(bin_paths) * 3))                                                     #
+                    #####################################################################################
+
+                    for binary_path in bin_paths:
+                        binary = os.path.basename(binary_path)
+                        binary_to_c_code(binary_path, processor_id=proc_id,
+                                         project_name=f"eval_{model_name}_{source_dir_name}",
+                                         project_location=project_location,
+                                         export_path=os.path.join(project_location, binary), debug=debug)
+
+                        ######################################################################
+                        progress.advance(task_extraction)                                    #
+                    ##########################################################################
+
+                    for binary_path in Path(os.path.join(source_dir, "original")).rglob("*"):
+                        binary = os.path.basename(binary_path).replace("_original", "")
+                        export_path = os.path.join(project_location, binary)
+                        binary_to_c_code(binary_path, processor_id=proc_id,
+                                         project_name=f"eval_{model_name}_{source_dir_name}",
+                                         project_location=project_location, export_path=export_path, debug=debug)
+                        existing_project_to_c_code(project_location=project_location, binary_name=f"{binary}_original",
+                                                   project_name=f"eval_{model_name}_{source_dir_name}",
+                                                   export_with_stripped_names=True, export_path=export_path,
+                                                   debug=debug)
+
+                        ########################################################################
+                        progress.advance(task_extraction)                                      #
+                    ############################################################################
+
+                    for binary_path in Path(os.path.join(source_dir, "no_propagation")).rglob("*"):
+                        binary = os.path.basename(binary_path).replace("_no_propagation", "")
+                        export_path = os.path.join(project_location, binary)
+                        binary_to_c_code(binary_path, processor_id=proc_id,
+                                         project_name=f"eval_{model_name}_{source_dir_name}",
+                                         project_location=project_location, export_path=export_path)
+
+                        #########################################################################
+                        progress.advance(task_extraction)                                       #
+                    progress.remove_task(task_extraction)                                       #
+                    progress.advance(task_source_dirs) if len(self.source_dirs) > 1 else None   #
+                progress.remove_task(task_source_dirs) if len(self.source_dirs) > 1 else None   #
+                progress.advance(task_ai_modules) if len(self.ai_modules) > 1 else None         #
+            progress.remove_task(task_ai_modules) if len(self.ai_modules) > 1 else None         #
+            progress.stop()                                                                     #
+            #####################################################################################
 
     def prepare_runs(self):
         for ai_module in self.ai_modules:
@@ -128,5 +171,5 @@ class EvaluationManager:
             evaluator = self.evaluator
         else:
             self.evaluator = evaluator(self.ai_modules, self.source_dirs,
-                                       self.runs, pool_size= self.connections)
+                                       self.runs, pool_size=self.connections)
         self.evaluator.evaluate()
