@@ -36,13 +36,15 @@ class LayeredEvaluator(EvaluatorInterface):
 
                 for source_dir in self.source_dirs:
                     source_dir_name = os.path.basename(source_dir)
+
                     task_runs = progress.add_task(f"[bold bright_yellow]Evaluating {self.runs} runs", total=self.runs)
+
                     for run in range(1, self.runs + 1):
                         usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
 
                         task_binary = progress.add_task(f"[bold bright_yellow]Evaluating {len(usable_binaries)} binaries", total=len(usable_binaries))
-                        self.task_binary = task_binary
 
+                        self.task_binary = task_binary
                         for binary in usable_binaries:
                             self.evaluate_atomic(make_run_path(model_name, source_dir_name, run, binary), binary)
 
