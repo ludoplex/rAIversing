@@ -19,7 +19,8 @@ from rAIversing.utils import extract_function_name, NoResponseException, clear_e
 
 def assemble_prompt_v1(code):
     pre = """
-You have been given a piece of C code which needs to be reverse engineered and improved. The original code is as follows:
+You have been given the decompiled code of a function that has been extracted from a binary that needs to be reverse engineered and improved.
+The original code is as follows:
 
 """
     post = """
@@ -47,6 +48,46 @@ You have been given a piece of C code which needs to be reverse engineered and i
 """
 
     return pre + code + post
+
+
+def assemble_prompt_v2(code):
+    pre = """
+    You are provided with a piece of code that appears to be decompiled from a binary, possibly including common libraries.
+    Your task is to create a more readable version of the code that closely resembles the original code.
+
+    Code:
+    """
+
+    post = """
+    [Prompt]:
+
+    You have been provided with a decompiled function from a binary, which may include common libraries.
+    Your task is to make the code more readable while preserving the original structure and logic.
+    Please ensure that the resulting code resembles the original as closely as possible.
+    Keep in mind that the original function likely has a similar functionality to a library function.
+    Your task is to identify and provide the name of the library function that best matches the functionality of the given code as restored_function_name.
+
+    Please provide the name of the library function that closely resembles the functionality of the provided code.
+
+    DO ONLY respond in the following format:
+        
+        {
+        "<original_function_name>": "<restored_function_name>",
+        "<original_parameter_name_1>": "<new_parameter_name_1>",
+        "<original_parameter_name_2>": "<new_parameter_name_2>",
+        ...
+        "<original_variable_name_1>": "<new_variable_name_1>",
+        "<original_variable_name_2>": "<new_variable_name_2>",
+        ...
+        }
+    
+    Do not use single quotes. No Explanation is needed.
+    Do NOT rename the function to "reverse_engineered", "improved_function" or similar.
+    """
+
+    return pre + code + post
+
+
 
 
 def api_key(path_to_api_key=DEFAULT_API_KEY_PATH, engine=PromptEngine.DEFAULT):
@@ -316,7 +357,7 @@ class ChatGPTModule(AiModuleInterface):
             This version uses the new prompt format and is more efficient than the old one
             It only asks the model for the renaming dict and then applies it to the code
         """
-        full_prompt = assemble_prompt_v1(input_code)
+        full_prompt = self.assemble_prompt(input_code)
         renaming_dict = {}
         response_string = ""
         response_string_orig = ""

@@ -77,7 +77,7 @@ class EvaluationManager:
         debug = False
 
         ##########################################################################################################
-        with Progress(*Progress.get_default_columns(),TimeElapsedColumn(),transient=False) as progress:
+        with Progress(*Progress.get_default_columns(),TimeElapsedColumn(),transient=True) as progress:
             task_ai_modules = progress.add_task(f"[bold bright_yellow]Extracting for {len(self.ai_modules)} AI modules",
                                                 total=len(self.ai_modules)) if len(self.ai_modules) > 1 else None
             ######################################################################################################
@@ -98,7 +98,8 @@ class EvaluationManager:
                         with open(os.path.join(source_dir, "proc_id"), "r") as f:
                             proc_id = f.read()
                     except FileNotFoundError:
-                        proc_id = "ARM:LE:32:Cortex"
+                        print(f"proc_id file not found {os.path.join(source_dir, 'proc_id')} EXITING NOW!!! PLEASE ADD IT AND RESTART")
+                        exit(-1)
                     bin_paths = list(Path(os.path.join(source_dir, "stripped")).rglob("*"))
 
                     #####################################################################################
