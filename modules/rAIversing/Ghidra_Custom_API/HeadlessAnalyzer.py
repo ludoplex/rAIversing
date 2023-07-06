@@ -49,8 +49,12 @@ class HeadlessAnalyzerWrapper:
         self.__loader__ = ""
         self.__noanalysis__ = ""
         self.__recursive__ = ""
-        if not os.access(self.__analyzeHeadlessBinary__, os.X_OK):
-            raise PermissionError(f'analyzeHeadlessBinary is not executable: {self.__analyzeHeadlessBinary__}\n run "chmod +x {self.__analyzeHeadlessBinary__}"')
+
+        if os.path.exists(self.__analyzeHeadlessBinary__):
+            if not os.access(self.__analyzeHeadlessBinary__, os.X_OK):
+                raise PermissionError(f'analyzeHeadlessBinary is not executable: {self.__analyzeHeadlessBinary__}\n run "chmod +x {self.__analyzeHeadlessBinary__}"')
+        else:
+            raise FileNotFoundError(f'analyzeHeadlessBinary not found: {self.__analyzeHeadlessBinary__}')
 
     def noanalysis(self):
         self.__noanalysis__ = f' -noanalysis'
