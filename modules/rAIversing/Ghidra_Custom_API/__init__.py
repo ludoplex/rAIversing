@@ -29,7 +29,37 @@ def binary_to_c_code(binary_path, processor_id="", custom_headless_binary=None, 
         ah.print()
     ah.run(debug)
 
-def existing_project_to_c_code(project_location, binary_name=None, project_name=None,custom_headless_binary=None, export_with_stripped_names=False,debug=False,export_path=None,max_cpu=2):
+
+def folder_to_c_code(folder_path, processor_id="", custom_headless_binary=None, project_location=None, project_name=None,debug=False,export_path=None,max_cpu=-1):
+    project_name = os.path.basename(folder_path).replace(".", "_") if project_name is None else project_name
+    project_location = f'{os.path.join(PROJECTS_ROOT, project_name)}' if project_location is None else project_location
+    export_path = export_path if export_path is not None else project_location
+    if is_already_exported(export_path, os.path.basename(folder_path)):
+        return
+    check_and_create_project_path(project_location)
+    ah = HeadlessAnalyzerWrapper(custom_headless_binary)
+    for thing in os.listdir(folder_path):
+        if not os.path.isfile(os.path.join(folder_path, thing)):
+            ah.add_import_file(os.path.join(folder_path, thing))
+    ah.recursive()
+    ah.project_location(project_location) \
+        .project_name(project_name) \
+        .postScript(f'ExtractCcode.py {export_path}') \
+        .scriptPath(f'{GHIDRA_SCRIPTS}') \
+        .log(f'{PROJECTS_ROOT}/log') \
+        .max_cpu(max_cpu)\
+        .scriptlog(f'{PROJECTS_ROOT}/scriptlog')
+
+    if processor_id != "":
+        ah.processor(processor_id)
+    if debug:
+        ah.print()
+    return ah.get_command()
+    #ah.run(debug)
+
+
+
+def existing_project_to_c_code(project_location, binary_name=None, project_name=None,custom_headless_binary=None, export_with_stripped_names=False,debug=False,export_path=None,max_cpu=2,folder_path=None):
     if project_name is None:
         project_name = os.path.basename(project_location)
     if binary_name is None:
@@ -52,7 +82,9 @@ def existing_project_to_c_code(project_location, binary_name=None, project_name=
         .scriptPath(f'{GHIDRA_SCRIPTS}') \
         .log(f'{PROJECTS_ROOT}/log') \
         .scriptlog(f'{PROJECTS_ROOT}/scriptlog')\
+        .folder_path(folder_path)\
         .max_cpu(max_cpu)
+
     if debug:
         ah.print()
     ah.run(debug)
