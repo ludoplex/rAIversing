@@ -63,7 +63,7 @@ def main(export_path=None, export_with_stripped_names=False):
     for i in range(len(funcs)):
         func = funcs[i]
         entrypoint = func.getEntryPoint().toString("0x")
-        if "{\n                    /* WARNING: Bad instruction - Truncating control flow here */\n  halt_baddata();\n}" in fdapi.decompile(func):
+        if "{\n                    /* WARNING: Bad instruction - Truncating control flow here */\n  halt_baddata();\n}" in func_to_C(func):
             continue
 
 
@@ -76,14 +76,15 @@ def main(export_path=None, export_with_stripped_names=False):
             func.setName(function_name, IMPORTED)
             funcs = list(fm.getFunctions(True))
             func = funcs[i]
-            code = fdapi.decompile(func)
+            code = func_to_C(func)
             func.setName(original_name, IMPORTED)
         else:
-            code = fdapi.decompile(func)
+            code = func_to_C(func)
 
         code = code.replace("/* WARNING: Unknown calling convention -- yet parameter storage is locked */", "")
         code = code.replace("/* WARNING: Control flow encountered bad instruction data */", "")
         code = code.replace("/* WARNING: Subroutine does not return */", "")
+        code = code.replace("/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */", "")
 
         function_metadata[function_name] = {}
         function_metadata[function_name]["entrypoint"] = entrypoint
@@ -143,6 +144,10 @@ def get_function_symbols(func):
     hf = get_high_function(func)
     lsm = hf.getLocalSymbolMap()
     return lsm.getSymbols()
+
+def func_to_C(func):
+    return ifc.decompileFunction(func, 0, ConsoleTaskMonitor()).getDecompiledFunction().getC()
+    #return fdapi.decompile(func)
 
 
 if __name__ == "__main__":
