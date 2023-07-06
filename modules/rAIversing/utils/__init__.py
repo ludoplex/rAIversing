@@ -62,11 +62,14 @@ def extract_function_name(code):
     if "WARNING: Removing unreachable block (ram," in code:
         code = code.split("\n\n")[1].split("(")[0].split("\n")[-1].split(" ")[-1]
         return code
-
-    code = code.split("(")[0].split(" ")[-1]
+    code = re.sub(re.compile("/\*.*?\*/",re.DOTALL ) ,"" ,code)
+    code.replace("::", " ")
+    code = code.split("{\n")[0].split("(")[0].split(" ")[-1]
     code = code.replace("\\n", "\n")
 
+
     splitted = re.split('[^a-zA-Z0-9_]', code)
+
 
     return splitted[-1]
 
