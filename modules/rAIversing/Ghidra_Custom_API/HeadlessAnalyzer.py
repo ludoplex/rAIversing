@@ -48,11 +48,16 @@ class HeadlessAnalyzerWrapper:
         self.__max_cpu__ = ""
         self.__loader__ = ""
         self.__noanalysis__ = ""
+        self.__recursive__ = ""
         if not os.access(self.__analyzeHeadlessBinary__, os.X_OK):
             raise PermissionError(f'analyzeHeadlessBinary is not executable: {self.__analyzeHeadlessBinary__}\n run "chmod +x {self.__analyzeHeadlessBinary__}"')
 
     def noanalysis(self):
         self.__noanalysis__ = f' -noanalysis'
+        return self
+
+    def recursive(self):
+        self.__recursive__ = f' -recursive'
         return self
 
     def process(self, file):
@@ -61,6 +66,10 @@ class HeadlessAnalyzerWrapper:
 
     def import_file(self, file_path):
         self.__import_file__ = f' -import {file_path}'
+        return self
+
+    def add_import_file(self, file_path):
+        self.__import_file__ += f' -import {file_path}'
         return self
 
     def project_location(self, project_location):
@@ -166,6 +175,9 @@ class HeadlessAnalyzerWrapper:
         self.__build__()
         print(self.__command__)
 
+    def get_command(self):
+        self.__build__()
+        return self.__command__
     def run(self, debug=False):
         self.__build__()
         if debug:

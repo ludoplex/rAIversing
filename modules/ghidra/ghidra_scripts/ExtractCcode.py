@@ -24,6 +24,7 @@ except:
 
 fpapi = FlatProgramAPI(getState().getCurrentProgram())
 fdapi = FlatDecompilerAPI(fpapi)
+
 options = DecompileOptions()
 monitor = ConsoleTaskMonitor()
 ifc = DecompInterface()
@@ -46,6 +47,7 @@ def renameForAllFunctions(functions, renaming_dict):
 
 
 def main(export_path=None, export_with_stripped_names=False):
+    program_name = fpapi.getProgramFile().getName()
     state = getState()
     project = state.getProject()
     locator = project.getProjectData().getProjectLocator()
@@ -58,6 +60,11 @@ def main(export_path=None, export_with_stripped_names=False):
 
     cCode = ""
     # If you want to export with stripped names, set this to True
+
+    if len(funcs) > 500 :
+        print("More than 500 functions in " + program_name + ". exiting!")
+        return
+
 
 
     for i in range(len(funcs)):
@@ -80,7 +87,7 @@ def main(export_path=None, export_with_stripped_names=False):
             func.setName(original_name, IMPORTED)
         else:
             code = func_to_C(func)
-
+        #print("Decompiled " + function_name)
         code = code.replace("/* WARNING: Unknown calling convention -- yet parameter storage is locked */", "")
         code = code.replace("/* WARNING: Control flow encountered bad instruction data */", "")
         code = code.replace("/* WARNING: Subroutine does not return */", "")
@@ -113,7 +120,10 @@ def main(export_path=None, export_with_stripped_names=False):
 
     if export_path is None:
         export_path = os.path.join(PROJECTS_ROOT, program_name)
-
+    else:
+        if not program_name.replace("_no_propagation", "").replace("_original", "") in export_path:
+            export_path = os.path.join(export_path, program_name.replace("_no_propagation", "").replace("_original", ""))
+    export_path = export_path.replace('"', "")
     if not os.path.exists(export_path):
         os.mkdir(export_path)
 
@@ -133,7 +143,7 @@ def main(export_path=None, export_with_stripped_names=False):
     with open(os.path.join(export_path, program_name + ".json"), "w") as f:
         f.write(json.dumps(save_file, indent=4))
         f.close()
-
+    print("#@#@#@#@#@#@#")
 def get_high_function(func):
     res = ifc.decompileFunction(func, 60, monitor)
     high = res.getHighFunction()

@@ -1,4 +1,5 @@
 import shutil
+import subprocess
 import time
 from pathlib import Path
 
@@ -6,7 +7,7 @@ from rich.progress import Progress, TimeElapsedColumn
 
 from rAIversing.AI_modules import AiModuleInterface
 from rAIversing.Engine import rAIverseEngine
-from rAIversing.Ghidra_Custom_API import binary_to_c_code, existing_project_to_c_code
+from rAIversing.Ghidra_Custom_API import binary_to_c_code, existing_project_to_c_code, folder_to_c_code
 from rAIversing.evaluator.DefaultEvaluator import DefaultEvaluator
 from rAIversing.evaluator.utils import make_run_path
 from rAIversing.pathing import *
@@ -75,7 +76,7 @@ class EvaluationManager:
                         run_path = make_run_path(model_name, source_dir, run, binary)
 
     def extract_code(self):
-        debug = True
+        debug = False
 
         ##########################################################################################################
         with Progress(*Progress.get_default_columns(),TimeElapsedColumn(),transient=True) as progress:
@@ -95,6 +96,8 @@ class EvaluationManager:
                 for source_dir in self.source_dirs:
                     source_dir_name = os.path.basename(source_dir)
                     project_location = os.path.join(EVALUATION_ROOT, model_name, source_dir_name, "extraction")
+
+
                     try:
                         with open(os.path.join(source_dir, "proc_id"), "r") as f:
                             proc_id = f.read()
@@ -102,71 +105,43 @@ class EvaluationManager:
                         print(f"proc_id file not found {os.path.join(source_dir, 'proc_id')} EXITING NOW!!! PLEASE ADD IT AND RESTART")
                         exit(-1)
                     bin_paths = list(Path(os.path.join(source_dir, "stripped")).rglob("*"))
-
                     #####################################################################################
                     task_extraction = progress.add_task(                                                #
-                        f"[bold bright_yellow]Extracting {len(bin_paths) * 3} binaries/versions",       #
-                        total=(len(bin_paths) * 3))                                                     #
+                        f"[bold bright_yellow]Extracting {len(bin_paths) * 4} binaries/versions",       #
+                        total=(len(bin_paths) * 4))                                                     #
                     #####################################################################################
 
-                    for binary_path in bin_paths:
-                        binary = os.path.basename(binary_path)
-                        try:
-                            time.sleep(1)
-                            binary_to_c_code(binary_path, processor_id=proc_id,
-                                             project_name=f"eval_{model_name}_{source_dir_name}",
-                                             project_location=project_location,
-                                             export_path=os.path.join(project_location, binary),
-                                             debug=debug,
-                                             )
-                        except KeyboardInterrupt:
-                            exit(-1)
+                    try:
+                        cmd = folder_to_c_code(source_dir, processor_id=proc_id,
+                                         project_name=f"eval_{model_name}_{source_dir_name}",
+                                         project_location=project_location,
+                                         export_path=os.path.join(project_location),
+                                         debug=debug,max_cpu=self.connections
+                                         )
+                        process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                        while True:
+                            output = process.stdout.readline()
+                            if process.poll() is not None:
+                                break
+                            if output:
+                                if "#@#@#@#@#@#@#" in output.decode():
+                                    progress.advance(task_extraction)
 
-                        ######################################################################
-                        progress.advance(task_extraction)                                    #
-                    ##########################################################################
-
+                    except KeyboardInterrupt:
+                        exit(-1)
                     for binary_path in Path(os.path.join(source_dir, "original")).rglob("*"):
                         binary = os.path.basename(binary_path).replace("_original", "")
                         export_path = os.path.join(project_location, binary)
-
-                        try:
-                            time.sleep(1)
-                            binary_to_c_code(binary_path, processor_id=proc_id,
-                                         project_name=f"eval_{model_name}_{source_dir_name}",
-                                         project_location=project_location, export_path=export_path,
-                                         debug=debug,max_cpu=self.connections
-                                             )
-                        except KeyboardInterrupt:
-                            exit(-1)
                         try:
                             existing_project_to_c_code(project_location=project_location, binary_name=f"{binary}_original",
-                                                   project_name=f"eval_{model_name}_{source_dir_name}",
-                                                   export_with_stripped_names=True, export_path=export_path,
-                                         debug=debug,max_cpu=self.connections
-                                             )
+                                                       project_name=f"eval_{model_name}_{source_dir_name}",
+                                                       export_with_stripped_names=True, export_path=export_path,
+                                                       debug=debug,max_cpu=self.connections,folder_path="original"
+                                                       )
                         except KeyboardInterrupt:
                             exit(-1)
-
-                        ########################################################################
-                        progress.advance(task_extraction)                                      #
-                    ############################################################################
-
-                    for binary_path in Path(os.path.join(source_dir, "no_propagation")).rglob("*"):
-                        binary = os.path.basename(binary_path).replace("_no_propagation", "")
-                        export_path = os.path.join(project_location, binary)
-                        try:
-                            time.sleep(1)
-                            binary_to_c_code(binary_path, processor_id=proc_id,
-                                         project_name=f"eval_{model_name}_{source_dir_name}",
-                                         project_location=project_location, export_path=export_path,
-                                         debug=debug,max_cpu=self.connections
-                                             )
-                        except KeyboardInterrupt:
-                            exit(-1)
-
+                        progress.advance(task_extraction)
                         #########################################################################
-                        progress.advance(task_extraction)                                       #
                     progress.remove_task(task_extraction)                                       #
                     progress.advance(task_source_dirs) if len(self.source_dirs) > 1 else None   #
                 progress.remove_task(task_source_dirs) if len(self.source_dirs) > 1 else None   #
