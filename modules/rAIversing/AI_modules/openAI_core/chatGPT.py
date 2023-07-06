@@ -88,11 +88,9 @@ def assemble_prompt_v2(code):
     return pre + code + post
 
 
-
-
-def api_key(path_to_api_key=DEFAULT_API_KEY_PATH, engine=PromptEngine.DEFAULT):
+def api_key(path_to_api_key=DEFAULT_API_KEY_PATH, engine=PromptEngine.DEFAULT, temperature=1):
     chat = ChatGPTModule()
-    chat.init_api(path_to_api_key, engine=engine)
+    chat.init_api(path_to_api_key, engine=engine, temperature=temperature)
     return chat
 
 
@@ -106,12 +104,14 @@ class ChatGPTModule(AiModuleInterface):
         self.logger = logging.getLogger("ChatGPTModule")
         self.console = Console()
         self.engine = PromptEngine.DEFAULT
+        self.temperature = 0.5
 
     def get_model_name(self):
         return self.engine.value
 
-    def init_api(self, path_to_api_key=DEFAULT_API_KEY_PATH, engine=PromptEngine.DEFAULT):
+    def init_api(self, path_to_api_key=DEFAULT_API_KEY_PATH, engine=PromptEngine.DEFAULT, temperature=1):
         self.engine = engine
+        self.temperature = temperature
         self.api_key_path = path_to_api_key
         with open(self.api_key_path) as f:
             self.api_key = f.read().strip()
@@ -124,13 +124,17 @@ class ChatGPTModule(AiModuleInterface):
         trunc_offset = 100
 
         self.chat_small = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine.small(),
-                                                max_tokens=max(self.engine.small_range())+trunc_offset,
-                                                truncate_limit=max(self.engine.small_range()))
+                                                max_tokens=max(self.engine.small_range()) + trunc_offset,
+                                                truncate_limit=max(self.engine.small_range()),
+                                                temperature=self.temperature
+                                                )
         self.chat_medium = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine.medium(),
                                                  max_tokens=max(self.engine.medium_range()) + trunc_offset,
+                                                 temperature=self.temperature,
                                                  truncate_limit=max(self.engine.medium_range()))
         self.chat_large = revChatGPT.V3.Chatbot(api_key=self.api_key, engine=self.engine.large(),
                                                 max_tokens=max(self.engine.large_range()) + trunc_offset,
+                                                temperature=self.temperature,
                                                 truncate_limit=max(self.engine.large_range()))
 
     def get_max_tokens(self):
@@ -139,7 +143,7 @@ class ChatGPTModule(AiModuleInterface):
     def assemble_prompt(self, input_code):
         return assemble_prompt_v1(input_code)
 
-    def prompt(self, prompt,try_larger=False):  # type: (str,int) -> (str,int)
+    def prompt(self, prompt, try_larger=False):  # type: (str,int) -> (str,int)
         """Prompts the model and returns the result and the number of used tokens"""
         # self.console.print("Prompting ChatGPT with: " + str(self.calc_used_tokens(prompt)) + " tokens")
         needed_tokens = self.calc_used_tokens(prompt)
@@ -325,8 +329,6 @@ class ChatGPTModule(AiModuleInterface):
                         max_double_quote_insertions -= 1
                         continue
 
-
-
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                         f.write(response_string_orig)
                     print(e)
@@ -365,12 +367,12 @@ class ChatGPTModule(AiModuleInterface):
         old_func_name = extract_function_name(input_code)
         if old_func_name is None or old_func_name == "":
             raise Exception(f"No function name found in input code {input_code}")
-        try_larger=False
+        try_larger = False
         total_tokens_used = 0
         for i in range(0, retries):
             e = " " or str(e)
             try:
-                response_string_orig, used_tokens = self.prompt(full_prompt,try_larger)
+                response_string_orig, used_tokens = self.prompt(full_prompt, try_larger)
                 total_tokens_used += used_tokens
                 response_dict = self.process_response(response_string_orig)
                 improved_code, renaming_dict = do_renaming(response_dict, input_code, old_func_name)
@@ -402,7 +404,7 @@ class ChatGPTModule(AiModuleInterface):
                     improved_code = self.postprocess_code(improved_code)
                     if improved_code == input_code:
                         raise Exception("No change")
-                    return improved_code, renaming_dict, total_tokens_used,i
+                    return improved_code, renaming_dict, total_tokens_used, i
                 else:
                     self.console.log(
                         f"[blue]{old_func_name}[/blue]:[orange3]Got invalid code from model, Retry  {i + 1}/{retries}[/orange3]")
