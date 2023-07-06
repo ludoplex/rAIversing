@@ -6,7 +6,7 @@ from rAIversing.evaluator.EvaluatorInterface import EvaluatorInterface
 from rAIversing.evaluator.ScoringAlgos import calc_score
 from rAIversing.evaluator.utils import *
 from rAIversing.utils import save_to_json, save_to_csv
-from rich.progress import Progress
+from rich.progress import Progress, TimeElapsedColumn
 import multiprocessing as mp
 
 
@@ -24,7 +24,7 @@ class LayeredEvaluator(EvaluatorInterface):
 
     def evaluate(self):
 
-        with Progress(transient=True) as progress:
+        with Progress(*Progress.get_default_columns(),TimeElapsedColumn(),transient=True,speed_estimate_period=60.0) as progress:
             task_ai_modules = progress.add_task(f"[bold bright_yellow]Evaluating {len(self.ai_modules)} AI modules", total=len(self.ai_modules))
 
             self.progress = progress
@@ -125,8 +125,8 @@ class LayeredEvaluator(EvaluatorInterface):
             self.plot_dataframe(avg_df_table,avg_title,export_path)
             self.plot_dataframe(median_df_table,median_title,export_path)
 
-        avg_export_console = Console(record=True, width=165)
-        median_export_console = Console(record=True, width=165)
+        avg_export_console = Console(record=True, width=180)
+        median_export_console = Console(record=True, width=180)
 
         avg_export_console.print(avg_table)
         median_export_console.print(median_table)
