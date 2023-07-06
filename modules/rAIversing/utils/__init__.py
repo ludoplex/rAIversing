@@ -214,7 +214,7 @@ def prompt_parallel(ai_module, result_queue, name, code, retries):
         if f"{name}\n" in code:
             for i in range(1, 20):
                 code = code.replace(f"{name}\n{' ' * i}(", f"{name}(")
-        result = ai_module.prompt_with_renaming(code, retries)
+        result = ai_module.prompt_with_renaming(code, retries, name)
         result_queue.put((name, result))
     except KeyboardInterrupt:
         return

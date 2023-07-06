@@ -354,7 +354,7 @@ class ChatGPTModule(AiModuleInterface):
 
         return response_dict
 
-    def prompt_with_renaming(self, input_code, retries=5):  # type: (str,int) -> (str, dict)
+    def prompt_with_renaming(self, input_code, retries=5,name=None):  # type: (str,int) -> (str, dict)
         """Prompts the model and returns the resulting code and a dict of renamed Names
             This version uses the new prompt format and is more efficient than the old one
             It only asks the model for the renaming dict and then applies it to the code
@@ -375,6 +375,9 @@ class ChatGPTModule(AiModuleInterface):
                 response_string_orig, used_tokens = self.prompt(full_prompt, try_larger)
                 total_tokens_used += used_tokens
                 response_dict = self.process_response(response_string_orig)
+                if old_func_name not in response_dict.keys() and (name is not None and name in response_dict.keys()):
+                    old_func_name = name
+
                 improved_code, renaming_dict = do_renaming(response_dict, input_code, old_func_name)
                 # with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                 #   f.write(response_string_orig)

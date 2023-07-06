@@ -1,7 +1,7 @@
 class AiModuleInterface:
 
 
-    def prompt_with_renaming(self, input_code, retries):  # type: (str,int) -> (str, dict)
+    def prompt_with_renaming(self, input_code, retries,name=None):  # type: (str,int) -> (str, dict)
         """Prompts the model and returns the resulting code and a dict of renamed Names"""
         pass
 
