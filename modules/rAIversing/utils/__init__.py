@@ -59,6 +59,7 @@ def check_and_create_project_path(project_path):
 
 
 def extract_function_name(code):
+    code=code.replace("(*)", "")
     if "WARNING: Removing unreachable block (ram," in code:
         code = code.split("\n\n")[1].split("(")[0].split("\n")[-1].split(" ")[-1]
         return code
