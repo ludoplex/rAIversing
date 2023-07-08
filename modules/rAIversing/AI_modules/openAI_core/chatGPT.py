@@ -34,17 +34,16 @@ The original code is as follows:
     DO ONLY respond in the following format:
         
         {
-        "<original_function_name>": "<new_function_name>",
+        "<original_function_name>": "<more_descriptive_function_name>",
         "<original_parameter_name_1>": "<new_parameter_name_1>",
         "<original_parameter_name_2>": "<new_parameter_name_2>",
-        ...
         "<original_variable_name_1>": "<new_variable_name_1>",
         "<original_variable_name_2>": "<new_variable_name_2>",
-        ...
+        "<original_variable_name_n>": "<new_variable_name_n>"
         }
         
     Do not use single quotes. No Explanation is needed.
-    Do NOT rename the function to "reverse_engineered", "improved_function" or similar.
+    You MUST NOT included reverse, engineer or improve in the function name. UNLESS the function is actually reversing something.
 """
 
     return pre + code + post
@@ -153,30 +152,54 @@ class ChatGPTModule(AiModuleInterface):
         if needed_tokens > self.get_max_tokens():
             raise Exception("Used more tokens than allowed: " + str(needed_tokens) + " > " + str(self.get_max_tokens()))
         elif needed_tokens in self.engine.large_range() or try_larger:
-            answer = self.chat_large.ask(prompt)
+            self.chat_large.reset()
+            try:
+                answer = self.chat_large.ask(prompt)
+            except TypeError as e:
+                raise IncompleteResponseException(e)
+            except Exception as e:
+                raise e
             if "{" not in answer:
-                print(f"messages: {self.chat_large.conversation['default']}")
-                print(f"Answer: {answer}" + locator())
+                if len(self.chat_large.conversation['default']) < 3:
+                    print(f"messages: {self.chat_large.conversation['default']}")
+                print(f"Answer: >{answer}<\n" + locator())
                 print(f"length of messages: {len(self.chat_large.conversation['default'])}")
+                raise IncompleteResponseException("Incomplete Response from Chat (no { found)" + locator())
             self.chat_large.conversation["default"].pop()
             used_tokens = self.chat_large.get_token_count()
             self.chat_large.reset()
             time.sleep(30)
         elif needed_tokens in self.engine.medium_range():
-            answer = self.chat_medium.ask(prompt)
+            self.chat_medium.reset()
+            try:
+                answer = self.chat_medium.ask(prompt)
+            except TypeError as e:
+                raise IncompleteResponseException(e)
+            except Exception as e:
+                raise e
             if "{" not in answer:
-                print(f"messages: {self.chat_medium.conversation['default']}")
-                print(f"Answer: {answer}" + locator())
+                if len(self.chat_medium.conversation['default']) < 3:
+                    print(f"messages: {self.chat_medium.conversation['default']}")
+                print(f"Answer: >{answer}<\n" + locator())
+                raise IncompleteResponseException("Incomplete Response from Chat (no { found)" + locator())
             self.chat_medium.conversation["default"].pop()
             used_tokens = self.chat_medium.get_token_count()
             self.chat_medium.reset()
             time.sleep(30)
         elif needed_tokens in self.engine.small_range():
-            answer = self.chat_small.ask(prompt)
+            self.chat_small.reset()
+            try:
+                answer = self.chat_small.ask(prompt)
+            except TypeError as e:
+                raise IncompleteResponseException(e)
+            except Exception as e:
+                raise e
             if "{" not in answer:
-                print(f"Answer: {answer}" + locator())
-                print(f"tokens: {self.chat_small.get_token_count()}")
+                if len(self.chat_small.conversation['default']) < 3:
+                    print(f"messages: {self.chat_small.conversation['default']}")
+                print(f"Answer: >{answer}<\n" + locator())
                 print(f"needed tokens: {needed_tokens}")
+                raise IncompleteResponseException("Incomplete Response from Chat (no { found)" + locator())
             self.chat_small.conversation["default"].pop()
             used_tokens = self.chat_small.get_token_count()
             self.chat_small.reset()
@@ -398,7 +421,7 @@ class ChatGPTModule(AiModuleInterface):
 
                 if check_reverse_engineer_fail_happend(improved_code):
                     self.console.log(
-                        f"[blue]{old_func_name}[/blue]:[orange3]Got reverse engineer fail from model, Retry  {i + 1}/{retries}[/orange3]")
+                        f"[orange3]Got renaming fail for: [blue]{old_func_name}[/blue] from model, Retry  {i + 1}/{retries}[/orange3]")
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                         f.write(response_string_orig)
                     continue

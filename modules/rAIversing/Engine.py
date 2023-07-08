@@ -36,9 +36,10 @@ class rAIverseEngine:
         self.retries = 5  # TODO make this a parameter
         logging.basicConfig()
         self.console = Console(soft_wrap=True)
+        self.load_save_file()
 
     def load_save_file(self):
-        self.console.log(f"[bold green_yellow]Loading Data from {self.path_to_save_file}[/bold green_yellow]")
+
         if os.path.isfile(self.path_to_save_file):
             with open(self.path_to_save_file) as f:
                 save_file = json.load(f)
@@ -63,6 +64,8 @@ class rAIverseEngine:
             self.functions[name]["current_name"] = current_name
             self.current_fn_lookup[name] = current_name
             self.original_fn_lookup[current_name] = name
+        if not self.check_all_processed():
+            self.console.log(f"[bold green_yellow]Loaded Data from {self.path_to_save_file}[/bold green_yellow]")
 
     def save_functions(self):
         with open(self.path_to_save_file, "w") as f:
@@ -76,7 +79,7 @@ class rAIverseEngine:
                 return True
         return False
 
-    def get_lowest_function_layer(self):
+    def get_lowest_function_layer(self,is_lower_layer=False):
         lflList = []
         for name, data in self.functions.items():
             if data["improved"] == False and not data["skipped"]:
@@ -94,23 +97,25 @@ class rAIverseEngine:
         if len(lflList) == 0:
             sorted_missing = self.get_sorted_missing()
             if len(sorted_missing) > 1:
-                self.logger.info(f'{len(sorted_missing)} functions missing, locking {sorted_missing[0]}')
+                self.console.log(f'[bold yellow]Still[/bold yellow] {len(sorted_missing)} [bold yellow]functions missing, locking [blue]{sorted_missing[0]}')
                 lock_candidate = sorted_missing.pop(0)
                 self.lock_function(lock_candidate)
-                lflList = self.get_lowest_function_layer()
+                lflList = self.get_lowest_function_layer(is_lower_layer=True)
                 if len(lflList) != 0:
                     if lflList not in self.to_be_redone:
                         self.to_be_redone.append(lflList)
                         for name in lflList:
                             self.functions[name]["code_backup"] = self.functions[name]["code"]
                     # print(lflList)
-                    self.logger.info(f"Locked functions: {self.locked_functions}")
+
         if len(lflList) == 0:
             missing = self.get_missing_functions()
             regex = r"FUN_\w+"
             for name in missing:  # Probably just one entry
                 print(name)
                 pass
+        if not is_lower_layer and len(self.locked_functions) > 0:
+            self.console.log(f"[bold yellow]Locked functions: [/bold yellow]{self.locked_functions}")
 
         return lflList
 
@@ -139,7 +144,6 @@ class rAIverseEngine:
         self.rename_for_all_functions(renaming_dict)
 
     def lock_function(self, name):
-        self.logger.info(f"Locking function {name}")
         self.skip_function(name)
         self.locked_functions.append(name)
 
@@ -257,9 +261,9 @@ class rAIverseEngine:
 
         return code
 
-    def check_all_improved(self):
+    def check_all_processed(self):
         for name, data in self.functions.items():
-            if not data["improved"]:
+            if not data["improved"] and not data["skipped"]:
                 return False
         return True
 
@@ -278,14 +282,14 @@ class rAIverseEngine:
         overall_processed_functions = self.count_processed()
         lfl = []
 
-        while not self.check_all_improved():
+        while not self.check_all_processed():
             self.console.log(f"[bold yellow]Gathering functions for layer [/bold yellow]{function_layer}")
             self.handle_unlocking()
 
             lfl = self.get_lowest_function_layer() if not no_propagation else self.get_missing_functions()
             if len(lfl) == 0:
                 if len(self.get_missing_functions()) == 0:
-                    self.console.log("[bold blue]All functions improved[/bold blue]")
+                    self.console.log(f"[bold blue]All {self.count_processed()} functions improved[/bold blue]")
                 else:
                     self.console.print(f"[bold orange3]No functions found for layer [/bold orange3]{function_layer}")
                     self.console.print(f"These functions remain {self.get_missing_functions()}")
@@ -303,7 +307,7 @@ class rAIverseEngine:
 
             function_layer = len(self.layers)
             self.console.log(
-                f"Starting layer {function_layer} with {len(lfl)} of {len(self.functions)} functions. Overall processed functions: {overall_processed_functions}/{len(self.functions)} Used tokens: {self.used_tokens}")
+                f"[bold orange1]Starting layer [/bold orange1]{function_layer}[bold orange1] with [/bold orange1]{len(lfl)}[bold orange1] of[/bold orange1] {len(self.functions)}[bold orange1] functions. Overall processed functions: [/bold orange1]{overall_processed_functions}/{len(self.functions)}[bold orange1] Used tokens: [/bold orange1]{self.used_tokens}")
 
             function_layer += 1
             processed_functions = 0
@@ -367,10 +371,10 @@ class rAIverseEngine:
                     exit(-1)
 
                 except Exception as e:
-                    self.console.print(f"Exception occured: {e}")
-                    self.console.print(f"Saving functions")
+                    self.console.log(f"Exception occured: {e}")
+                    self.console.log(f"Saving functions")
                     self.save_functions()
-                    self.console.print(f"{processed_functions}/{total} | Saved functions! Exiting!")
+                    self.console.log(f"{processed_functions}/{total} | Saved functions! Exiting!")
                     exit(0)
 
             for p in processes:
@@ -385,7 +389,7 @@ class rAIverseEngine:
         for name in self.get_missing_functions():
             current_cost = self.ai_module.calc_used_tokens(self.ai_module.assemble_prompt(self.functions[name]["code"]))
             if current_cost > self.max_tokens:
-                self.console.print(f"Function [blue]{name}[/blue] is too big [red]{current_cost}[/red] Skipping")
+                self.console.log(f"Function [blue]{name}[/blue] is too big [red]{current_cost}[/red] Skipping")
                 self.skip_function(name)
 
     def build_prompting_args(self, lfl, prompting_args, result_queue):

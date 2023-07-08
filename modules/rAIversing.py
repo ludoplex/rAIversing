@@ -55,9 +55,8 @@ def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=N
     import_path = check_and_fix_project_path(path)
     if not is_already_exported(import_path, binary_name):
         existing_project_to_c_code(import_path, binary_name, project_name,
-                                   custom_headless_binary=custom_headless_binary)
+                                   custom_headless_binary=custom_headless_binary,max_cpu=parallel if parallel > 1 else 2)
     raie = rAIverseEngine(ai_module, json_path=f"{os.path.join(import_path, binary_name)}.json", max_tokens=max_tokens)
-    raie.load_save_file()
     if dry_run:
         raie.dry_run()
         return
@@ -76,7 +75,7 @@ def run_on_new_binary(binary_path, arch, ai_module=None, custom_headless_binary=
         raise ValueError("No AI module was provided")
     import_path = check_and_fix_bin_path(binary_path)
     binary_to_c_code(import_path, arch, custom_headless_binary=custom_headless_binary, project_location=output_path,
-                     project_name=project_name)
+                     project_name=project_name,max_cpu=parallel if parallel > 1 else 2)
     if output_path is not None:
         binary_name = os.path.basename(binary_path).replace(".", "_")
         json_path = f"{os.path.join(output_path, binary_name)}.json"
@@ -85,7 +84,6 @@ def run_on_new_binary(binary_path, arch, ai_module=None, custom_headless_binary=
     else:
         json_path = ""
     raie = rAIverseEngine(ai_module, json_path=json_path, binary_path=import_path, max_tokens=max_tokens)
-    raie.load_save_file()
     if dry_run:
         raie.dry_run()
         return
