@@ -27,6 +27,9 @@ class InvalidResponseException(Exception):
 class IncompleteResponseException(Exception):
     """Raised when the response is incomplete"""
 
+class EmptyResponseException(Exception):
+    """Raised when the response is empty"""
+
 
 def ptr_escape(string):
     rand_str = get_random_string(5)
@@ -328,6 +331,10 @@ def insert_missing_double_quote(response, exception):
     if ":" in response[char:]:
         mid = response[char:].split(':')[0] + '":'
         post = response[char:].split(':',1)[1]
+    elif "..." in response[char:]:
+        response=response.replace("...\n", "")
+        response = remove_trailing_commas(response)
+        return response
     else:
         print(response)
         print(exception)

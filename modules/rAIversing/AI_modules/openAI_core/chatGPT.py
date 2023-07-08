@@ -14,7 +14,8 @@ from rAIversing.pathing import *
 from rAIversing.utils import extract_function_name, NoResponseException, clear_extra_data, check_valid_code, \
     MaxTriesExceeded, InvalidResponseException, format_newlines_in_code, escape_failed_escapes, \
     check_reverse_engineer_fail_happend, locator, insert_missing_delimiter, do_renaming, \
-    IncompleteResponseException, insert_missing_double_quote, HardLimitReached, get_char, insert_missing_colon,remove_trailing_commas
+    IncompleteResponseException, insert_missing_double_quote, HardLimitReached, get_char, insert_missing_colon, \
+    remove_trailing_commas, EmptyResponseException
 
 
 def assemble_prompt_v1(code):
@@ -153,14 +154,11 @@ class ChatGPTModule(AiModuleInterface):
             raise Exception("Used more tokens than allowed: " + str(needed_tokens) + " > " + str(self.get_max_tokens()))
         elif needed_tokens in self.engine.large_range() or try_larger:
             self.chat_large.reset()
-            try:
-                answer = self.chat_large.ask(prompt)
-            except TypeError as e:
-                print("Got TypeError from ChatGPT : " + str(e))
-                raise IncompleteResponseException(e)
-            except Exception as e:
-                raise e
-            if "{" not in answer:
+            answer = self.chat_large.ask(prompt)
+
+            if answer == "":
+                raise EmptyResponseException("Empty Response from Chat (empty string)")
+            if "{" not in answer :
                 if len(self.chat_large.conversation['default']) < 3:
                     print(f"messages: {self.chat_large.conversation['default']}")
                 print(f"Answer: >{answer}<\n" + locator())
@@ -172,13 +170,9 @@ class ChatGPTModule(AiModuleInterface):
             time.sleep(30)
         elif needed_tokens in self.engine.medium_range():
             self.chat_medium.reset()
-            try:
-                answer = self.chat_medium.ask(prompt)
-            except TypeError as e:
-                print("Got TypeError from ChatGPT : " + str(e))
-                raise IncompleteResponseException(e)
-            except Exception as e:
-                raise e
+            answer = self.chat_medium.ask(prompt)
+            if answer == "":
+                raise EmptyResponseException("Empty Response from Chat (empty string)")
             if "{" not in answer:
                 if len(self.chat_medium.conversation['default']) < 3:
                     print(f"messages: {self.chat_medium.conversation['default']}")
@@ -190,13 +184,9 @@ class ChatGPTModule(AiModuleInterface):
             time.sleep(30)
         elif needed_tokens in self.engine.small_range():
             self.chat_small.reset()
-            try:
-                answer = self.chat_small.ask(prompt)
-            except TypeError as e:
-                print("Got TypeError from ChatGPT : " + str(e))
-                raise IncompleteResponseException(e)
-            except Exception as e:
-                raise e
+            answer = self.chat_small.ask(prompt)
+            if answer == "":
+                raise EmptyResponseException("Empty Response from Chat (empty string)")
             if "{" not in answer:
                 if len(self.chat_small.conversation['default']) < 3:
                     print(f"messages: {self.chat_small.conversation['default']}")
@@ -263,7 +253,7 @@ class ChatGPTModule(AiModuleInterface):
             except json.JSONDecodeError as e:
                 if "char" in str(e):
                     current_char = get_char(e)
-                    if current_char <= json_decode_error_char:
+                    if current_char < json_decode_error_char:
                         print(type(e))
                         print(e)
                         with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
@@ -352,8 +342,8 @@ class ChatGPTModule(AiModuleInterface):
                 if check_reverse_engineer_fail_happend(improved_code):
                     self.console.log(
                         f"[orange3]Got renaming fail for: [blue]{old_func_name}[/blue] from model, Retry  {i + 1}/{retries}[/orange3]")
-                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
-                        f.write(response_string_orig)
+                    #with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                    #    f.write(response_string_orig)
                     continue
 
                 if check_valid_code(improved_code):
@@ -373,6 +363,10 @@ class ChatGPTModule(AiModuleInterface):
             except NoResponseException as e:
                 raise e
 
+            except EmptyResponseException as e:
+                self.console.log(f"[orange3]Got empty response for: [blue]{old_func_name}[/blue], Retry  {i + 1}/{retries}! Is it maybe too long: {self.calc_used_tokens(full_prompt)}[/orange3]")
+                continue
+
             except IncompleteResponseException as e:
                 if i >= retries - 1:
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
@@ -382,12 +376,13 @@ class ChatGPTModule(AiModuleInterface):
                 if i >= (retries - 1) / 2:
                     try_larger = True
                 self.console.log(
-                    f"[blue]{old_func_name}[/blue]:[orange3]Got incomplete response from model, Retry  {i + 1}/{retries}! Is it maybe too long: {self.calc_used_tokens(full_prompt)}[/orange3]")
+                    f"[orange3]Got incomplete response for [blue]{old_func_name}[/blue], Retry  {i + 1}/{retries}! Is it maybe too long: {self.calc_used_tokens(full_prompt)}[/orange3]")
                 with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                     f.write(response_string_orig)
                 continue
 
             except json.JSONDecodeError as e:
+                self.console.log(f"Got JSONDecodeError: {e}" + locator())
                 if i >= retries - 1:
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                         f.write(response_string_orig)
