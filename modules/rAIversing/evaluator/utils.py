@@ -1,4 +1,5 @@
 import json
+import math
 import os
 
 import pandas as pd
@@ -6,7 +7,7 @@ from rich.table import Table, Column
 
 from rAIversing.pathing import PROJECTS_ROOT, EVALUATION_ROOT
 from rAIversing.utils import to_snake_case, locator
-
+from cairosvg import svg2png
 
 
 class FunctionNotInLayersException(Exception):
@@ -40,7 +41,7 @@ def split_run_path(run_path):
     return model_name, source_dir, int(run.replace("run_", "")), binary
 
 
-def collect_pairs(original, predicted ):
+def collect_pairs(original, predicted):
     """
     finds the corresponding function names between two lists of functions
     :param original: list of functions
@@ -88,6 +89,9 @@ def collect_layered_pairs(original_fn, original_layers, predicted_fn, predicted_
     for x in range(0, len(predicted_layers)):
         pairs[x] = {}
     if len(predicted_layers) == 0:
+        print(original_layers)
+        print(predicted_layers)
+        print(predicted_fn)
         raise Exception("No layers found")
 
     for orig_name, orig_data in original_fn.items():
@@ -120,12 +124,12 @@ def collect_layered_pairs(original_fn, original_layers, predicted_fn, predicted_
         except Exception as e:
             print(e)
             raise e
-        #print(f"{orig_name} -> {predicted_name} in layer {layer_index}")
+        # print(f"{orig_name} -> {predicted_name} in layer {layer_index}")
 
         pairs[layer_index][orig_name] = predicted_name
 
     result_pairs = {}
-    #remove empty layers
+    # remove empty layers
     for layer, pair in pairs.items():
         if len(pair) != 0:
             result_pairs[layer] = pair
@@ -137,10 +141,26 @@ def get_layers_index(layers, function_name):
     if "FUN" not in function_name:
         function_name = "FUN_" + function_name.replace("0x", "")
     for index, layer in enumerate(layers):
-        #print(f"layer {index}")
+        # print(f"layer {index}")
         if function_name in layer:
             return index
     raise FunctionNotInLayersException(f"Function {function_name} not found in layers")
+
+
+def check_extracted(model_name, source_dir_name, binary):
+    """
+    checks if the binary has been extracted
+    or if it has been skipped due too many functions
+    TODO fix this whole too many functions thing for eval runs
+    :param model_name:
+    :param source_dir_name:
+    :param binary:
+    :return:
+    """
+    run_path = os.path.join(EVALUATION_ROOT, model_name, source_dir_name, "extraction", binary)
+    # print(os.path.join(run_path, "not_extracted"))
+    # print(not os.path.exists(os.path.join(run_path, "not_extracted")))
+    return not os.path.exists(os.path.join(run_path, "not_extracted"))
 
 
 def collect_partial_scores(scored):
@@ -154,7 +174,7 @@ def collect_partial_scores(scored):
     hfl_sum = 0
     hfl_count = 0
 
-    layer=0
+    layer = 0
     for group, scores in scored.items():
         for entrypoint, entry in scores.items():
             pred_name = entry["predicted"]
@@ -167,31 +187,65 @@ def collect_partial_scores(scored):
                 lfl_sum += entry["score"]
                 lfl_count += 1
         layer += 1
-    return {"all": {"score": (hfl_sum + lfl_sum) / (hfl_count + lfl_count), "count": hfl_count + lfl_count},
-            "hfl": {"score": hfl_sum / hfl_count, "count": hfl_count},
-            "lfl": {"score": lfl_sum / lfl_count, "count": lfl_count}}
+    return {"all": {"score": ((hfl_sum + lfl_sum) / (hfl_count + lfl_count)) if (hfl_count + lfl_count) else 0,
+                    "count": hfl_count + lfl_count},
+            "hfl": {"score": (hfl_sum / hfl_count) if hfl_count else 0
+                , "count": hfl_count},
+            "lfl": {"score": (lfl_sum / lfl_count) if lfl_count else 0, "count": lfl_count}}
 
-def collect_layered_partial_scores(scored):
+
+def collect_layered_partial_scores(scored,bucket_factor = 0.0):
     """
-    calculates the score for the layered functions and total score
+    calculates the score for the layered functions and total score for each bucket
     :param scored: the scored functions dict (ends up in the *_eval.json file)
     :param predicted: dict of predicted functions
     :return: dict of all, and layer scores and counts
     """
+    layer_indices = list(scored.keys())
+    layers_left = len(layer_indices)
+
     result = {}
+    current_bucket = 0
+    while layers_left > 0:
+        for i in range(layers_for_bucket(current_bucket, bucket_factor)):
+            layer_index = layer_indices.pop(0)
+            layer = scored[layer_index]
+            if current_bucket not in result.keys():
+                result[current_bucket] = {"score": 0, "count": 0}
+            for entrypoint, entry in layer.items():
+                pred_name = entry["predicted"]
+                if "nothing" in pred_name.lower() or "FUNC_" in pred_name:
+                    continue
+                result[current_bucket]["score"] += entry["score"]
+                result[current_bucket]["count"] += 1
+            layers_left -= 1
+            if layers_left == 0:
+                break
+        if result[current_bucket]["count"] > 0 and result[current_bucket]["score"] > 0:
+            result[current_bucket]["score"] /= result[current_bucket]["count"]
+        elif result[current_bucket]["score"] > 0:
+            print(
+                f"Bucket {current_bucket} has score {result[current_bucket]['score']} but count {result[current_bucket]['count']}")
+            raise Exception("Bucket has score but count is 0")
+        current_bucket += 1
+
+    return result
 
     for layer_index, scores in scored.items():
-        result[layer_index]= {"score": 0, "count": 0}
+        result[layer_index] = {"score": 0, "count": 0}
         for entrypoint, entry in scores.items():
             pred_name = entry["predicted"]
             if "nothing" in pred_name.lower() or "FUNC_" in pred_name:
                 continue
             result[layer_index]["score"] += entry["score"]
             result[layer_index]["count"] += 1
+
+
         if result[layer_index]["count"] > 0 and result[layer_index]["score"] > 0:
             result[layer_index]["score"] /= result[layer_index]["count"]
         elif result[layer_index]["score"] > 0:
-            print(f"Layer {layer_index} has score {result[layer_index]['score']} but count {result[layer_index]['count']}")
+            print(
+                f"Layer {layer_index} has score {result[layer_index]['score']} but count {result[layer_index]['count']}")
             raise Exception("Layer has score but count is 0")
 
     return result
@@ -234,9 +288,6 @@ def setup_results(ai_modules, results, source_dirs, runs):
                     results[model_name][source_dir_name][run][binary] = {}
 
 
-
-
-
 def build_scoring_args(calculator, direct, original, scoring_args):
     for group, layer in direct.items():
         for orig_name, pred_name in layer.items():
@@ -264,7 +315,6 @@ def calc_relative_percentage_difference(best, worst, actual):
 
 
 def fill_table(table, scores, binary):
-    # self.console.print(scores)
 
     score_pred = scores["pred"]["all"]["score"]
     score_pred_hfl = scores["pred"]["hfl"]["score"]
@@ -311,7 +361,7 @@ def fill_table(table, scores, binary):
                   f"{counted_worst:.0f}")
 
 
-def fill_layered_table( table, scores, do_csv=False):
+def fill_layered_table(table, scores, do_csv=False):
     score_previous_layer = 0
     for layer_name, layer in scores["pred-layered"].items():
         score_pred = scores["pred-layered"][layer_name]["score"]
@@ -325,8 +375,6 @@ def fill_layered_table( table, scores, do_csv=False):
 
         score_best_vs_pred_direct = scores["best_vs_pred-layered"][layer_name]["score"]
 
-        total_orig = scores["total_count"]["original"]["count"]
-        total_pred = scores["total_count"]["predicted"]["count"]
 
         try:
             score_best_vs_pred = score_pred / score_best
@@ -368,6 +416,33 @@ def fill_layered_table( table, scores, do_csv=False):
         score_previous_layer = score_pred
 
 
+def layers_for_bucket(bucket_number,growth_factor=0.0):
+    return math.floor(math.pow((1 + growth_factor),bucket_number))
+
+def get_bucket_scores(scores):
+    layers_left = len(scores["pred-layered"].keys())
+    bucket_scores = {}
+    current_bucket = 0
+    while layers_left > 0:
+        for layer_index in range(layers_for_bucket(current_bucket)):
+            layer_name = str(layer_index)
+            if current_bucket not in bucket_scores:
+                bucket_scores[layer_name] = {"score": 0, "count": 0}
+
+            score_pred = scores["pred-layered"][layer_name]["score"]
+            count_pred = scores["pred-layered"][layer_name]["count"]
+
+            score_best = scores["best-layered"][layer_name]["score"]
+            count_best = scores["best-layered"][layer_name]["count"]
+
+            score_worst = scores["worst-layered"][layer_name]["score"]
+            count_worst = scores["worst-layered"][layer_name]["count"]
+
+            score_best_vs_pred_direct = scores["best_vs_pred-layered"][layer_name]["score"]
+
+            layers_left-=1
+        current_bucket+=1
+
 def create_table(title):
     result_table = Table(Column(header="Binary", style="bold bright_yellow on grey23"),
                          Column(header="Actual\nAll", style="bold cyan1 on grey23", justify="center"),
@@ -386,3 +461,9 @@ def create_table(title):
                          title_style="bold bright_red on grey23 ", style="on grey23",
                          border_style="bold bright_green", header_style="bold yellow1 on grey23", )
     return result_table
+
+
+def svg_2_png(svg_path):
+    with open(svg_path + ".svg", "rb") as svg_file:
+        svg = svg_file.read()
+    svg2png(bytestring=svg, write_to=svg_path + ".png")
