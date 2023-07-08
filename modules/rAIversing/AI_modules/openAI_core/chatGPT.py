@@ -237,7 +237,7 @@ class ChatGPTModule(AiModuleInterface):
         if '`' in response_string:
             response_string = response_string.replace('`', '"')
 
-        response = fix_single_quotes(response_string)
+        response_string = fix_single_quotes(response_string)
 
         ideas_left = True
         max_delimiter_insertions = 5
