@@ -1,5 +1,6 @@
 import statistics
 
+import pandas
 from rich.console import Console, CONSOLE_SVG_FORMAT
 
 from rAIversing.evaluator.EvaluatorInterface import EvaluatorInterface
@@ -351,6 +352,7 @@ class LayeredEvaluator(EvaluatorInterface):
                                           "Counted Worst"])
         return csv_table
 
-    def plot_dataframe(self, df,title,export_path):
+    def plot_dataframe(self, df: pandas.DataFrame,title,export_path):
         fig = df.plot(x="Layer", y=["Actual", "Best Case", "Worst Case", "Act vs Best (direct)"], title=title)
+        fig.set_ylim(0, 100)
         fig.figure.savefig(export_path+".png")
