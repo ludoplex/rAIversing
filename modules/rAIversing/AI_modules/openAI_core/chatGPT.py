@@ -15,7 +15,7 @@ from rAIversing.utils import extract_function_name, NoResponseException, clear_e
     MaxTriesExceeded, InvalidResponseException, format_newlines_in_code, escape_failed_escapes, \
     check_reverse_engineer_fail_happend, locator, insert_missing_delimiter, do_renaming, \
     IncompleteResponseException, insert_missing_double_quote, HardLimitReached, get_char, insert_missing_colon, \
-    remove_trailing_commas, EmptyResponseException
+    remove_trailing_commas, EmptyResponseException, fix_single_quotes
 
 
 def assemble_prompt_v1(code):
@@ -236,6 +236,8 @@ class ChatGPTModule(AiModuleInterface):
             response_string = response_string.replace('```', '')
         if '`' in response_string:
             response_string = response_string.replace('`', '"')
+
+        response = fix_single_quotes(response_string)
 
         ideas_left = True
         max_delimiter_insertions = 5

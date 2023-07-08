@@ -448,3 +448,8 @@ def remove_trailing_commas(string):
     string = string.replace(',\n  }', '\n  }')
     string = string.replace(',\n   }', '\n   }')
     return string
+
+
+def fix_single_quotes(string):
+    string = string.replace("\':", "\":")
+    return string
