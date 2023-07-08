@@ -31,6 +31,10 @@ ifc = DecompInterface()
 ifc.setOptions(options)
 ifc.openProgram(getState().getCurrentProgram())
 
+
+halt_bad_data = "{\n                    /* WARNING: Bad instruction - Truncating control flow here */\n  halt_baddata();\n}"
+
+
 def getLowestFunctionLayer(functions):
     lflList = []
     for name, data in functions.items():
@@ -56,13 +60,27 @@ def main(export_path=None, export_with_stripped_names=False):
     fm = currentProgram.getFunctionManager()
     funcs = list(fm.getFunctions(True))  # True means 'forward'
 
+
+    if export_path is None:
+        export_path = os.path.join(PROJECTS_ROOT, program_name)
+    else:
+        if not program_name.replace("_no_propagation", "").replace("_original", "") in export_path.split("/")[-1].split("\\")[-1]:
+            export_path = os.path.join(export_path, program_name.replace("_no_propagation", "").replace("_original", ""))
+    export_path = export_path.replace('"', "")
+
+    if os.path.exists(os.path.join(export_path, program_name + ".json")):
+        print("#@#@#@#@#@#@#")
+        return
+    else:
+        print(os.path.join(export_path, program_name + ".json") + " does not exist")
     function_metadata = {}
 
     cCode = ""
     # If you want to export with stripped names, set this to True
 
-    if len(funcs) > 500 :
-        print("More than 500 functions in " + program_name + ". exiting!")
+    if len(funcs) > 700 and True:
+        print("More than 700 functions in " + program_name + ". exiting!")
+        print("#@#@#@#@#@#@#")
         return
 
 
@@ -70,9 +88,12 @@ def main(export_path=None, export_with_stripped_names=False):
     for i in range(len(funcs)):
         func = funcs[i]
         entrypoint = func.getEntryPoint().toString("0x")
-        if "{\n                    /* WARNING: Bad instruction - Truncating control flow here */\n  halt_baddata();\n}" in func_to_C(func):
+        try:
+            if halt_bad_data in func_to_C(func):
+                continue
+        except Exception as e:
+            print(e)
             continue
-
 
         if export_with_stripped_names:
             function_name = "FUN_" + entrypoint.replace("0x", "")
@@ -118,12 +139,7 @@ def main(export_path=None, export_with_stripped_names=False):
     program_name = str(fpapi.getCurrentProgram()).split(" ")[0].replace(".", "_")
 
 
-    if export_path is None:
-        export_path = os.path.join(PROJECTS_ROOT, program_name)
-    else:
-        if not program_name.replace("_no_propagation", "").replace("_original", "") in export_path:
-            export_path = os.path.join(export_path, program_name.replace("_no_propagation", "").replace("_original", ""))
-    export_path = export_path.replace('"', "")
+
     if not os.path.exists(export_path):
         os.mkdir(export_path)
 
@@ -140,9 +156,10 @@ def main(export_path=None, export_with_stripped_names=False):
     if export_with_stripped_names:
         program_name += "_stripped"
 
-    with open(os.path.join(export_path, program_name + ".json"), "w") as f:
-        f.write(json.dumps(save_file, indent=4))
-        f.close()
+    if not os.path.exists(os.path.join(export_path, program_name + ".json")):
+        with open(os.path.join(export_path, program_name + ".json"), "w") as f:
+            f.write(json.dumps(save_file, indent=4))
+            f.close()
     print("#@#@#@#@#@#@#")
 def get_high_function(func):
     res = ifc.decompileFunction(func, 60, monitor)
@@ -156,15 +173,26 @@ def get_function_symbols(func):
     return lsm.getSymbols()
 
 def func_to_C(func):
-    return ifc.decompileFunction(func, 0, ConsoleTaskMonitor()).getDecompiledFunction().getC()
-    #return fdapi.decompile(func)
+    try:
+        return ifc.decompileFunction(func, 0, ConsoleTaskMonitor()).getDecompiledFunction().getC()
+    except:
+        try:
+            return fdapi.decompile(func)
+        except:
+            return halt_bad_data
 
 
 if __name__ == "__main__":
     args = list(getScriptArgs())
-    if len(args) > 1:
-        main(str(args[0]), str(args[1]) == "True")
-    elif len(args) > 0:
-        main(str(args[0]))
-    else:
-        main()
+    try:
+        if len(args) > 1:
+            main(str(args[0]), str(args[1]) == "True")
+        elif len(args) > 0:
+            main(str(args[0]))
+        else:
+            main()
+    except Exception as e:
+        print(e)
+        print("main() failed!")
+        print("#@#@#@#@#@#@#")
+

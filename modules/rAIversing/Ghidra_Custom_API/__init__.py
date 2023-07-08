@@ -30,7 +30,7 @@ def binary_to_c_code(binary_path, processor_id="", custom_headless_binary=None, 
     ah.run(debug)
 
 
-def folder_to_c_code(folder_path, processor_id="", custom_headless_binary=None, project_location=None, project_name=None,debug=False,export_path=None,max_cpu=-1):
+def folder_processor(folder_path, processor_id="", custom_headless_binary=None, project_location=None, project_name=None, debug=False, export_path=None, max_cpu=-1, process_only=False, import_only=False):
     project_name = os.path.basename(folder_path).replace(".", "_") if project_name is None else project_name
     project_location = f'{os.path.join(PROJECTS_ROOT, project_name)}' if project_location is None else project_location
     export_path = export_path if export_path is not None else project_location
@@ -38,13 +38,23 @@ def folder_to_c_code(folder_path, processor_id="", custom_headless_binary=None, 
         return
     check_and_create_project_path(project_location)
     ah = HeadlessAnalyzerWrapper(custom_headless_binary)
-    for thing in os.listdir(folder_path):
-        if not os.path.isfile(os.path.join(folder_path, thing)):
-            ah.add_import_file(os.path.join(folder_path, thing))
+    if import_only and process_only:
+        raise Exception("import_only and process_only cannot be both true")
+
+    if not process_only:
+        for thing in os.listdir(folder_path):
+            if not os.path.isfile(os.path.join(folder_path, thing)):
+                ah.add_import_file(os.path.join(folder_path, thing))
+    else:
+        ah.process("")
+        ah.noanalysis()
     ah.recursive()
+    if not import_only and process_only:
+        ah.postScript(f'ExtractCcode.py {export_path}')
+
+
     ah.project_location(project_location) \
         .project_name(project_name) \
-        .postScript(f'ExtractCcode.py {export_path}') \
         .scriptPath(f'{GHIDRA_SCRIPTS}') \
         .log(f'{PROJECTS_ROOT}/log') \
         .max_cpu(max_cpu)\

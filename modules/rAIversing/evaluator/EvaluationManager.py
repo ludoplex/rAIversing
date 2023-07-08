@@ -7,7 +7,7 @@ from rich.progress import Progress, TimeElapsedColumn
 
 from rAIversing.AI_modules import AiModuleInterface
 from rAIversing.Engine import rAIverseEngine
-from rAIversing.Ghidra_Custom_API import binary_to_c_code, existing_project_to_c_code, folder_to_c_code
+from rAIversing.Ghidra_Custom_API import binary_to_c_code, existing_project_to_c_code, folder_processor
 from rAIversing.evaluator.DefaultEvaluator import DefaultEvaluator
 from rAIversing.evaluator.utils import make_run_path
 from rAIversing.pathing import *
@@ -41,7 +41,6 @@ class EvaluationManager:
             else:
                 no_prop = json_path.name.endswith("no_propagation.json")
                 raie = rAIverseEngine(ai_module, json_path=json_path)
-                raie.load_save_file()
                 raie.max_parallel_functions = self.connections
                 raie.run_parallel_rev(no_propagation=no_prop)
 
@@ -105,6 +104,17 @@ class EvaluationManager:
                         print(f"proc_id file not found {os.path.join(source_dir, 'proc_id')} EXITING NOW!!! PLEASE ADD IT AND RESTART")
                         exit(-1)
                     bin_paths = list(Path(os.path.join(source_dir, "stripped")).rglob("*"))
+
+                    try:
+                        with open(os.path.join(project_location, "extraction_done"), "r") as f:
+                            state = f.read()
+                            if state == "done":
+                                if debug:
+                                    print(f"extraction for {model_name} and {source_dir_name} already done")
+                                continue
+                    except FileNotFoundError:
+                        pass
+
                     #####################################################################################
                     task_extraction = progress.add_task(                                                #
                         f"[bold bright_yellow]Extracting {len(bin_paths) * 4} binaries/versions",       #
@@ -112,18 +122,38 @@ class EvaluationManager:
                     #####################################################################################
 
                     try:
-                        cmd = folder_to_c_code(source_dir, processor_id=proc_id,
-                                         project_name=f"eval_{model_name}_{source_dir_name}",
-                                         project_location=project_location,
-                                         export_path=os.path.join(project_location),
-                                         debug=debug,max_cpu=self.connections
-                                         )
+                        cmd = folder_processor(source_dir, processor_id=proc_id,
+                                               project_name=f"eval_{model_name}_{source_dir_name}",
+                                               project_location=project_location,
+                                               export_path=os.path.join(project_location),
+                                               debug=debug, max_cpu=self.connections,import_only=True
+                                               )
                         process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                         while True:
                             output = process.stdout.readline()
                             if process.poll() is not None:
                                 break
                             if output:
+                                print(output.strip().decode())
+                                if "#@#@#@#@#@#@#" in output.decode():
+                                    progress.advance(task_extraction)
+
+                    except KeyboardInterrupt:
+                        exit(-1)
+                    try:
+                        cmd = folder_processor(source_dir, processor_id=proc_id,
+                                               project_name=f"eval_{model_name}_{source_dir_name}",
+                                               project_location=project_location,
+                                               export_path=os.path.join(project_location),
+                                               debug=debug, max_cpu=self.connections, process_only=True
+                                               )
+                        process = subprocess.Popen(cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                        while True:
+                            output = process.stdout.readline()
+                            if process.poll() is not None:
+                                break
+                            if output:
+                                print(output.strip().decode())
                                 if "#@#@#@#@#@#@#" in output.decode():
                                     progress.advance(task_extraction)
 
@@ -133,6 +163,7 @@ class EvaluationManager:
                         binary = os.path.basename(binary_path).replace("_original", "")
                         export_path = os.path.join(project_location, binary)
                         try:
+                            time.sleep(1)
                             existing_project_to_c_code(project_location=project_location, binary_name=f"{binary}_original",
                                                        project_name=f"eval_{model_name}_{source_dir_name}",
                                                        export_with_stripped_names=True, export_path=export_path,
@@ -141,7 +172,11 @@ class EvaluationManager:
                         except KeyboardInterrupt:
                             exit(-1)
                         progress.advance(task_extraction)
-                        #########################################################################
+
+                    with open(os.path.join(project_location, "extraction_done"), "w") as f:
+                        f.write("done")
+
+                    #############################################################################
                     progress.remove_task(task_extraction)                                       #
                     progress.advance(task_source_dirs) if len(self.source_dirs) > 1 else None   #
                 progress.remove_task(task_source_dirs) if len(self.source_dirs) > 1 else None   #

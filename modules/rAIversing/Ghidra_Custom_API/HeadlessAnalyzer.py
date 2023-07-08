@@ -160,6 +160,7 @@ class HeadlessAnalyzerWrapper:
                            f"{self.__postScript__}" \
                            f"{self.__scriptPath__}" \
                            f"{self.__process__}" \
+                           f"{self.__recursive__}" \
                            f"{self.__propertiesPath__}" \
                            f"{self.__scriptlog__}" \
                            f"{self.__log__}" \
