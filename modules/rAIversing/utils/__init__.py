@@ -204,9 +204,16 @@ def format_newlines_in_code(code):
     return front + 'improved_code": "' + main + '}\",' + back
 
 
-def escape_failed_escapes(response_string):
-    # original = response_string
-    response_string = response_string.replace("\'\\x", "\'\\\\x")
+def escape_failed_escapes(response_string,e):
+    target = str(e).split("char ")[1].split(")")[0]
+    char = int(target)
+
+    if """\"\\'""" in response_string[char-1:char+2]:
+        response_string=response_string.replace("""\"\\'""" , """\"\'""")
+        response_string=response_string.replace("""\\'\"""" , """\'\"""")
+
+    if "\'\\x" in response_string[char-1:char+4]:
+        response_string = response_string.replace("\'\\x", "\'\\\\x")
 
     return response_string
 
@@ -326,6 +333,21 @@ def insert_missing_double_quote(response, exception):
         raise Exception("Could not find ':' in response")
     return pre + mid + post
 
+def insert_missing_colon(response, exception):
+    # Expecting ':' delimiter: line 9 column 5 (char 252)
+    target = str(exception).split("char ")[1].split(")")[0]
+    char = int(target)
+    pre = response[:char-1] + ': '
+    post = response[char:]
+    return pre + post
+
+
+def get_char(exception):
+    target = str(exception).split("char ")[1].split(")")[0]
+    char = int(target)
+    return char
+
+
 
 def key_finder(key_parts, dictionary):
     """
@@ -410,3 +432,11 @@ def do_renaming(renaming_dict, code, name):
     for tag, new in temporary_remapping.items():
         code = code.replace(tag, new)
     return code, clean_dict
+
+
+def remove_trailing_commas(string):
+    string = string.replace(',\n}', '\n}')
+    string = string.replace(',\n }', '\n }')
+    string = string.replace(',\n  }', '\n  }')
+    string = string.replace(',\n   }', '\n   }')
+    return string

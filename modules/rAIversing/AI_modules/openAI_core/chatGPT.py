@@ -14,7 +14,7 @@ from rAIversing.pathing import *
 from rAIversing.utils import extract_function_name, NoResponseException, clear_extra_data, check_valid_code, \
     MaxTriesExceeded, InvalidResponseException, format_newlines_in_code, escape_failed_escapes, \
     check_reverse_engineer_fail_happend, locator, insert_missing_delimiter, do_renaming, \
-    IncompleteResponseException, insert_missing_double_quote, HardLimitReached
+    IncompleteResponseException, insert_missing_double_quote, HardLimitReached, get_char, insert_missing_colon,remove_trailing_commas
 
 
 def assemble_prompt_v1(code):
@@ -156,6 +156,7 @@ class ChatGPTModule(AiModuleInterface):
             try:
                 answer = self.chat_large.ask(prompt)
             except TypeError as e:
+                print("Got TypeError from ChatGPT : " + str(e))
                 raise IncompleteResponseException(e)
             except Exception as e:
                 raise e
@@ -174,6 +175,7 @@ class ChatGPTModule(AiModuleInterface):
             try:
                 answer = self.chat_medium.ask(prompt)
             except TypeError as e:
+                print("Got TypeError from ChatGPT : " + str(e))
                 raise IncompleteResponseException(e)
             except Exception as e:
                 raise e
@@ -191,6 +193,7 @@ class ChatGPTModule(AiModuleInterface):
             try:
                 answer = self.chat_small.ask(prompt)
             except TypeError as e:
+                print("Got TypeError from ChatGPT : " + str(e))
                 raise IncompleteResponseException(e)
             except Exception as e:
                 raise e
@@ -218,13 +221,6 @@ class ChatGPTModule(AiModuleInterface):
         string = string.replace('\\', '\\\\')
         return string
 
-    def remove_trailing_commas(self, string):
-        string = string.replace(',\n}', '\n}')
-        string = string.replace(',\n }', '\n }')
-        string = string.replace(',\n  }', '\n  }')
-        string = string.replace(',\n   }', '\n   }')
-        return string
-
     def any_dict_to_renaming_dict(self, any_dict):
         pass
 
@@ -233,151 +229,85 @@ class ChatGPTModule(AiModuleInterface):
         return out.replace('\\\\', '\\')
 
     def process_response(self, response_string_orig):
+
+
         try:
             response_dict = json.loads(response_string_orig, strict=False)
             return response_dict
-        except:
+        except Exception as e:
             pass
-
         response_string = self.remove_plaintext_from_response(response_string_orig)
         if response_string == "":
             raise IncompleteResponseException("Respond Incomplete, closing bracket missing")
 
-        try:
-            response_dict = json.loads(response_string, strict=False)
-            return response_dict
-        except:
-            pass
-
-        response_string = self.remove_trailing_commas(response_string)
-        try:
-            response_dict = json.loads(response_string, strict=False)
-            return response_dict
-        except:
-            pass
-
+        response_string = remove_trailing_commas(response_string)
         response_string = self.add_missing_commas(response_string)
-        try:
-            response_dict = json.loads(response_string, strict=False)
-            return response_dict
-        except:
-            pass
-
-        response_string = escape_failed_escapes(response_string)
-        try:
-            response_dict = json.loads(response_string, strict=False)
-            return response_dict
-        except:
-            pass
-
-        try:
-            response_string = format_newlines_in_code(response_string)
-            # For cases where the code is not escaped and contains double quotes
-
-            response_dict = json.loads(response_string, strict=False)
-            return response_dict
-        except:
-            pass
-
-        if '```\n\n```' in response_string:
-            response_string = response_string.replace('```\n\n```', '\n####\n')
-            splits = response_string.split('####')
-            temp_dict = {}
-            try:
-                rename_dict = json.loads(splits[0], strict=False)
-                temp_dict["code"] = splits[1]
-            except Exception as e:
-                self.logger.error("Ended Up here AAA")
-                pass
-            try:
-                rename_dict = json.loads(splits[1], strict=False)
-                temp_dict["code"] = splits[0]
-            except Exception as e:
-                self.logger.error("Ended Up here BBB")
-                pass
-
-            # TODO: check if temp_dict is empty
         if '```' in response_string:
             response_string = response_string.replace('```', '')
         if '`' in response_string:
             response_string = response_string.replace('`', '"')
-        if """'""" in response_string:
-            response_string = response_string.replace("""'""", '"')
+
         ideas_left = True
         max_delimiter_insertions = 5
         max_double_quote_insertions = 20
-
+        json_decode_error_char=0
+        iterations = 10
         while ideas_left:
+            #print(response_string)
+            iterations -= 1
+            if iterations == 0:
+                raise Exception("Too many iterations")
             try:
                 response_dict = json.loads(response_string, strict=False)
                 break
-
-
-            except Exception as e:
-                if """Expecting ',' delimiter:""" in str(e):
-                    if max_delimiter_insertions != 0:
-                        response_string = insert_missing_delimiter(response_string, e)
-                        max_delimiter_insertions -= 1
-                        continue
-
-                    self.logger.exception(e)
-                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
-                        f.write(response_string_orig)
-                    print(f"###### RESPONSE START @ {locator()}######")
-
-                    print(response_string_orig)
-                    print(f"###### RESPONSE END @ {locator()}######")
-                    print(f"###### CURRENT STATE @ {locator()}######")
-                    print(response_string)
-                    print(f"###### CURRENT STATE END @ {locator()}######")
-                elif "Extra data" in str(e):
-                    try:
-                        response_string = clear_extra_data(response_string, e)
-                        continue
-                    except Exception as e2:
+            except json.JSONDecodeError as e:
+                if "char" in str(e):
+                    current_char = get_char(e)
+                    if current_char <= json_decode_error_char:
+                        print(type(e))
+                        print(e)
                         with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                             f.write(response_string_orig)
-                        print(e2)
-                        print(f"###### RESPONSE START @ {locator()}######")
-
-                        print(response_string_orig)
-                        print(f"###### RESPONSE END @ {locator()}######")
-                        print(f"###### CURRENT STATE @ {locator()}######")
-                        print(response_string)
-                        print(f"###### CURRENT STATE END @ {locator()}######")
-                        pass
-                elif "Expecting property name enclosed in double quotes" in str(e):
-                    if max_double_quote_insertions != 0:
-                        response_string = insert_missing_double_quote(response_string, e)
-                        max_double_quote_insertions -= 1
+                        raise e
+                    json_decode_error_char = current_char
+                    if "Invalid \escape:" in str(e):
+                        response_string = escape_failed_escapes(response_string,e)
                         continue
-
-                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
-                        f.write(response_string_orig)
-                    print(e)
-                    print(f"###### RESPONSE START @ {locator()}######")
-                    print(response_string_orig)
-                    print(f"###### RESPONSE END @ {locator()}######")
-                    print(f"###### CURRENT STATE @ {locator()}######")
-                    print(response_string)
-                    print(f"###### CURRENT STATE END @ {locator()}######")
-                    ideas_left = False
-                    pass
+                    if """Expecting ',' delimiter:""" in str(e):
+                        response_string = insert_missing_delimiter(response_string, e)
+                        continue
+                    if "Expecting ':' delimiter:" in str(e):
+                        response_string = insert_missing_colon(response_string, e)
+                        continue
+                    if "Expecting property name enclosed in double quotes" in str(e):
+                        response_string = insert_missing_double_quote(response_string, e)
+                        continue
+                    if "Extra data" in str(e):
+                        response_string = clear_extra_data(response_string, e)
+                        continue
                 else:
+                    print(type(e))
+                    print(e)
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                         f.write(response_string_orig)
-                    print(e)
-                    print(f"###### RESPONSE START @ {locator()}######")
-                    print(response_string_orig)
-                    print(f"###### RESPONSE END @ {locator()}######")
-                    print(f"###### CURRENT STATE @ {locator()}######")
-                    print(response_string)
-                    print(f"###### CURRENT STATE END @ {locator()}######")
                     raise e
+
+            except Exception as e:
+                self.logger.exception(e)
+                with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                    f.write(response_string_orig)
+                print(f"###### RESPONSE START @ {locator()}######")
+                print(response_string_orig)
+                print(f"###### RESPONSE END @ {locator()}######")
+                print(f"###### CURRENT STATE @ {locator()}######")
+                print(response_string)
+                print(f"###### CURRENT STATE END @ {locator()}######")
+                ideas_left = False
+                exit(-1)
 
         return response_dict
 
-    def prompt_with_renaming(self, input_code, retries=5,name=None):  # type: (str,int) -> (str, dict)
+    def prompt_with_renaming(self, input_code, retries=5, name=None):  # type: (str,int) -> (str, dict)
         """Prompts the model and returns the resulting code and a dict of renamed Names
             This version uses the new prompt format and is more efficient than the old one
             It only asks the model for the renaming dict and then applies it to the code
