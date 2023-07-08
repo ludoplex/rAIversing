@@ -13,10 +13,12 @@ import multiprocessing as mp
 class LayeredEvaluator(EvaluatorInterface):
     def __init__(self, ai_modules, source_dirs, runs=1, calculation_function=calc_score, pool_size=1):
         super().__init__(ai_modules, source_dirs, runs, pool_size)
+        self.bucket_growth_factor = 0.33
         self.calculator = calculation_function
         self.results = {}
         self.save_all = False
         self.console = Console(soft_wrap=True)
+        self.usable_binaries = {}
         setup_results(self.ai_modules, self.results, self.source_dirs, self.runs)
 
     def set_calculator(self, calculation_function):
@@ -31,11 +33,12 @@ class LayeredEvaluator(EvaluatorInterface):
 
             for ai_module in self.ai_modules:
                 model_name = ai_module.get_model_name()
-
+                self.usable_binaries[model_name]={}
                 task_source_dirs = progress.add_task(f"[bold bright_yellow]Evaluating {len(self.source_dirs)} source directories", total=len(self.source_dirs))
 
                 for source_dir in self.source_dirs:
                     source_dir_name = os.path.basename(source_dir)
+                    self.usable_binaries[model_name][source_dir_name]=set()
 
                     task_runs = progress.add_task(f"[bold bright_yellow]Evaluating {self.runs} runs", total=self.runs)
 
@@ -46,8 +49,11 @@ class LayeredEvaluator(EvaluatorInterface):
 
                         self.task_binary = task_binary
                         for binary in usable_binaries:
-                            self.evaluate_atomic(make_run_path(model_name, source_dir_name, run, binary), binary)
-
+                            if check_extracted(model_name, source_dir_name, binary):
+                                self.evaluate_atomic(make_run_path(model_name, source_dir_name, run, binary), binary)
+                                self.usable_binaries[model_name][source_dir_name].add(binary)
+                            else:
+                                self.usable_binaries[model_name][source_dir_name].discard(binary)
                             progress.advance(task_runs, advance=(1/len(usable_binaries)))
                         progress.remove_task(task_binary)
                         progress.advance(task_source_dirs, advance=(1/self.runs))
@@ -59,6 +65,7 @@ class LayeredEvaluator(EvaluatorInterface):
             self.collect_cumulative_results()
             # self.console.print(self.results)
             self.display_results()
+            self.console.log(f"Finished evaluation of {len(self.ai_modules)} AI modules on {len(self.source_dirs)} source directories with {self.runs} runs each with a Bucket Growth Factor of {self.bucket_growth_factor}")
 
     def display_results(self):
         for ai_module in self.ai_modules:
@@ -78,8 +85,7 @@ class LayeredEvaluator(EvaluatorInterface):
         avg_table = create_table(f"Average {model_name} on {source_dir_name} ({self.runs} runs)")
         median_table = create_table(f"Median {model_name} on {source_dir_name} ({self.runs} runs)")
         #todo add csv table
-
-        for binary in usable_binaries:
+        for binary in self.usable_binaries[model_name][source_dir_name]:
             avg_title = f"Average {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
             median_title = f"Median {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
 
@@ -113,6 +119,7 @@ class LayeredEvaluator(EvaluatorInterface):
                                     clear=False,
                                     title="",
                                     code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
+            svg_2_png(export_path)
             avg_df_table.to_csv(export_path + ".csv")
             export_name = f"Layered_Eval_Median_{model_name}_{source_dir_name}_{binary}_{self.runs}_runs"
             export_path = os.path.join(export_prefix, export_name)
@@ -120,6 +127,7 @@ class LayeredEvaluator(EvaluatorInterface):
                                     clear=False,
                                     title="",
                                     code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
+            svg_2_png(export_path)
             median_df_table.to_csv(export_path + ".csv")
 
             self.plot_dataframe(avg_df_table,avg_title,export_path)
@@ -141,64 +149,6 @@ class LayeredEvaluator(EvaluatorInterface):
             os.path.join(export_path, f"Eval_Median_{model_name}_{source_dir_name}_{self.runs}_runs.svg"), clear=False,
             title="",
             code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
-
-
-
-
-
-
-
-
-
-
-    def create_layered_average_results(self, model_name, source_dir):
-        source_dir_name = os.path.basename(source_dir)
-        usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
-        for binary in usable_binaries:
-            title = f"Average {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
-            table = self.create_layered_table(title)
-            df_table = self.create_layered_csv_table()
-            scores = self.get_average_results(model_name, source_dir_name, binary)
-            fill_layered_table(table, scores)
-            fill_layered_table(df_table, scores, do_csv=True)
-
-            export_console = Console(record=True, width=100)
-            export_console.print(table)
-            export_path = make_run_path(model_name, source_dir, "0", binary)
-            export_name = f"Layered_Eval_Avg_{model_name}_{source_dir_name}_{binary}_{self.runs}_runs"
-            export_path = os.path.join(export_path, export_name)
-            export_console.save_svg(export_path + ".svg",
-                                    clear=False,
-                                    title="",
-                                    code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
-            df_table.to_csv(export_path + ".csv")
-
-            self.plot_dataframe(df_table,title,export_path)
-
-    def create_layered_median_results(self, model_name, source_dir):
-        source_dir_name = os.path.basename(source_dir)
-        usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
-
-        for binary in usable_binaries:
-            title = f"Median {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
-            table = self.create_layered_table(title)
-            df_table = self.create_layered_csv_table()
-            scores = self.get_median_results(model_name, source_dir_name, binary)
-
-            fill_layered_table(table, scores)
-            fill_layered_table(df_table, scores, do_csv=True)
-            export_console = Console(record=True, width=100)
-            export_console.print(table)
-            export_path = make_run_path(model_name, source_dir, "0", binary)
-            export_name = f"Layered_Eval_Median_{model_name}_{source_dir_name}_{binary}_{self.runs}_runs"
-            export_path = os.path.join(export_path, export_name )
-            export_console.save_svg(export_path + ".svg",
-                                    clear=False,
-                                    title="",
-                                    code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
-            df_table.to_csv(export_path + ".csv")
-
-            self.plot_dataframe(df_table,title,export_path)
 
     def collect_cumulative_results(self):
         for ai_module in self.ai_modules:
@@ -263,10 +213,10 @@ class LayeredEvaluator(EvaluatorInterface):
         self.progress.remove_task(task_gen_comp)
 
 
-        self.insert_result(run_path, collect_layered_partial_scores(predict_scored), "pred-layered")
-        self.insert_result(run_path, collect_layered_partial_scores(best_scored), "best-layered")
-        self.insert_result(run_path, collect_layered_partial_scores(worst_scored), "worst-layered")
-        self.insert_result(run_path, collect_layered_partial_scores(best_vs_predict_scored), "best_vs_pred-layered")
+        self.insert_result(run_path, collect_layered_partial_scores(predict_scored,self.bucket_growth_factor), "pred-layered")
+        self.insert_result(run_path, collect_layered_partial_scores(best_scored,self.bucket_growth_factor), "best-layered")
+        self.insert_result(run_path, collect_layered_partial_scores(worst_scored,self.bucket_growth_factor), "worst-layered")
+        self.insert_result(run_path, collect_layered_partial_scores(best_vs_predict_scored,self.bucket_growth_factor), "best_vs_pred-layered")
 
         self.insert_result(run_path, collect_partial_scores(predict_scored), "pred")
         self.insert_result(run_path, collect_partial_scores(best_scored), "best")

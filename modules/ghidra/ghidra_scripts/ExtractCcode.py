@@ -80,6 +80,8 @@ def main(export_path=None, export_with_stripped_names=False):
 
     if len(funcs) > 700 and True:
         print("More than 700 functions in " + program_name + ". exiting!")
+        with open(os.path.join(export_path, "not_extracted"),"w") as f:
+            f.write("More than 700 functions in " + program_name + ". exiting!")
         print("#@#@#@#@#@#@#")
         return
 
@@ -125,7 +127,6 @@ def main(export_path=None, export_with_stripped_names=False):
         function_metadata[function_name]["skipped"] = False
         function_metadata[function_name]["imported"] = False
         function_metadata[function_name]["tags"] = []
-
 
         for calling in func.getCallingFunctions(getMonitor()):
             function_metadata[function_name]["calling"].append(calling.getName())
