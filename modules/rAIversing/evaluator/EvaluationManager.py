@@ -206,9 +206,6 @@ class EvaluationManager:
 
                                 if not os.path.exists(os.path.join(run_path, file)):
                                     shutil.copy(os.path.join(extraction_path, file), run_path)
-                                else:
-                                    nondestructive_savefile_merge(os.path.join(run_path, file),
-                                                                  os.path.join(extraction_path, file))
     def evaluate(self, evaluator=None,growth_factor=None):
         if evaluator is None:
             evaluator = self.evaluator

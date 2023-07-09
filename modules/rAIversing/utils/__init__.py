@@ -453,7 +453,7 @@ def fix_single_quotes(string):
     string = string.replace("\':", "\":")
     return string
 
-
+    #TODO REMOVE? This is not used anywhere maybe in the future
 def nondestructive_savefile_merge(base_file_path, new_file_path):
     """
     Merges the contents of new_file_path onto base_file_path, extending base_file_path.
@@ -477,18 +477,39 @@ def nondestructive_savefile_merge(base_file_path, new_file_path):
     for name, new_function in new_functions.items():
         if name in base_functions.keys():
             base_function = base_functions[name]
+            if base_function["entrypoint"] != new_function["entrypoint"]:
+                print(f"Function {name} has different entrypoint in base file "
+                      f"({base_function['entrypoint']}) and new file ({new_function['entrypoint']}), skipping")
+                continue
             if base_function["improved"] and len(base_function["renaming"]) == 0:
                 base_functions[name]=new_function
+                continue
+            elif not base_function["improved"] and not base_function["skipped"]:
+                base_functions[name]=new_function
+                continue
+            elif base_function["improved"] and len(base_function["renaming"]) > 0:
+                if len(base_function["code"].split("\n")) != len(new_function["code"].split("\n")):
+                    if len(base_function["called"]) != len(new_function["called"]):
+                        print(f"Function {name} has different number of callers in base file "
+                          f"({len(base_function['called'])}) and new file ({len(new_function['called'])}), skipping")
+                        continue
+                    if len(base_function["calling"]) != len(new_function["calling"]):
+                        print(f"Function {name} has different number of callees in base file "
+                          f"({len(base_function['calling'])}) and new file ({len(new_function['calling'])}), skipping")
+                        continue
+                else:
+                    print(f"Function {name} seems to have the same number of lines in base file and new file, "
+                          f"skipping")
+                    continue
 
 
-
-
-            #print(f"Function {name} already exists in base file, skipping")
+            print(f"Function {name} already exists in base file, skipping")
             continue
         else:
             base_functions[name] = new_function
-        print("merged function", name)
-    with open(base_file_path, "w") as f:
-        save_file = {"functions": base_functions, "used_tokens": base_used_tokens, "layers": base_layers,
+            #print("merged function", name)
+    if False:
+        with open(base_file_path, "w") as f:
+            save_file = {"functions": base_functions, "used_tokens": base_used_tokens, "layers": base_layers,
                      "locked_functions": base_locked_functions}
-        json.dump(save_file, f, indent=4)
+            json.dump(save_file, f, indent=4)
