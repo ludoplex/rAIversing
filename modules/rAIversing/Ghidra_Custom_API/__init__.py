@@ -5,7 +5,7 @@ from rAIversing.pathing import PROJECTS_ROOT, GHIDRA_SCRIPTS, BINARIES_ROOT
 from rAIversing.utils import check_and_fix_bin_path, check_and_create_project_path, is_already_exported
 
 
-def binary_to_c_code(binary_path, processor_id="", custom_headless_binary=None, project_location=None, project_name=None,debug=False,export_path=None,max_cpu=2):
+def binary_to_c_code(binary_path, language_id="", compiler_id="", custom_headless_binary=None, project_location=None, project_name=None, debug=False, export_path=None, max_cpu=2):
     import_path = check_and_fix_bin_path(binary_path)
     project_name = os.path.basename(binary_path).replace(".", "_") if project_name is None else project_name
     project_location = f'{os.path.join(PROJECTS_ROOT, project_name)}' if project_location is None else project_location
@@ -23,8 +23,10 @@ def binary_to_c_code(binary_path, processor_id="", custom_headless_binary=None, 
         .max_cpu(max_cpu)\
         .scriptlog(f'{PROJECTS_ROOT}/scriptlog')
 
-    if processor_id != "":
-        ah.processor(processor_id)
+    if language_id != "" :
+        ah.processor(language_id)
+    if compiler_id != "":
+        ah.cspec(compiler_id)
     if debug:
         ah.print()
     ah.run(debug)
