@@ -211,14 +211,20 @@ def format_newlines_in_code(code):
 def escape_failed_escapes(response_string, e):
     target = str(e).split("char ")[1].split(")")[0]
     char = int(target)
-
+    original_string = response_string
     if """\"\\'""" in response_string[char - 1:char + 2]:
         response_string = response_string.replace("""\"\\'""", """\"\'""")
         response_string = response_string.replace("""\\'\"""", """\'\"""")
 
-    if "\'\\x" in response_string[char - 1:char + 4]:
+    elif "\'\\x" in response_string[char - 1:char + 4]:
         response_string = response_string.replace("\'\\x", "\'\\\\x")
 
+    elif """\\'""" in response_string[char - 1:char + 2]:
+        response_string = response_string.replace("""\\'""", """\'""")
+    else:
+        print(f"Unknown escape sequence in {original_string}")
+        print(f"Error: {e}")
+        print(locator())
     return response_string
 
 

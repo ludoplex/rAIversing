@@ -240,8 +240,6 @@ class ChatGPTModule(AiModuleInterface):
         response_string = fix_single_quotes(response_string)
 
         ideas_left = True
-        max_delimiter_insertions = 5
-        max_double_quote_insertions = 20
         json_decode_error_char=0
         iterations = 10
         while ideas_left:
@@ -263,20 +261,30 @@ class ChatGPTModule(AiModuleInterface):
                         raise e
                     json_decode_error_char = current_char
                     if "Invalid \escape:" in str(e):
+                        #print( "Invalid \escape:")
                         response_string = escape_failed_escapes(response_string,e)
                         continue
                     if """Expecting ',' delimiter:""" in str(e):
+                        #print(", delimiter")
                         response_string = insert_missing_delimiter(response_string, e)
                         continue
                     if "Expecting ':' delimiter:" in str(e):
+                        #print(" : delimiter")
                         response_string = insert_missing_colon(response_string, e)
                         continue
                     if "Expecting property name enclosed in double quotes" in str(e):
+                        #print("double quotes")
                         response_string = insert_missing_double_quote(response_string, e)
                         continue
                     if "Extra data" in str(e):
+                        #print("Extra data")
                         response_string = clear_extra_data(response_string, e)
                         continue
+                    print(type(e))
+                    print(e)
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                        f.write(response_string_orig)
+                    raise e
                 else:
                     print(type(e))
                     print(e)
