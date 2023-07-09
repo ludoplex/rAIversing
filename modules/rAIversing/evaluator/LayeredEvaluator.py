@@ -14,7 +14,7 @@ import multiprocessing as mp
 class LayeredEvaluator(EvaluatorInterface):
     def __init__(self, ai_modules, source_dirs, runs=1, calculation_function=calc_score, pool_size=1):
         super().__init__(ai_modules, source_dirs, runs, pool_size)
-        self.bucket_growth_factor = 0.33
+        self.bucket_growth_factor = 0.0
         self.calculator = calculation_function
         self.results = {}
         self.save_all = False
@@ -25,8 +25,8 @@ class LayeredEvaluator(EvaluatorInterface):
     def set_calculator(self, calculation_function):
         self.calculator = calculation_function
 
-    def evaluate(self):
-
+    def evaluate(self,growth_factor=0.0):
+        self.bucket_growth_factor = growth_factor
         with Progress(*Progress.get_default_columns(),TimeElapsedColumn(),transient=True,speed_estimate_period=60.0) as progress:
             task_ai_modules = progress.add_task(f"[bold bright_yellow]Evaluating {len(self.ai_modules)} AI modules", total=len(self.ai_modules))
 

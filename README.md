@@ -28,9 +28,9 @@
 
 * THIS IS A WORK IN PROGRESS AND IS NOT READY FOR PRODUCTION USE.
 * BACKUP YOUR GHIDRA PROJECT BEFORE USING THIS TOOL.
-* ``ARM:LE:32:Cortex`` is the default for now so if you want something else ,**specify it with the -a flag.**
+* If Ghidra is unable to auto-import the binary you might have to supply the language and compiler id manually.
 * Pathing might be a bit of a mess.
-* As the models behavior is not deterministic i might not have caught all the possible ways the response can be
+* As the models behavior is not deterministic I might not have caught all the possible ways the response can be
   formatted.
 * The models is not perfect and will sometimes make mistakes.(like claiming a function has something to do with a game
   when there is no game)
@@ -69,37 +69,33 @@ rAIversing.py
   ```bash
   python3 rAIversing.py -a ~/api.txt -g ~/ghidra_10.2.2_PUBLIC/support/analyzeHeadless ghidra -p ~/binary_i_found_in_the_parking_lot
   ```
-* **Start a new project from a binary after you followed the installation guide (api_key and ghidra):**
+* **Start/Continue a new project from a binary after you followed the installation guide (api_key and ghidra):**  
   ```bash
   python3 rAIversing.py binary -p ~/binary_i_found_on_the_internet
   ```
-  (being `ARM:LE:32:Cortex`)
-
-
-* **The previous example but with
-  a [custom processor ID](https://static.grumpycoder.net/pixel/support/analyzeHeadlessREADME.html#processor):**
-  ```bash
-  python3 rAIversing.py binary -p ~/binary_i_found_in_the_mail -a x86:LE:64:default
-  ```
 * **The previous example but the results should go into an already existing Ghidra Project :**
   ```bash
-  python3 rAIversing.py binary -p ~/binary_i_found_in_the_mail -a x86:LE:64:default -o ~/projects/ghidra_projects -n WildBinariesInTallGrass
+  python3 rAIversing.py binary -p ~/binary_i_found_in_the_mail -o ~/projects/ghidra_projects -n WildBinariesInTallGrass
   ```
-* **Start a binary in /testing/binaries/p2im after you run the setup.py and followed the installation guide:**
+* **Start/Continue a binary in /testing/binaries/p2im after you run the setup.py and followed the installation guide:**
   ```bash
   python3 rAIversing.py binary -p p2im/Heat_Press
   ```
-  (they are all ``ARM:LE:32:Cortex``)
-
-
-* **Continue a session started with the previous command:**
-  ```bash
-  python3 rAIversing.py binary -p p2im/Heat_Press
-   ```
 * **Do a Dry-Run to check how many tokens the model would use approximately:**
   ```bash
   python3 rAIversing.py binary -p ~/binary_i_found_in_the_mail -d
     ```
+
+
+### Only do the following if ghidra is unable to auto-import the binary. 
+* **Start a binary that Ghidra is unable to auto-import with 
+  a [custom language ID](https://static.grumpycoder.net/pixel/support/analyzeHeadlessREADME.html#processor) and a [custom compiler ID](https://static.grumpycoder.net/pixel/support/analyzeHeadlessREADME.html#cspec):**
+  ```bash
+  python3 rAIversing.py binary -p ~/binary_i_found_in_the_mail -l x86:LE:64:default -c gcc
+  ```
+
+
+
 
 ## Installation
 
@@ -138,35 +134,35 @@ rAIversing.py
 
 > #### General
 >```
->usage: rAIversing [-h] [--testbench] [--evaluation] [-a API_KEY_PATH] [-t ACCESS_TOKEN_PATH] [-g GHIDRA_PATH] [-m MAX_TOKEN] {ghidra,new} ...
+>usage: rAIversing [-h] [--testbench] [-a API_KEY_PATH] [-g GHIDRA_PATH] [-m MAX_TOKEN] [-t THREADS] [-d] [-e ENGINE] {ghidra,binary,evaluation} ...
 >
 >Reverse engineering tool using AI
 >
 >positional arguments:
->   {ghidra,binary}
->sub-command                  help
+>   {ghidra,binary,evaluation}
+>sub-command                  Help
 >   ghidra                    Run rAIversing on a ghidra project
 >   binary                    Run rAIversing on a new binary or continue a previous session
+>   evaluation                Run evaluation pipeline
 >
 >optional arguments:
->   -h, --help                show this help message and exit
+>   -h, --help                Show this help message and exit
 >   --testbench               Run testbench
->   --evaluation              Run evaluation
->   --access_token_path       Custom OpenAI access token path (deprecated)
 >   -a, --api_key_path        Custom OpenAI API key path (preferred)
 >   -g, --ghidra_path         /path/to/custom/ghidra/support/analyzeHeadless
 >   -m, --max_token           Maximum number of tokens before function is skipped (size of function)
 >   -t, --threads             Number of parallel requests to the AI (default: 1)
 >   -d, --dry                 Dry run to calculate how many tokens will be used
+>   -e, --engine              Engine to use(gpt-3.5-turbo/gpt-4/hybrid) (default: gpt-3.5-turbo)
 >```
 >#### Using an existing ghidra project
 >```
 >usage: rAIversing.py ghidra [-h] -p PATH [-b BINARY_NAME] [-n PROJECT_NAME]
 >
 >optional arguments:
->   -h, --help                show this help message and exit
+>   -h, --help                Show this help message and exit
 >   -p, --path                /path/to/directory/containing/project.rep/
->   -b, --binary_name         name of the used binary
+>   -b, --binary_name         Name of the used binary
 >   -n, --project_name        Project Name as entered in Ghidra
 >```
 >
@@ -175,12 +171,25 @@ rAIversing.py
 >usage: rAIversing binary [-h] -p PATH [-a ARCH] [-n PROJECT_NAME] [-o OUTPUT_PATH]
 >
 >optional arguments:
->   -h, --help                show this help message and exit
+>   -h, --help                Show this help message and exit
 >   -p, --path                Location of the binary file either absolute or relative to ~/rAIversing/testing/samples/binaries
->   -a, --arch                Processor ID as defined in Ghidra (e.g. x86:LE:64:default)
->   -o, --output_path         Output path for the project aka ~/projects/my_binary
+>   -l, --language_id         Language ID as defined in Ghidra (e.g.: x86:LE:64:default) Will be auto detected by Ghidra if not specified
+>   -c, --compiler_id         Compiler ID as defined in Ghidra (e.g.: gcc) Will be auto detected by Ghidra if not specified
 >   -n, --project_name        Project Name for the Ghidra Project (defaults to the binary name)
+>   -o, --output_path         Output path for the project aka ~/projects/my_binary
 >```
+
+#### Evaluation
+>```
+>usage: rAIversing evaluation [-h] [-b] [-g GROWTH_FACTOR] [--no_layering] [-r RUNS]
+> 
+>optional arguments:
+>   -h, --help                Show this help message and exit
+>   -b, --bucketing           Use Layer bucketing for layered Evaluation (growth factor of 0.33 is default)
+>   -g, --growth_factor       Growth factor for Layer bucketing. Default is 0.33
+>       --no_layering         Do not use Layering for Evaluation (Overrides bucketing and growth factor)
+>   -r, --runs                Number of runs for Evaluation
+
 
 ## Performance and Evaluation
 

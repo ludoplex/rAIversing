@@ -9,6 +9,7 @@ from rAIversing.AI_modules import AiModuleInterface
 from rAIversing.Engine import rAIverseEngine
 from rAIversing.Ghidra_Custom_API import binary_to_c_code, existing_project_to_c_code, folder_processor
 from rAIversing.evaluator.DefaultEvaluator import DefaultEvaluator
+from rAIversing.evaluator.LayeredEvaluator import LayeredEvaluator
 from rAIversing.evaluator.utils import make_run_path
 from rAIversing.pathing import *
 
@@ -194,10 +195,13 @@ class EvaluationManager:
                                 if not os.path.exists(os.path.join(run_path, file)):
                                     shutil.copy(os.path.join(extraction_path, file), run_path)
 
-    def evaluate(self, evaluator=None):
+    def evaluate(self, evaluator=None,growth_factor=None):
         if evaluator is None:
             evaluator = self.evaluator
         else:
             self.evaluator = evaluator(self.ai_modules, self.source_dirs,
                                        self.runs, pool_size=self.connections)
-        self.evaluator.evaluate()
+        if growth_factor is not None:
+            self.evaluator.evaluate(growth_factor=growth_factor)
+        else:
+            self.evaluator.evaluate()
