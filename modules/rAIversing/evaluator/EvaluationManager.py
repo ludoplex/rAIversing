@@ -12,6 +12,7 @@ from rAIversing.evaluator.DefaultEvaluator import DefaultEvaluator
 from rAIversing.evaluator.LayeredEvaluator import LayeredEvaluator
 from rAIversing.evaluator.utils import make_run_path
 from rAIversing.pathing import *
+from rAIversing.utils import nondestructive_savefile_merge
 
 
 # evaluates the model given paths to testfolders with each 3 subfolders (original, stripped, no_propagation)
@@ -202,9 +203,12 @@ class EvaluationManager:
 
                         for file in os.listdir(extraction_path):
                             if file.endswith(".json"):
+
                                 if not os.path.exists(os.path.join(run_path, file)):
                                     shutil.copy(os.path.join(extraction_path, file), run_path)
-
+                                else:
+                                    nondestructive_savefile_merge(os.path.join(run_path, file),
+                                                                  os.path.join(extraction_path, file))
     def evaluate(self, evaluator=None,growth_factor=None):
         if evaluator is None:
             evaluator = self.evaluator

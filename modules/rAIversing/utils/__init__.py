@@ -16,6 +16,7 @@ class MaxTriesExceeded(Exception):
 class HardLimitReached(Exception):
     """Raised when the hard limit is definitely reached"""
 
+
 class NoResponseException(Exception):
     """Raised when no response is received"""
 
@@ -26,6 +27,7 @@ class InvalidResponseException(Exception):
 
 class IncompleteResponseException(Exception):
     """Raised when the response is incomplete"""
+
 
 class EmptyResponseException(Exception):
     """Raised when the response is empty"""
@@ -62,18 +64,16 @@ def check_and_create_project_path(project_path):
 
 
 def extract_function_name(code):
-    code=code.replace("(*)", "")
+    code = code.replace("(*)", "")
     if "WARNING: Removing unreachable block (ram," in code:
         code = code.split("\n\n")[1].split("(")[0].split("\n")[-1].split(" ")[-1]
         return code
-    code = re.sub(re.compile("/\*.*?\*/",re.DOTALL ) ,"" ,code)
+    code = re.sub(re.compile("/\*.*?\*/", re.DOTALL), "", code)
     code.replace("::", " ")
     code = code.split("{\n")[0].split("(")[0].split(" ")[-1]
     code = code.replace("\\n", "\n")
 
-
     splitted = re.split('[^a-zA-Z0-9_]', code)
-
 
     return splitted[-1]
 
@@ -208,15 +208,15 @@ def format_newlines_in_code(code):
     return front + 'improved_code": "' + main + '}\",' + back
 
 
-def escape_failed_escapes(response_string,e):
+def escape_failed_escapes(response_string, e):
     target = str(e).split("char ")[1].split(")")[0]
     char = int(target)
 
-    if """\"\\'""" in response_string[char-1:char+2]:
-        response_string=response_string.replace("""\"\\'""" , """\"\'""")
-        response_string=response_string.replace("""\\'\"""" , """\'\"""")
+    if """\"\\'""" in response_string[char - 1:char + 2]:
+        response_string = response_string.replace("""\"\\'""", """\"\'""")
+        response_string = response_string.replace("""\\'\"""", """\'\"""")
 
-    if "\'\\x" in response_string[char-1:char+4]:
+    if "\'\\x" in response_string[char - 1:char + 4]:
         response_string = response_string.replace("\'\\x", "\'\\\\x")
 
     return response_string
@@ -282,7 +282,6 @@ def save_to_json(data, file):
         json.dump(data, f, indent=4)
 
 
-
 def save_to_csv(data, file):
     """
     if file is not a path to an existing file, it is assumed to be relative to PROJECTS_ROOT
@@ -330,9 +329,9 @@ def insert_missing_double_quote(response, exception):
     pre = response[:char] + '"'
     if ":" in response[char:]:
         mid = response[char:].split(':')[0] + '":'
-        post = response[char:].split(':',1)[1]
+        post = response[char:].split(':', 1)[1]
     elif "..." in response[char:]:
-        response=response.replace("...\n", "")
+        response = response.replace("...\n", "")
         response = remove_trailing_commas(response)
         return response
     else:
@@ -341,11 +340,12 @@ def insert_missing_double_quote(response, exception):
         raise Exception("Could not find ':' in response")
     return pre + mid + post
 
+
 def insert_missing_colon(response, exception):
     # Expecting ':' delimiter: line 9 column 5 (char 252)
     target = str(exception).split("char ")[1].split(")")[0]
     char = int(target)
-    pre = response[:char-1] + ': '
+    pre = response[:char - 1] + ': '
     post = response[char:]
     return pre + post
 
@@ -354,7 +354,6 @@ def get_char(exception):
     target = str(exception).split("char ")[1].split(")")[0]
     char = int(target)
     return char
-
 
 
 def key_finder(key_parts, dictionary):
@@ -453,3 +452,43 @@ def remove_trailing_commas(string):
 def fix_single_quotes(string):
     string = string.replace("\':", "\":")
     return string
+
+
+def nondestructive_savefile_merge(base_file_path, new_file_path):
+    """
+    Merges the contents of new_file_path onto base_file_path, extending base_file_path.
+    :param base_file_path: the file to merge into
+    :param new_file_path: the file to merge from
+    """
+    print(f"Merge {new_file_path} into {base_file_path}")
+    with open(base_file_path, "r") as base_file:
+        base_contents = json.load(base_file)
+        base_functions = base_contents["functions"]
+        base_used_tokens = base_contents["used_tokens"]
+        base_layers = base_contents["layers"]
+        base_locked_functions = base_contents["locked_functions"]
+    with open(new_file_path, "r") as new_file:
+        new_contents = json.load(new_file)
+        new_functions = new_contents["functions"]
+        new_used_tokens = new_contents["used_tokens"]
+        new_layers = new_contents["layers"]
+        new_locked_functions = new_contents["locked_functions"]
+
+    for name, new_function in new_functions.items():
+        if name in base_functions.keys():
+            base_function = base_functions[name]
+            if base_function["improved"] and len(base_function["renaming"]) == 0:
+                base_functions[name]=new_function
+
+
+
+
+            #print(f"Function {name} already exists in base file, skipping")
+            continue
+        else:
+            base_functions[name] = new_function
+        print("merged function", name)
+    with open(base_file_path, "w") as f:
+        save_file = {"functions": base_functions, "used_tokens": base_used_tokens, "layers": base_layers,
+                     "locked_functions": base_locked_functions}
+        json.dump(save_file, f, indent=4)
