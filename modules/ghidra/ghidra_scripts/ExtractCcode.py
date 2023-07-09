@@ -16,6 +16,11 @@ from pathing import *
 import ghidra.program.model.symbol.SourceType.IMPORTED as IMPORTED
 
 # As we import changes from a file, we mark them as imported and not as user defined
+import sys
+
+# sys.setdefaultencoding() does not exist, here!
+reload(sys)  # Reload does the trick!
+sys.setdefaultencoding('UTF8')
 
 try:
     from ghidra.ghidra_builtins import *
@@ -30,7 +35,6 @@ monitor = ConsoleTaskMonitor()
 ifc = DecompInterface()
 ifc.setOptions(options)
 ifc.openProgram(getState().getCurrentProgram())
-
 
 halt_bad_data = "{\n                    /* WARNING: Bad instruction - Truncating control flow here */\n  halt_baddata();\n}"
 
@@ -60,32 +64,28 @@ def main(export_path=None, export_with_stripped_names=False):
     fm = currentProgram.getFunctionManager()
     funcs = list(fm.getFunctions(True))  # True means 'forward'
 
-
     if export_path is None:
         export_path = os.path.join(PROJECTS_ROOT, program_name)
     else:
-        if not program_name.replace("_no_propagation", "").replace("_original", "") in export_path.split("/")[-1].split("\\")[-1]:
-            export_path = os.path.join(export_path, program_name.replace("_no_propagation", "").replace("_original", ""))
+        if not program_name.replace("_no_propagation", "").replace("_original", "") in \
+               export_path.split("/")[-1].split("\\")[-1]:
+            export_path = os.path.join(export_path,
+                                       program_name.replace("_no_propagation", "").replace("_original", ""))
     export_path = export_path.replace('"', "")
 
     if os.path.exists(os.path.join(export_path, program_name + ".json")):
         print("#@#@#@#@#@#@#")
         return
-    else:
-        print(os.path.join(export_path, program_name + ".json") + " does not exist")
     function_metadata = {}
 
-    cCode = ""
-    # If you want to export with stripped names, set this to True
+    cCode = "".encode("utf-8")
 
     if len(funcs) > 700 and True:
         print("More than 700 functions in " + program_name + ". exiting!")
-        with open(os.path.join(export_path, "not_extracted"),"w") as f:
+        with open(os.path.join(export_path, "not_extracted"), "w") as f:
             f.write("More than 700 functions in " + program_name + ". exiting!")
         print("#@#@#@#@#@#@#")
         return
-
-
 
     for i in range(len(funcs)):
         func = funcs[i]
@@ -110,7 +110,7 @@ def main(export_path=None, export_with_stripped_names=False):
             func.setName(original_name, IMPORTED)
         else:
             code = func_to_C(func)
-        #print("Decompiled " + function_name)
+        # print("Decompiled " + function_name)
         code = code.replace("/* WARNING: Unknown calling convention -- yet parameter storage is locked */", "")
         code = code.replace("/* WARNING: Control flow encountered bad instruction data */", "")
         code = code.replace("/* WARNING: Subroutine does not return */", "")
@@ -123,7 +123,8 @@ def main(export_path=None, export_with_stripped_names=False):
         function_metadata[function_name]["renaming"] = {}
         function_metadata[function_name]["calling"] = []
         function_metadata[function_name]["called"] = []
-        function_metadata[function_name]["improved"] = "FUN_" not in function_name or (function_name not in code and "FUN_" in function_name)
+        function_metadata[function_name]["improved"] = "FUN_" not in function_name or (
+                function_name not in code and "FUN_" in function_name)
         function_metadata[function_name]["skipped"] = False
         function_metadata[function_name]["imported"] = False
         function_metadata[function_name]["tags"] = []
@@ -134,12 +135,12 @@ def main(export_path=None, export_with_stripped_names=False):
         for called in func.getCalledFunctions(getMonitor()):
             function_metadata[function_name]["called"].append(called.getName())
 
-        cCode += "\n////>>" + func.getEntryPoint().toString("0x") + ">>" + function_name + ">>////\n"
-        cCode += code
+        cCode += ("\n////>>" + func.getEntryPoint().toString("0x") + ">>" + function_name + ">>////\n").encode(
+            "utf-8").decode("utf-8")
+
+        cCode += code.encode("utf-8").decode("utf-8")
 
     program_name = str(fpapi.getCurrentProgram()).split(" ")[0].replace(".", "_")
-
-
 
     if not os.path.exists(export_path):
         os.mkdir(export_path)
@@ -162,6 +163,8 @@ def main(export_path=None, export_with_stripped_names=False):
             f.write(json.dumps(save_file, indent=4))
             f.close()
     print("#@#@#@#@#@#@#")
+
+
 def get_high_function(func):
     res = ifc.decompileFunction(func, 60, monitor)
     high = res.getHighFunction()
@@ -173,27 +176,25 @@ def get_function_symbols(func):
     lsm = hf.getLocalSymbolMap()
     return lsm.getSymbols()
 
+
 def func_to_C(func):
     try:
-        return ifc.decompileFunction(func, 0, ConsoleTaskMonitor()).getDecompiledFunction().getC()
+        return ifc.decompileFunction(func, 0, ConsoleTaskMonitor()).getDecompiledFunction().getC().encode("utf-8").decode("utf-8")
     except:
         try:
-            return fdapi.decompile(func)
+            print("Ding!")
+            return fdapi.decompile(func).encode("utf-8").decode("utf-8")
         except:
+            print("Dong!")
             return halt_bad_data
 
 
 if __name__ == "__main__":
     args = list(getScriptArgs())
-    try:
-        if len(args) > 1:
-            main(str(args[0]), str(args[1]) == "True")
-        elif len(args) > 0:
-            main(str(args[0]))
-        else:
-            main()
-    except Exception as e:
-        print(e)
-        print("main() failed!")
-        print("#@#@#@#@#@#@#")
 
+    if len(args) > 1:
+        main(str(args[0]), str(args[1]) == "True")
+    elif len(args) > 0:
+        main(str(args[0]))
+    else:
+        main()
