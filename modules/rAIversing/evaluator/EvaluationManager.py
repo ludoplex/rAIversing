@@ -79,7 +79,7 @@ class EvaluationManager:
         debug = False
 
         ##########################################################################################################
-        with Progress(*Progress.get_default_columns(),TimeElapsedColumn(),transient=True) as progress:
+        with Progress(*Progress.get_default_columns(),TimeElapsedColumn(),transient=False) as progress:
             task_ai_modules = progress.add_task(f"[bold bright_yellow]Extracting for {len(self.ai_modules)} AI modules",
                                                 total=len(self.ai_modules)) if len(self.ai_modules) > 1 else None
             ######################################################################################################
@@ -109,11 +109,11 @@ class EvaluationManager:
                     except FileNotFoundError:
                         pass
 
-                    #####################################################################################
-                    task_extraction = progress.add_task(                                                #
-                        f"[bold bright_yellow]Extracting {len(bin_paths) * 4} binaries/versions",       #
-                        total=(len(bin_paths) * 4))                                                     #
-                    #####################################################################################
+                    #########################################################################################
+                    task_import = progress.add_task(                                                        #
+                        f"[bold bright_yellow]Importing {len(bin_paths) * 3} binaries/versions into Ghidra",#
+                        total=(len(bin_paths) * 3))                                                         #
+                    #########################################################################################
 
                     try:
                         cmd = folder_processor(source_dir,
@@ -128,12 +128,21 @@ class EvaluationManager:
                             if process.poll() is not None:
                                 break
                             if output:
-                                print(output.strip().decode())
-                                if "#@#@#@#@#@#@#" in output.decode():
-                                    progress.advance(task_extraction)
+                                if debug:
+                                    print(output.strip().decode())
+                                if "INFO  REPORT: Analysis succeeded for file:" in output.decode():
+                                    progress.advance(task_import)
 
                     except KeyboardInterrupt:
                         exit(-1)
+                    #############################################################################################
+                    progress.remove_task(task_import)                                                           #
+                    task_extraction = progress.add_task(                                                        #
+                        f"[bold bright_yellow]Extracting {len(bin_paths) * 4} binaries/versions from Ghidra",   #
+                        total=(len(bin_paths) * 4))                                                             #
+                    #############################################################################################
+
+
                     try:
                         cmd = folder_processor(source_dir,
                                                project_name=f"eval_{model_name}_{source_dir_name}",
@@ -147,7 +156,8 @@ class EvaluationManager:
                             if process.poll() is not None:
                                 break
                             if output:
-                                print(output.strip().decode())
+                                if debug:
+                                    print(output.strip().decode())
                                 if "#@#@#@#@#@#@#" in output.decode():
                                     progress.advance(task_extraction)
 
@@ -171,7 +181,7 @@ class EvaluationManager:
                         f.write("done")
 
                     #############################################################################
-                    progress.remove_task(task_extraction)                                       #
+                    progress.remove_task(task_extraction)
                     progress.advance(task_source_dirs) if len(self.source_dirs) > 1 else None   #
                 progress.remove_task(task_source_dirs) if len(self.source_dirs) > 1 else None   #
                 progress.advance(task_ai_modules) if len(self.ai_modules) > 1 else None         #
