@@ -96,13 +96,6 @@ class EvaluationManager:
                     source_dir_name = os.path.basename(source_dir)
                     project_location = os.path.join(EVALUATION_ROOT, model_name, source_dir_name, "extraction")
 
-
-                    try:
-                        with open(os.path.join(source_dir, "proc_id"), "r") as f:
-                            proc_id = f.read()
-                    except FileNotFoundError:
-                        print(f"proc_id file not found {os.path.join(source_dir, 'proc_id')} EXITING NOW!!! PLEASE ADD IT AND RESTART")
-                        exit(-1)
                     bin_paths = list(Path(os.path.join(source_dir, "stripped")).rglob("*"))
 
                     try:
@@ -122,7 +115,7 @@ class EvaluationManager:
                     #####################################################################################
 
                     try:
-                        cmd = folder_processor(source_dir, processor_id=proc_id,
+                        cmd = folder_processor(source_dir,
                                                project_name=f"eval_{model_name}_{source_dir_name}",
                                                project_location=project_location,
                                                export_path=os.path.join(project_location),
@@ -141,7 +134,7 @@ class EvaluationManager:
                     except KeyboardInterrupt:
                         exit(-1)
                     try:
-                        cmd = folder_processor(source_dir, processor_id=proc_id,
+                        cmd = folder_processor(source_dir,
                                                project_name=f"eval_{model_name}_{source_dir_name}",
                                                project_location=project_location,
                                                export_path=os.path.join(project_location),
