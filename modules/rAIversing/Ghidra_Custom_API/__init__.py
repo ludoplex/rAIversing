@@ -30,7 +30,7 @@ def binary_to_c_code(binary_path, processor_id="", custom_headless_binary=None, 
     ah.run(debug)
 
 
-def folder_processor(folder_path, processor_id="", custom_headless_binary=None, project_location=None, project_name=None, debug=False, export_path=None, max_cpu=-1, process_only=False, import_only=False):
+def folder_processor(folder_path, processor_id="",cspec="", custom_headless_binary=None, project_location=None, project_name=None, debug=False, export_path=None, max_cpu=-1, process_only=False, import_only=False):
     project_name = os.path.basename(folder_path).replace(".", "_") if project_name is None else project_name
     project_location = f'{os.path.join(PROJECTS_ROOT, project_name)}' if project_location is None else project_location
     export_path = export_path if export_path is not None else project_location
@@ -62,6 +62,8 @@ def folder_processor(folder_path, processor_id="", custom_headless_binary=None, 
 
     if processor_id != "":
         ah.processor(processor_id)
+    if cspec != "":
+        ah.cspec(cspec)
     if debug:
         ah.print()
     return ah.get_command()
