@@ -281,11 +281,9 @@ class rAIverseEngine:
         self.skip_do_nothing()
         overall_processed_functions = self.count_processed()
         lfl = []
-
         while not self.check_all_processed():
-            self.console.log(f"[bold yellow]Gathering functions for layer [/bold yellow]{function_layer}")
+            continue_layer = False
             self.handle_unlocking()
-
             lfl = self.get_lowest_function_layer() if not no_propagation else self.get_missing_functions()
             if len(lfl) == 0:
                 if len(self.get_missing_functions()) == 0:
@@ -302,12 +300,14 @@ class rAIverseEngine:
                         self.layers.append(lfl)
                     else:
                         lfl = leftover_functions
+                        continue_layer = True
                 else:
                     self.layers.append(lfl)
 
             function_layer = len(self.layers)
+
             self.console.log(
-                f"[bold orange1]Starting layer [/bold orange1]{function_layer}[bold orange1] with [/bold orange1]{len(lfl)}[bold orange1] of[/bold orange1] {len(self.functions)}[bold orange1] functions. Overall processed functions: [/bold orange1]{overall_processed_functions}/{len(self.functions)}[bold orange1] Used tokens: [/bold orange1]{self.used_tokens}")
+                f"[bold orange1]{'Starting' if not continue_layer else 'Continuing'} layer [/bold orange1]{function_layer}[bold orange1] with [/bold orange1]{len(lfl)}[bold orange1] of[/bold orange1] {len(self.functions)}[bold orange1] functions. Overall processed functions: [/bold orange1]{overall_processed_functions}/{len(self.functions)}[bold orange1] Used tokens: [/bold orange1]{self.used_tokens}")
 
             function_layer += 1
             processed_functions = 0

@@ -83,45 +83,45 @@ class LayeredEvaluator(EvaluatorInterface):
     def create_all_results(self, model_name, source_dir):
         source_dir_name = os.path.basename(source_dir)
         usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
-        avg_table = create_table(f"Average {model_name} on {source_dir_name} ({self.runs} runs)")
+        #avg_table = create_table(f"Average {model_name} on {source_dir_name} ({self.runs} runs)")
         median_table = create_table(f"Median {model_name} on {source_dir_name} ({self.runs} runs)")
         #todo add csv table
         for binary in self.usable_binaries[model_name][source_dir_name]:
-            avg_title = f"Average {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
+            #avg_title = f"Average {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
             median_title = f"Median {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
 
-            avg_layered_table = self.create_layered_table(avg_title)
+            #avg_layered_table = self.create_layered_table(avg_title)
             median_layered_table = self.create_layered_table(median_title)
 
-            avg_df_table = self.create_layered_csv_table()
+            #avg_df_table = self.create_layered_csv_table()
             median_df_table = self.create_layered_csv_table()
 
-            avg_scores = self.get_average_results(model_name, source_dir_name, binary)
+            #avg_scores = self.get_average_results(model_name, source_dir_name, binary)
             median_scores = self.get_median_results(model_name, source_dir_name, binary)
 
-            fill_layered_table(avg_layered_table, avg_scores)
+            #fill_layered_table(avg_layered_table, avg_scores)
             fill_layered_table(median_layered_table, median_scores)
-            fill_layered_table(avg_df_table, avg_scores, do_csv=True)
+            #fill_layered_table(avg_df_table, avg_scores, do_csv=True)
             fill_layered_table(median_df_table, median_scores, do_csv=True)
 
-            fill_table(avg_table, avg_scores,binary)
+            #fill_table(avg_table, avg_scores,binary)
             fill_table(median_table, median_scores,binary)
 
-            avg_export_console = Console(record=True, width=100)
+            #avg_export_console = Console(record=True, width=100)
             median_export_console = Console(record=True, width=100)
 
-            avg_export_console.print(avg_layered_table)
+            #avg_export_console.print(avg_layered_table)
             median_export_console.print(median_layered_table)
 
             export_prefix = make_run_path(model_name, source_dir, "0", binary)
-            export_name = f"Layered_Eval_Avg_{model_name}_{source_dir_name}_{binary}_{self.runs}_runs"
-            export_path = os.path.join(export_prefix, export_name)
-            avg_export_console.save_svg(export_path + ".svg",
-                                    clear=False,
-                                    title="",
-                                    code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
-            svg_2_png(export_path)
-            avg_df_table.to_csv(export_path + ".csv")
+            #export_name = f"Layered_Eval_Avg_{model_name}_{source_dir_name}_{binary}_{self.runs}_runs"
+            #export_path = os.path.join(export_prefix, export_name)
+            #avg_export_console.save_svg(export_path + ".svg",
+            #                        clear=False,
+            #                        title="",
+            #                        code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
+            #svg_2_png(export_path)
+            #avg_df_table.to_csv(export_path + ".csv")
             export_name = f"Layered_Eval_Median_{model_name}_{source_dir_name}_{binary}_{self.runs}_runs"
             export_path = os.path.join(export_prefix, export_name)
             median_export_console.save_svg(export_path + ".svg",
@@ -131,21 +131,21 @@ class LayeredEvaluator(EvaluatorInterface):
             svg_2_png(export_path)
             median_df_table.to_csv(export_path + ".csv")
 
-            self.plot_dataframe(avg_df_table,avg_title,export_path)
+            #self.plot_dataframe(avg_df_table,avg_title,export_path)
             self.plot_dataframe(median_df_table,median_title,export_path)
 
-        avg_export_console = Console(record=True, width=180)
+        #avg_export_console = Console(record=True, width=180)
         median_export_console = Console(record=True, width=180)
 
-        avg_export_console.print(avg_table)
+        #avg_export_console.print(avg_table)
         median_export_console.print(median_table)
 
         export_path = make_run_path(model_name, source_dir, "0", "")
 
-        avg_export_console.save_svg(
-            os.path.join(export_path, f"Eval_Avg_{model_name}_{source_dir_name}_{self.runs}_runs.svg"), clear=False,
-            title="",
-            code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
+        #avg_export_console.save_svg(
+        #    os.path.join(export_path, f"Eval_Avg_{model_name}_{source_dir_name}_{self.runs}_runs.svg"), clear=False,
+        #    title="",
+        #    code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
         median_export_console.save_svg(
             os.path.join(export_path, f"Eval_Median_{model_name}_{source_dir_name}_{self.runs}_runs.svg"), clear=False,
             title="",

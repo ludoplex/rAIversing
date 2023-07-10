@@ -74,8 +74,14 @@ def main(export_path=None, export_with_stripped_names=False):
     export_path = export_path.replace('"', "")
 
     if os.path.exists(os.path.join(export_path, program_name + ".json")):
-        print("#@#@#@#@#@#@#")
-        return
+        if export_with_stripped_names:
+            program_name_temp = program_name + "_stripped"
+            if os.path.exists(os.path.join(export_path, program_name_temp + ".json")):
+                print("#@#@#@#@#@#@#")
+                return
+        else:
+            print("#@#@#@#@#@#@#")
+            return
     function_metadata = {}
 
     cCode = "".encode("utf-8")

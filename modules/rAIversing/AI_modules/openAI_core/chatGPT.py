@@ -276,14 +276,29 @@ class ChatGPTModule(AiModuleInterface):
                         #print("double quotes")
                         response_string = insert_missing_double_quote(response_string, e)
                         continue
+                    if "Unterminated string starting at" in str(e):
+                        #print("Unterminated string")
+                        response_string = insert_missing_double_quote(response_string, e)
+                        continue
+
                     if "Extra data" in str(e):
                         #print("Extra data")
                         response_string = clear_extra_data(response_string, e)
                         continue
-                    print(type(e))
-                    print(e)
+                    if "Expecting value" in str(e):
+                        print("Expecting value TODO")
+                        #response_string = insert_missing_value(response_string, e)
+                        raise e
+
+                    self.logger.exception(e)
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                         f.write(response_string_orig)
+                    print(f"###### RESPONSE START @ {locator()}######")
+                    print(response_string_orig)
+                    print(f"###### RESPONSE END @ {locator()}######")
+                    print(f"###### CURRENT STATE @ {locator()}######")
+                    print(response_string)
+                    print(f"###### CURRENT STATE END @ {locator()}######")
                     raise e
                 else:
                     print(type(e))
