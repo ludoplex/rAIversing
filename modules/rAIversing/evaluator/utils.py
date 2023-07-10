@@ -2,6 +2,7 @@ import json
 import math
 import os
 
+import pandas
 import pandas as pd
 from rich.table import Table, Column
 
@@ -194,7 +195,7 @@ def collect_partial_scores(scored):
             "lfl": {"score": (lfl_sum / lfl_count) if lfl_count else 0, "count": lfl_count}}
 
 
-def collect_layered_partial_scores(scored,bucket_factor = 0.0):
+def collect_layered_partial_scores(scored, bucket_factor=0.0):
     """
     calculates the score for the layered functions and total score for each bucket
     :param scored: the scored functions dict (ends up in the *_eval.json file)
@@ -239,7 +240,6 @@ def collect_layered_partial_scores(scored,bucket_factor = 0.0):
                 continue
             result[layer_index]["score"] += entry["score"]
             result[layer_index]["count"] += 1
-
 
         if result[layer_index]["count"] > 0 and result[layer_index]["score"] > 0:
             result[layer_index]["score"] /= result[layer_index]["count"]
@@ -315,7 +315,6 @@ def calc_relative_percentage_difference(best, worst, actual):
 
 
 def fill_table(table, scores, binary):
-
     score_pred = scores["pred"]["all"]["score"]
     score_pred_hfl = scores["pred"]["hfl"]["score"]
     score_pred_lfl = scores["pred"]["lfl"]["score"]
@@ -375,7 +374,6 @@ def fill_layered_table(table, scores, do_csv=False):
 
         score_best_vs_pred_direct = scores["best_vs_pred-layered"][layer_name]["score"]
 
-
         try:
             score_best_vs_pred = score_pred / score_best
         except ZeroDivisionError:
@@ -416,32 +414,9 @@ def fill_layered_table(table, scores, do_csv=False):
         score_previous_layer = score_pred
 
 
-def layers_for_bucket(bucket_number,growth_factor=0.0):
-    return math.floor(math.pow((1 + growth_factor),bucket_number))
+def layers_for_bucket(bucket_number, growth_factor=0.0):
+    return math.floor(math.pow((1 + growth_factor), bucket_number))
 
-def get_bucket_scores(scores):
-    layers_left = len(scores["pred-layered"].keys())
-    bucket_scores = {}
-    current_bucket = 0
-    while layers_left > 0:
-        for layer_index in range(layers_for_bucket(current_bucket)):
-            layer_name = str(layer_index)
-            if current_bucket not in bucket_scores:
-                bucket_scores[layer_name] = {"score": 0, "count": 0}
-
-            score_pred = scores["pred-layered"][layer_name]["score"]
-            count_pred = scores["pred-layered"][layer_name]["count"]
-
-            score_best = scores["best-layered"][layer_name]["score"]
-            count_best = scores["best-layered"][layer_name]["count"]
-
-            score_worst = scores["worst-layered"][layer_name]["score"]
-            count_worst = scores["worst-layered"][layer_name]["count"]
-
-            score_best_vs_pred_direct = scores["best_vs_pred-layered"][layer_name]["score"]
-
-            layers_left-=1
-        current_bucket+=1
 
 def create_table(title):
     result_table = Table(Column(header="Binary", style="bold bright_yellow on grey23"),
@@ -467,3 +442,15 @@ def svg_2_png(svg_path):
     with open(svg_path + ".svg", "rb") as svg_file:
         svg = svg_file.read()
     svg2png(bytestring=svg, write_to=svg_path + ".png")
+
+
+def plot_layered_multi_dataframe(axis, df: pandas.DataFrame, title):
+
+    df.plot(ax=axis, title=title, x="Layer", y=["Actual", "Best Case", "Worst Case", "Act/Best","Act vs Best (direct)"]).set_ylim(
+        0, 110)
+
+
+def plot_dataframe(df: pandas.DataFrame, title, export_path):
+    fig = df.plot(x="Layer", y=["Actual", "Best Case", "Worst Case", "Act/Best","Act vs Best (direct)"], title=title)
+    fig.set_ylim(0, 100)
+    fig.figure.savefig(export_path+".png")
