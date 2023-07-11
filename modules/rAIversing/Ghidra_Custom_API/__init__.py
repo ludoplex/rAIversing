@@ -17,7 +17,7 @@ def binary_to_c_code(binary_path, language_id="", compiler_id="", custom_headles
     ah.import_file(import_path)
     ah.project_location(project_location) \
         .project_name(project_name) \
-        .postScript(f'ExtractCcode.py "{export_path}"') \
+        .postScript(f'ExtractCcode.java "{export_path}"') \
         .scriptPath(f'{GHIDRA_SCRIPTS}') \
         .log(f'{PROJECTS_ROOT}/log') \
         .max_cpu(max_cpu)\
@@ -52,7 +52,7 @@ def folder_processor(folder_path, processor_id="",cspec="", custom_headless_bina
         ah.noanalysis()
     ah.recursive()
     if not import_only and process_only:
-        ah.postScript(f'ExtractCcode.py {export_path}')
+        ah.postScript(f'ExtractCcode.java {export_path}')
 
 
     ah.project_location(project_location) \
@@ -90,7 +90,7 @@ def existing_project_to_c_code(project_location, binary_name=None, project_name=
     ah = HeadlessAnalyzerWrapper(custom_headless_binary)
     ah.project_location(f'{project_location}') \
         .project_name(project_name) \
-        .postScript(f'ExtractCcode.py {export_path} {export_with_stripped_names}') \
+        .postScript(f'ExtractCcode.java {export_path} {export_with_stripped_names}') \
         .process(binary_name) \
         .noanalysis()\
         .scriptPath(f'{GHIDRA_SCRIPTS}') \
@@ -133,7 +133,7 @@ def import_changes_to_existing_project(project_location,binary_name=None,project
     ah.project_location(f'{project_location}') \
         .project_name(project_name) \
         .scriptPath(f'{GHIDRA_SCRIPTS}') \
-        .postScript(f'ImportChanges.py {project_location}') \
+        .postScript(f'ImportChanges.java {project_location}') \
         .process(binary_name) \
         .noanalysis() \
         .scriptlog(f'{PROJECTS_ROOT}/scriptlog')
