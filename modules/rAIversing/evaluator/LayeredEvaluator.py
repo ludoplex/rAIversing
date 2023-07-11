@@ -154,6 +154,7 @@ class LayeredEvaluator(EvaluatorInterface):
             os.path.join(export_path, f"Eval_Median_{model_name}_{source_dir_name}_{self.runs}_runs.svg"), clear=False,
             title="",
             code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
+        svg_2_png(export_path)
         export_path = make_run_path(model_name, source_dir, "0", "")
         median_layered_fig.savefig(os.path.join(export_path, f"Layered_Eval_Median_{model_name}_{source_dir_name}_{self.runs}_runs.png"))
 

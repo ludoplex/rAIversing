@@ -232,23 +232,7 @@ def collect_layered_partial_scores(scored, bucket_factor=0.0):
 
     return result
 
-    for layer_index, scores in scored.items():
-        result[layer_index] = {"score": 0, "count": 0}
-        for entrypoint, entry in scores.items():
-            pred_name = entry["predicted"]
-            if "nothing" in pred_name.lower() or "FUNC_" in pred_name:
-                continue
-            result[layer_index]["score"] += entry["score"]
-            result[layer_index]["count"] += 1
 
-        if result[layer_index]["count"] > 0 and result[layer_index]["score"] > 0:
-            result[layer_index]["score"] /= result[layer_index]["count"]
-        elif result[layer_index]["score"] > 0:
-            print(
-                f"Layer {layer_index} has score {result[layer_index]['score']} but count {result[layer_index]['count']}")
-            raise Exception("Layer has score but count is 0")
-
-    return result
 
 
 def find_entrypoint(original_fn, orig_name, pred_name):
@@ -442,6 +426,7 @@ def svg_2_png(svg_path):
     with open(svg_path + ".svg", "rb") as svg_file:
         svg = svg_file.read()
     svg2png(bytestring=svg, write_to=svg_path + ".png")
+    os.remove(svg_path + ".svg")
 
 
 def plot_layered_multi_dataframe(axis, df: pandas.DataFrame, title):
