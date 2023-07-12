@@ -82,47 +82,28 @@ class LayeredEvaluator(EvaluatorInterface):
     def create_all_results(self, model_name, source_dir):
         source_dir_name = os.path.basename(source_dir)
         usable_binaries = sorted(self.usable_binaries[model_name][source_dir_name])
-        #avg_table = create_table(f"Average {model_name} on {source_dir_name} ({self.runs} runs)")
         median_table = create_table(f"Median {model_name} on {source_dir_name} ({self.runs} runs)")
         median_layered_fig, median_layered_axes = plt.subplots(nrows=len(usable_binaries), ncols=1, sharex=True,figsize=(10,len(usable_binaries)*4),layout=("tight"))
         axes_index = 0
         #todo add csv table
         for binary in usable_binaries:
-            #avg_title = f"Average {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
             median_title = f"Median {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
 
-            #avg_layered_table = self.create_layered_table(avg_title)
             median_layered_table = self.create_layered_table(median_title)
 
-            #avg_df_table = self.create_layered_csv_table()
             median_df_table = self.create_layered_csv_table()
 
-            #avg_scores = self.get_average_results(model_name, source_dir_name, binary)
             median_scores = self.get_median_results(model_name, source_dir_name, binary)
 
-            #fill_layered_table(avg_layered_table, avg_scores)
             fill_layered_table(median_layered_table, median_scores)
-            #fill_layered_table(avg_df_table, avg_scores, do_csv=True)
             fill_layered_table(median_df_table, median_scores, do_csv=True)
-
-            #fill_table(avg_table, avg_scores,binary)
             fill_table(median_table, median_scores,binary)
 
-            #avg_export_console = Console(record=True, width=100)
             median_export_console = Console(record=True, width=100)
 
-            #avg_export_console.print(avg_layered_table)
             median_export_console.print(median_layered_table)
 
             export_prefix = make_run_path(model_name, source_dir, "0", binary)
-            #export_name = f"Layered_Eval_Avg_{model_name}_{source_dir_name}_{binary}_{self.runs}_runs"
-            #export_path = os.path.join(export_prefix, export_name)
-            #avg_export_console.save_svg(export_path + ".svg",
-            #                        clear=False,
-            #                        title="",
-            #                        code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
-            #svg_2_png(export_path)
-            #avg_df_table.to_csv(export_path + ".csv")
             export_name = f"Layered_Eval_Median_{model_name}_{source_dir_name}_{binary}_{self.runs}_runs"
             export_path = os.path.join(export_prefix, export_name)
             median_export_console.save_svg(export_path + ".svg",
@@ -132,24 +113,17 @@ class LayeredEvaluator(EvaluatorInterface):
             svg_2_png(export_path)
             median_df_table.to_csv(export_path + ".csv")
 
-            #self.plot_dataframe(avg_df_table,avg_title,export_path)
             plot_dataframe(median_df_table, median_title, export_path)
             median_layered_axes[axes_index].set_xmargin(0.0)
             plot_layered_multi_dataframe(median_layered_axes[axes_index], median_df_table, binary)
             axes_index += 1
 
-        #avg_export_console = Console(record=True, width=180)
         median_export_console = Console(record=True, width=180)
 
-        #avg_export_console.print(avg_table)
         median_export_console.print(median_table)
 
         export_path = make_run_path(model_name, source_dir, "0", "")
 
-        #avg_export_console.save_svg(
-        #    os.path.join(export_path, f"Eval_Avg_{model_name}_{source_dir_name}_{self.runs}_runs.svg"), clear=False,
-        #    title="",
-        #    code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
         median_export_console.save_svg(
             os.path.join(export_path, f"Eval_Median_{model_name}_{source_dir_name}_{self.runs}_runs.svg"), clear=False,
             title="",

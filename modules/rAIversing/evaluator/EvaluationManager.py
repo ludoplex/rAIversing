@@ -10,7 +10,7 @@ from rAIversing.Engine import rAIverseEngine
 from rAIversing.Ghidra_Custom_API import binary_to_c_code, existing_project_to_c_code, folder_processor
 from rAIversing.evaluator.DefaultEvaluator import DefaultEvaluator
 from rAIversing.evaluator.LayeredEvaluator import LayeredEvaluator
-from rAIversing.evaluator.utils import make_run_path
+from rAIversing.evaluator.utils import make_run_path, check_extracted
 from rAIversing.pathing import *
 from rAIversing.utils import nondestructive_savefile_merge
 
@@ -54,6 +54,8 @@ class EvaluationManager:
                     usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
                     # usable_binaries = ["CNC"]  # TODO remove
                     for binary in usable_binaries:
+                        if check_extracted(model_name, source_dir, binary):
+                            continue
                         run_path = make_run_path(model_name, source_dir, run, binary)
                         self.run_atomic(ai_module, run_path, binary)
 
@@ -200,7 +202,8 @@ class EvaluationManager:
                         extraction_path = os.path.join(EVALUATION_ROOT, model_name, os.path.basename(source_dir),
                                                        "extraction", binary)
                         run_path = make_run_path(model_name, source_dir, run, binary)
-
+                        if check_extracted(model_name, source_dir, binary):
+                            continue
                         for file in os.listdir(extraction_path):
                             if file.endswith(".json"):
 

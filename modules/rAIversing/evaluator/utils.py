@@ -159,8 +159,6 @@ def check_extracted(model_name, source_dir_name, binary):
     :return:
     """
     run_path = os.path.join(EVALUATION_ROOT, model_name, source_dir_name, "extraction", binary)
-    # print(os.path.join(run_path, "not_extracted"))
-    # print(not os.path.exists(os.path.join(run_path, "not_extracted")))
     return not os.path.exists(os.path.join(run_path, "not_extracted"))
 
 
