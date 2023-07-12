@@ -17,7 +17,7 @@ from rAIversing.utils import check_and_fix_bin_path, extract_function_name, gene
 
 
 class rAIverseEngine:
-    def __init__(self, ai_module, json_path="", binary_path="", max_tokens=None):
+    def __init__(self, ai_module, json_path="", binary_path="", max_tokens=None,retries=5):
         self.max_parallel_functions = os.cpu_count() // 2
         self.max_tokens = max_tokens if max_tokens is not None else ai_module.get_max_tokens()
         self.ai_module = ai_module  # type: chatGPT
@@ -32,8 +32,7 @@ class rAIverseEngine:
         self.logger.setLevel(logging.DEBUG)
         self.binary_name = os.path.basename(binary_path).replace(".", "_")
         self.path_to_save_file = json_path if json_path != "" else f"{PROJECTS_ROOT}/{self.binary_name}/{self.binary_name}.json"
-        self.skip_failed_functions = True  # TODO make this a parameter
-        self.retries = 5  # TODO make this a parameter
+        self.retries = retries
         logging.basicConfig()
         self.console = Console(soft_wrap=True)
         self.load_save_file()

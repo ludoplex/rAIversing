@@ -226,7 +226,6 @@ class DefaultEvaluator(EvaluatorInterface):
     def create_run_results(self, model_name, source_dir):
         source_dir_name = os.path.basename(source_dir)
         usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
-        # usable_binaries = ["CNC"]  # TODO remove
         for run in range(1, self.runs + 1):
             table = create_table(f"{model_name} on {source_dir_name} (Run {run})")
             for binary in usable_binaries:
