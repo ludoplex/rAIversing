@@ -7,10 +7,10 @@ from rAIversing.Ghidra_Custom_API import *
 
 from rAIversing.evaluator.EvaluationManager import EvaluationManager
 from rAIversing.evaluator.LayeredEvaluator import LayeredEvaluator
-from rAIversing.evaluator.utils import make_run_path
+from rAIversing.evaluator.utils import make_run_path, layers_str_for_bucket
 from rAIversing.pathing import *
 from rAIversing.AI_modules.openAI_core.PromptEngine import PromptEngine
-
+import json
 from rAIversing.utils import *
 from DataGather.src.DataGather import run_for_packages, create_sample_structure
 
@@ -22,7 +22,7 @@ def testbench(ai_module):
 def evaluation(ai_module=None, parallel=1, bucketing=False, growth_factor=0.33, no_layering=False, runs=1):
     ai_modules = [ai_module]
     # ai_modules = [chatGPT.api_key(engine=PromptEngine.GPT_4)]
-    #source_dirs = [os.path.join(BINARIES_ROOT, "punstrip_cc_selection_static"),
+    # source_dirs = [os.path.join(BINARIES_ROOT, "punstrip_cc_selection_static"),
     #               os.path.join(BINARIES_ROOT, "punstrip_cc_selection_dyn")]
     source_dirs = [P2IM_BINS_ROOT]
 
@@ -82,13 +82,15 @@ def run_on_new_binary(binary_path, language_id="", compiler_id="", ai_module=Non
     binary_to_c_code(import_path, language_id=language_id, compiler_id=compiler_id,
                      custom_headless_binary=custom_headless_binary, project_location=output_path,
                      project_name=project_name, max_cpu=parallel if parallel > 1 else 2)
-    if output_path is not None:
-        binary_name = os.path.basename(binary_path).replace(".", "_")
+
+    binary_name = os.path.basename(binary_path).replace(".", "_")
+    project_name = binary_name if project_name is None else project_name
+    if output_path:
         json_path = f"{os.path.join(output_path, binary_name)}.json"
-        project_name = binary_name if project_name is None else project_name
         project_location = os.path.join(output_path, project_name)
     else:
-        json_path = ""
+        json_path = f"{os.path.join(PROJECTS_ROOT, binary_name, binary_name)}.json"
+        project_location = os.path.join(PROJECTS_ROOT, binary_name)
     raie = rAIverseEngine(ai_module, json_path=json_path, binary_path=import_path, max_tokens=max_tokens)
     if dry_run:
         raie.dry_run()
@@ -97,11 +99,8 @@ def run_on_new_binary(binary_path, language_id="", compiler_id="", ai_module=Non
     raie.run_parallel_rev()
 
     raie.export_processed(all_functions=True)
-    if output_path is not None:
-        import_changes_to_existing_project(project_location, binary_name, project_name,
-                                           custom_headless_binary=custom_headless_binary)
-    else:
-        import_changes_to_ghidra_project(import_path, custom_headless_binary=custom_headless_binary)
+    import_changes_to_existing_project(project_location, binary_name, project_name,
+                                       custom_headless_binary=custom_headless_binary)
 
 
 if __name__ == "__main__":
@@ -186,9 +185,9 @@ if __name__ == "__main__":
 
                 else:
                     print(f"WARNING: Custom Compiler ID: {args.compiler_id} was specified without a Language ID!\n"
-                            f"         This is not supported by Ghidra!\n"
-                            f"         Please specify a Language ID or let Ghidra detect it automatically!\n"
-                            f"Exiting...")
+                          f"         This is not supported by Ghidra!\n"
+                          f"         Please specify a Language ID or let Ghidra detect it automatically!\n"
+                          f"Exiting...")
                     exit(1)
 
         run_on_new_binary(args.path, language_id=args.language_id, compiler_id=args.compiler_id, ai_module=ai_module,
