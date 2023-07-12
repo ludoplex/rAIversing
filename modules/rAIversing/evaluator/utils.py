@@ -202,35 +202,37 @@ def collect_layered_partial_scores(scored, bucket_factor=0.0):
     """
     layer_indices = list(scored.keys())
     layers_left = len(layer_indices)
-
+    max_layer = len(layer_indices) - 1
     result = {}
     current_bucket = 0
+    layer_key = current_bucket if bucket_factor == 0.0 else layers_str_for_bucket(current_bucket, bucket_factor,
+                                                                                  max_layer)
     while layers_left > 0:
-        for i in range(layers_for_bucket(current_bucket, bucket_factor)):
+        for i in range(num_layers_for_bucket(current_bucket, bucket_factor)):
             layer_index = layer_indices.pop(0)
             layer = scored[layer_index]
-            if current_bucket not in result.keys():
-                result[current_bucket] = {"score": 0, "count": 0}
+            if layer_key not in result.keys():
+                result[layer_key] = {"score": 0, "count": 0}
             for entrypoint, entry in layer.items():
                 pred_name = entry["predicted"]
                 if "nothing" in pred_name.lower() or "FUNC_" in pred_name:
                     continue
-                result[current_bucket]["score"] += entry["score"]
-                result[current_bucket]["count"] += 1
+                result[layer_key]["score"] += entry["score"]
+                result[layer_key]["count"] += 1
             layers_left -= 1
             if layers_left == 0:
                 break
-        if result[current_bucket]["count"] > 0 and result[current_bucket]["score"] > 0:
-            result[current_bucket]["score"] /= result[current_bucket]["count"]
-        elif result[current_bucket]["score"] > 0:
+        if result[layer_key]["count"] > 0 and result[layer_key]["score"] > 0:
+            result[layer_key]["score"] /= result[layer_key]["count"]
+        elif result[layer_key]["score"] > 0:
             print(
                 f"Bucket {current_bucket} has score {result[current_bucket]['score']} but count {result[current_bucket]['count']}")
             raise Exception("Bucket has score but count is 0")
         current_bucket += 1
+        layer_key = current_bucket if bucket_factor == 0.0 else layers_str_for_bucket(current_bucket, bucket_factor,
+                                                                                      max_layer)
 
     return result
-
-
 
 
 def find_entrypoint(original_fn, orig_name, pred_name):
@@ -354,7 +356,13 @@ def fill_layered_table(table, scores, do_csv=False):
         score_worst = scores["worst-layered"][layer_name]["score"]
         count_worst = scores["worst-layered"][layer_name]["count"]
 
-        score_best_vs_pred_direct = scores["best_vs_pred-layered"][layer_name]["score"]
+        # This is to catch cases where the direct comparison had different number of layers and the last bucket of
+        # "best_vs_pred-layered" is not the same as the last bucket of "pred-layered"
+        try:
+            score_best_vs_pred_direct = scores["best_vs_pred-layered"][layer_name]["score"]
+        except KeyError:
+            layer_keys = list(scores["best_vs_pred-layered"].keys())
+            score_best_vs_pred_direct = scores["best_vs_pred-layered"][layer_keys[-1]]["score"]
 
         try:
             score_best_vs_pred = score_pred / score_best
@@ -380,8 +388,8 @@ def fill_layered_table(table, scores, do_csv=False):
                           f"{count_worst}"
                           )
         else:
-            table.loc[int(layer_name)] = pd.Series({
-                "Layer": int(layer_name),
+            table.loc[layer_name] = pd.Series({
+                "Layer": layer_name,
                 "Actual": float(f"{score_pred * 100:.2f}"),
                 "Best Case": float(f"{score_best * 100:.2f}"),
                 "Worst Case": float(f"{score_worst * 100:.2f}"),
@@ -396,8 +404,21 @@ def fill_layered_table(table, scores, do_csv=False):
         score_previous_layer = score_pred
 
 
-def layers_for_bucket(bucket_number, growth_factor=0.0):
+def num_layers_for_bucket(bucket_number, growth_factor=0.0):
     return math.floor(math.pow((1 + growth_factor), bucket_number))
+
+
+def layers_str_for_bucket(bucket_number, growth_factor=0.0, max_layer=0):
+    num_prev_layers = 0
+    needed_layers = num_layers_for_bucket(bucket_number, growth_factor)
+    for i in range(bucket_number):
+        num_prev_layers += num_layers_for_bucket(i, growth_factor)
+    bucket_end = min(num_prev_layers + num_layers_for_bucket(bucket_number, growth_factor) - 1, max_layer)
+    bucket_start = num_prev_layers
+    if needed_layers == 1 or bucket_start == bucket_end:
+        return f"{num_prev_layers}"
+    else:
+        return f"{bucket_start}-{bucket_end}"
 
 
 def create_table(title):
@@ -428,12 +449,13 @@ def svg_2_png(svg_path):
 
 
 def plot_layered_multi_dataframe(axis, df: pandas.DataFrame, title):
-
-    df.plot(ax=axis, title=title, x="Layer", y=["Actual", "Best Case", "Worst Case", "Act/Best","Act vs Best (direct)"]).set_ylim(
+    df.plot(ax=axis, title=title, x="Layer",
+            y=["Actual", "Best Case", "Worst Case", "Act/Best", "Act vs Best (direct)"]).set_ylim(
         0, 110)
 
 
 def plot_dataframe(df: pandas.DataFrame, title, export_path):
-    fig = df.plot(x="Layer", y=["Actual", "Best Case", "Worst Case", "Act/Best","Act vs Best (direct)"], title=title)
-    fig.set_ylim(0, 100)
-    fig.figure.savefig(export_path+".png")
+    fig = df.plot.bar(x="Layer", y=["Best Case", "Actual", "Worst Case", "Act/Best", "Act vs Best (direct)"],
+                      title=title, figsize=(len(df["Layer"]) * 2, 8), layout=("tight"), width=0.8,
+                      color=["green", "darkorange", "red", "mediumturquoise", "darkorchid"]).get_figure()
+    fig.figure.savefig(export_path + ".png")
