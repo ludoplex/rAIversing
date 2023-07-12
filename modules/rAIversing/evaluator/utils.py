@@ -168,6 +168,7 @@ def collect_partial_scores(scored):
     :param scored: the scored functions dict (ends up in the *_eval.json file)
     :return: dict of all, hfl and lfl scores and counts
     """
+    debug = False
     lfl_sum = 0
     lfl_count = 0
     hfl_sum = 0
@@ -177,7 +178,11 @@ def collect_partial_scores(scored):
     for group, scores in scored.items():
         for entrypoint, entry in scores.items():
             pred_name = entry["predicted"]
-            if "nothing" in pred_name.lower() or "FUNC_" in pred_name:
+            if "nothing" in pred_name.lower() or "FUNC_" in pred_name or \
+                    ("reverse" in pred_name and "engineer" in pred_name) or \
+                    ("improve" in pred_name and "function" in pred_name):
+                if debug:
+                    print(f"skipping {pred_name}")
                 continue
             if layer == 0:
                 hfl_sum += entry["score"]
@@ -202,6 +207,7 @@ def collect_layered_partial_scores(scored, bucket_factor=0.0):
     """
     layer_indices = list(scored.keys())
     layers_left = len(layer_indices)
+    debug = False
     max_layer = len(layer_indices) - 1
     result = {}
     current_bucket = 0
@@ -215,7 +221,11 @@ def collect_layered_partial_scores(scored, bucket_factor=0.0):
                 result[layer_key] = {"score": 0, "count": 0}
             for entrypoint, entry in layer.items():
                 pred_name = entry["predicted"]
-                if "nothing" in pred_name.lower() or "FUNC_" in pred_name:
+                if "nothing" in pred_name.lower() or "FUNC_" in pred_name or \
+                        ("reverse" in pred_name and "engineer" in pred_name) or \
+                        ("improve" in pred_name and "function" in pred_name):
+                    if debug:
+                        print(f"skipping {pred_name}")
                     continue
                 result[layer_key]["score"] += entry["score"]
                 result[layer_key]["count"] += 1
