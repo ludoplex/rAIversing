@@ -308,7 +308,7 @@ def calc_relative_percentage_difference(best, worst, actual):
         return 0
 
 
-def fill_table(table, scores, binary):
+def fill_table(table, scores, binary, do_csv=False):
     score_pred = scores["pred"]["all"]["score"]
     score_pred_hfl = scores["pred"]["hfl"]["score"]
     score_pred_lfl = scores["pred"]["lfl"]["score"]
@@ -340,18 +340,45 @@ def fill_table(table, scores, binary):
     score_rdp_lfl = calc_relative_percentage_difference(score_best_lfl, score_worst_lfl, score_pred_lfl)
     score_rpd = calc_relative_percentage_difference(score_best, score_worst, score_pred)
 
-    table.add_row(binary, f"{score_pred * 100:.2f}%",
-                  f"{score_pred_hfl * 100:.2f}%",
-                  f"{score_pred_lfl * 100:.2f}%",
-                  f"{score_best_hfl * 100:.2f}%",
-                  f"{score_worst_hfl * 100:.2f}%",
-                  f"{score_best_vs_pred * 100:.1f}%|{score_best_vs_pred_hfl * 100:.1f}%",
-                  f"{score_best_vs_pred_direct * 100:.2f}%|{score_best_vs_pred_direct_hfl * 100:.2f}%",
-                  f"{score_rpd :.1f}%|{score_rpd_hfl :.1f}%|{score_rdp_lfl :.1f}%",
-                  f"{total_orig:.0f}[bold magenta1]|[/bold magenta1]{total_pred:.0f}",
-                  f"{counted_pred:.0f}",
-                  f"{counted_best:.0f}",
-                  f"{counted_worst:.0f}")
+    if not do_csv:
+        table.add_row(binary, f"{score_pred * 100:.2f}%",
+                      f"{score_pred_hfl * 100:.2f}%",
+                      f"{score_pred_lfl * 100:.2f}%",
+                      f"{score_best_hfl * 100:.2f}%",
+                      f"{score_worst_hfl * 100:.2f}%",
+                      f"{score_best_vs_pred * 100:.1f}%|{score_best_vs_pred_hfl * 100:.1f}%",
+                      f"{score_best_vs_pred_direct * 100:.2f}%|{score_best_vs_pred_direct_hfl * 100:.2f}%",
+                      f"{score_rpd :.1f}%|{score_rpd_hfl :.1f}%|{score_rdp_lfl :.1f}%",
+                      f"{total_orig:.0f}[bold magenta1]|[/bold magenta1]{total_pred:.0f}",
+                      f"{counted_pred:.0f}",
+                      f"{counted_best:.0f}",
+                      f"{counted_worst:.0f}")
+    else:
+        #["binary", "actual-all", "actual-hfl", "actual-lfl", "best-case", "worst-case",
+        #"act/best-all", "act/best-hfl", "act-vs-best-direct-all",
+        #"act-vs-best-direct-hfl", "rpd-all", "rpd-hfl", "rpd-lfl", "total-orig",
+        #"total-act", "counted-actual", "counted-best", "counted-worst"]
+
+        table.loc[binary] = pd.Series({
+            "binary": binary,
+            "actual-all": f"{score_pred * 100:.2f}%",
+            "actual-hfl": f"{score_pred_hfl * 100:.2f}%",
+            "actual-lfl": f"{score_pred_lfl * 100:.2f}%",
+            "best-case": f"{score_best_hfl * 100:.2f}%",
+            "worst-case": f"{score_worst_hfl * 100:.2f}%",
+            "act/best-all": f"{score_best_vs_pred * 100:.1f}%",
+            "act/best-hfl": f"{score_best_vs_pred_hfl * 100:.1f}%",
+            "act-vs-best-direct-all": f"{score_best_vs_pred_direct * 100:.2f}%",
+            "act-vs-best-direct-hfl": f"{score_best_vs_pred_direct_hfl * 100:.2f}%",
+            "rpd-all": f"{score_rpd :.1f}%",
+            "rpd-hfl": f"{score_rpd_hfl :.1f}%",
+            "rpd-lfl": f"{score_rdp_lfl :.1f}%",
+            "total-orig": f"{total_orig:.0f}",
+            "total-act": f"{total_pred:.0f}",
+            "counted-actual": f"{counted_pred:.0f}",
+            "counted-best": f"{counted_best:.0f}",
+            "counted-worst": f"{counted_worst:.0f}"
+        })
 
 
 def fill_layered_table(table, scores, do_csv=False):
@@ -451,8 +478,16 @@ def create_table(title):
     return result_table
 
 
+def create_csv_table():
+    result_table = pd.DataFrame(columns=["binary", "actual-all", "actual-hfl", "actual-lfl", "best-case", "worst-case",
+                                         "act/best-all", "act/best-hfl", "act-vs-best-direct-all",
+                                         "act-vs-best-direct-hfl", "rpd-all", "rpd-hfl", "rpd-lfl", "total-orig",
+                                         "total-act", "counted-actual", "counted-best", "counted-worst"])
+    return result_table
+
+
 def svg_2_png(svg_path):
-    with open(svg_path + ".svg", "rb") as svg_file:
+    with open(svg_path + ".svg", "r") as svg_file:
         svg = svg_file.read()
     svg2png(bytestring=svg, write_to=svg_path + ".png")
     os.remove(svg_path + ".svg")
@@ -469,3 +504,17 @@ def plot_dataframe(df: pandas.DataFrame, title, export_path):
                       title=title, figsize=(len(df["Layer"]) * 2, 8), layout=("tight"), width=0.8,
                       color=["green", "darkorange", "red", "mediumturquoise", "darkorchid"]).get_figure()
     fig.figure.savefig(export_path + ".png")
+
+
+def create_layered_csv_table():
+    csv_table = pd.DataFrame(columns=["Layer",
+                                      "Actual",
+                                      "Best Case",
+                                      "Worst Case",
+                                      "Act/Best",
+                                      "Act vs Best (direct)",
+                                      "Change",
+                                      "Counted Actual",
+                                      "Counted Best",
+                                      "Counted Worst"])
+    return csv_table

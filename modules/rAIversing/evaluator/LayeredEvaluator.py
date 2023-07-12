@@ -6,6 +6,7 @@ from rich.console import Console, CONSOLE_SVG_FORMAT
 from rAIversing.evaluator.EvaluatorInterface import EvaluatorInterface
 from rAIversing.evaluator.ScoringAlgos import calc_score
 from rAIversing.evaluator.utils import *
+from rAIversing.evaluator.utils import create_layered_csv_table
 from rAIversing.utils import save_to_json, save_to_csv
 from rich.progress import Progress, TimeElapsedColumn
 import multiprocessing as mp
@@ -90,6 +91,7 @@ class LayeredEvaluator(EvaluatorInterface):
 
         # Table that contains results for all binaries in a source directory no layering
         median_table = create_table(f"Median {model_name} on {source_dir_name} ({self.runs} runs)")
+        median_df_table = create_csv_table()
 
         # Table that contains results for all binaries in a source directory with layering
         median_layered_fig, median_layered_axes = plt.subplots(nrows=len(usable_binaries), ncols=1, sharex=True,
@@ -99,21 +101,22 @@ class LayeredEvaluator(EvaluatorInterface):
         # todo add csv table
         for binary in usable_binaries:
             # Table and DataFrame for a single binary with layering
-            median_title = f"Median {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
-            median_layered_table = self.create_layered_table(median_title)
-            median_df_table = self.create_layered_csv_table()
+            single_median_title = f"Median {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
+            single_median_layered_table = self.create_layered_table(single_median_title)
+            single_median_df_table = create_layered_csv_table()
 
             # Scores for a single binary
             median_scores = self.get_median_results(model_name, source_dir_name, binary)
 
             # Fill tables with scores
-            fill_layered_table(median_layered_table, median_scores)
-            fill_layered_table(median_df_table, median_scores, do_csv=True)
+            fill_layered_table(single_median_layered_table, median_scores)
+            fill_layered_table(single_median_df_table, median_scores, do_csv=True)
             fill_table(median_table, median_scores, binary)
+            fill_table(median_df_table, median_scores, binary, do_csv=True)
 
             # Setup results export for the median_layered_table
             median_export_console = Console(record=True, width=100)
-            median_export_console.print(median_layered_table)
+            median_export_console.print(single_median_layered_table)
 
             # File Type agnostic export path
             export_path = os.path.join(make_run_path(model_name, source_dir, "0", binary)
@@ -128,14 +131,14 @@ class LayeredEvaluator(EvaluatorInterface):
             svg_2_png(export_path)
 
             # Export csv
-            median_df_table.to_csv(export_path + ".csv")
+            single_median_df_table.to_csv(export_path + ".csv")
 
             # Plot results for the median_df_table
-            plot_dataframe(median_df_table, median_title, export_path)
+            plot_dataframe(single_median_df_table, single_median_title, export_path)
             median_layered_axes[axes_index].set_xmargin(0.0)
 
             # Add plot to figure that contains all plots for a source directory with layering
-            plot_layered_multi_dataframe(median_layered_axes[axes_index], median_df_table, binary)
+            plot_layered_multi_dataframe(median_layered_axes[axes_index], single_median_df_table, binary)
             axes_index += 1
 
         # Setup results export that contains results for all binaries in a source directory no layering
@@ -149,6 +152,9 @@ class LayeredEvaluator(EvaluatorInterface):
         median_export_console.save_svg(export_path + ".svg",
                                        code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
         svg_2_png(export_path)
+
+        # Export csv
+        median_df_table.to_csv(export_path + ".csv")
 
         # Save figure that contains all plots for a source directory with layering as png
         median_layered_fig.savefig(
@@ -340,16 +346,3 @@ class LayeredEvaluator(EvaluatorInterface):
 
     def get_average_results(self, model_name, source_dir, binary):
         return self.results[model_name][source_dir][0][binary]
-
-    def create_layered_csv_table(self):
-        csv_table = pd.DataFrame(columns=["Layer",
-                                          "Actual",
-                                          "Best Case",
-                                          "Worst Case",
-                                          "Act/Best",
-                                          "Act vs Best (direct)",
-                                          "Change",
-                                          "Counted Actual",
-                                          "Counted Best",
-                                          "Counted Worst"])
-        return csv_table
