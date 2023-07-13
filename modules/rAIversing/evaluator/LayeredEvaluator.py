@@ -94,11 +94,13 @@ class LayeredEvaluator(EvaluatorInterface):
         median_df_table = create_csv_table()
 
         # Table that contains results for all binaries in a source directory with layering
-        median_layered_fig, median_layered_axes = plt.subplots(nrows=len(usable_binaries), ncols=1, sharex=True,
+        median_layered_fig, median_layered_axes = plt.subplots(nrows=len(usable_binaries), ncols=1,
                                                                figsize=(10, len(usable_binaries) * 4), layout=("tight"))
-        axes_index = 0
 
-        # todo add csv table
+        axes_index = 0
+        size_max = 0
+        axis_max = 0
+
         for binary in usable_binaries:
             # Table and DataFrame for a single binary with layering
             single_median_title = f"Median {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
@@ -138,7 +140,12 @@ class LayeredEvaluator(EvaluatorInterface):
             median_layered_axes[axes_index].set_xmargin(0.0)
 
             # Add plot to figure that contains all plots for a source directory with layering
-            plot_layered_multi_dataframe(median_layered_axes[axes_index], single_median_df_table, binary)
+            size_curr = plot_layered_multi_dataframe(median_layered_axes[axes_index], single_median_df_table, binary)
+
+            # For finding the plot with the longest x axis
+            if size_curr > size_max:
+                axis_max = axes_index
+            size_max = max(size_curr, size_max)
             axes_index += 1
 
         # Setup results export that contains results for all binaries in a source directory no layering
@@ -156,11 +163,21 @@ class LayeredEvaluator(EvaluatorInterface):
         # Export csv
         median_df_table.to_csv(export_path + ".csv")
 
+        # Fix missing tick labels and share longest x axis
+        for a in median_layered_fig.axes:
+            a.sharex(median_layered_axes[axis_max])
+            a.tick_params(
+                axis='x',  # changes apply to the x-axis
+                which='both',  # both major and minor ticks are affected
+                bottom=True,
+                top=False,
+                labelbottom=True)  # labels along the bottom edge are on
         # Save figure that contains all plots for a source directory with layering as png
         median_layered_fig.savefig(
             os.path.join(make_run_path(model_name, source_dir, "0", ""),
                          f"Layered_Eval_Median_{model_name}_{source_dir_name}_{self.runs}_runs.png")
         )
+        plt.close()
 
     def collect_cumulative_results(self):
         for ai_module in self.ai_modules:
