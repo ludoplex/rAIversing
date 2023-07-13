@@ -383,6 +383,7 @@ def fill_table(table, scores, binary, do_csv=False):
 
 def fill_layered_table(table, scores, do_csv=False):
     score_previous_layer = 0
+    bucket_number = 0
     for layer_name, layer in scores["pred-layered"].items():
         score_pred = scores["pred-layered"][layer_name]["score"]
         count_pred = scores["pred-layered"][layer_name]["count"]
@@ -425,7 +426,8 @@ def fill_layered_table(table, scores, do_csv=False):
                           f"{count_worst}"
                           )
         else:
-            table.loc[layer_name] = pd.Series({
+            table.loc[bucket_number] = pd.Series({
+                "Bucket": bucket_number,
                 "Layer": layer_name,
                 "Actual": float(f"{score_pred * 100:.2f}"),
                 "Best Case": float(f"{score_best * 100:.2f}"),
@@ -437,7 +439,7 @@ def fill_layered_table(table, scores, do_csv=False):
                 "Counted Best": float(f"{count_best}"),
                 "Counted Worst": float(f"{count_worst}")
             })
-
+        bucket_number += 1
         score_previous_layer = score_pred
 
 
@@ -494,9 +496,10 @@ def svg_2_png(svg_path):
 
 
 def plot_layered_multi_dataframe(axis, df: pandas.DataFrame, title):
-    df.plot(ax=axis, title=title, x="Layer",
+    df.plot(ax=axis, title=title, x="Bucket",
             y=["Actual", "Best Case", "Worst Case", "Act/Best", "Act vs Best (direct)"]).set_ylim(
         0, 110)
+    return len(df["Bucket"])
 
 
 def plot_dataframe(df: pandas.DataFrame, title, export_path):
@@ -507,7 +510,8 @@ def plot_dataframe(df: pandas.DataFrame, title, export_path):
 
 
 def create_layered_csv_table():
-    csv_table = pd.DataFrame(columns=["Layer",
+    csv_table = pd.DataFrame(columns=["Bucket",
+                                      "Layer",
                                       "Actual",
                                       "Best Case",
                                       "Worst Case",
