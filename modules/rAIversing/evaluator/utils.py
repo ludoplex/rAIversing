@@ -451,6 +451,7 @@ def plot_dataframe(df: pandas.DataFrame, title, export_path):
     fig = df.plot.bar(x="Layer", y=["Best Case", "Actual", "Worst Case", "RDP", "Act/Best"], title=title,
                       figsize=(len(df["Layer"]) * 2, 8), layout=("tight"), width=0.8,
                       color=["green", "darkorange", "red", "mediumturquoise", "darkorchid"]).get_figure()
+    fig.axes[0].set_ylim(0, 110)
     fig.figure.savefig(export_path + ".png")
 
 
