@@ -88,7 +88,7 @@ def assemble_prompt_v2(code):
     return pre + code + post
 
 
-def api_key(path_to_api_key=DEFAULT_API_KEY_PATH, engine=PromptEngine.DEFAULT, temperature=1):
+def api_key(path_to_api_key=DEFAULT_API_KEY_PATH, engine=PromptEngine.DEFAULT, temperature=1.0):
     chat = ChatGPTModule()
     chat.init_api(path_to_api_key, engine=engine, temperature=temperature)
     return chat
@@ -104,12 +104,12 @@ class ChatGPTModule(AiModuleInterface):
         self.logger = logging.getLogger("ChatGPTModule")
         self.console = Console()
         self.engine = PromptEngine.DEFAULT
-        self.temperature = 0.5
+        self.temperature = 1.0
 
     def get_model_name(self):
         return self.engine.value
 
-    def init_api(self, path_to_api_key=DEFAULT_API_KEY_PATH, engine=PromptEngine.DEFAULT, temperature=1):
+    def init_api(self, path_to_api_key=DEFAULT_API_KEY_PATH, engine=PromptEngine.DEFAULT, temperature=1.0):
         self.engine = engine
         self.temperature = temperature
         self.api_key_path = path_to_api_key
