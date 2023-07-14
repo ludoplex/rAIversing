@@ -178,9 +178,9 @@ def collect_partial_scores(scored):
     for group, scores in scored.items():
         for entrypoint, entry in scores.items():
             pred_name = entry["predicted"]
-            if "nothing" in pred_name.lower() or "FUNC_" in pred_name or \
-                    ("reverse" in pred_name and "engineer" in pred_name) or \
-                    ("improve" in pred_name and "function" in pred_name):
+            if "nothing" in pred_name.lower() or "FUNC_" in pred_name or (
+                    "reverse" in pred_name and "engineer" in pred_name) or (
+                    "improve" in pred_name and "function" in pred_name):
                 if debug:
                     print(f"skipping {pred_name}")
                 continue
@@ -193,8 +193,7 @@ def collect_partial_scores(scored):
         layer += 1
     return {"all": {"score": ((hfl_sum + lfl_sum) / (hfl_count + lfl_count)) if (hfl_count + lfl_count) else 0,
                     "count": hfl_count + lfl_count},
-            "hfl": {"score": (hfl_sum / hfl_count) if hfl_count else 0
-                , "count": hfl_count},
+            "hfl": {"score": (hfl_sum / hfl_count) if hfl_count else 0, "count": hfl_count},
             "lfl": {"score": (lfl_sum / lfl_count) if lfl_count else 0, "count": lfl_count}}
 
 
@@ -341,44 +340,30 @@ def fill_table(table, scores, binary, do_csv=False):
     score_rpd = calc_relative_percentage_difference(score_best, score_worst, score_pred)
 
     if not do_csv:
-        table.add_row(binary, f"{score_pred * 100:.2f}%",
-                      f"{score_pred_hfl * 100:.2f}%",
-                      f"{score_pred_lfl * 100:.2f}%",
-                      f"{score_best_hfl * 100:.2f}%",
-                      f"{score_worst_hfl * 100:.2f}%",
+        table.add_row(binary, f"{score_pred * 100:.2f}%", f"{score_pred_hfl * 100:.2f}%",
+                      f"{score_pred_lfl * 100:.2f}%", f"{score_best_hfl * 100:.2f}%", f"{score_worst_hfl * 100:.2f}%",
                       f"{score_best_vs_pred * 100:.1f}%|{score_best_vs_pred_hfl * 100:.1f}%",
                       f"{score_best_vs_pred_direct * 100:.2f}%|{score_best_vs_pred_direct_hfl * 100:.2f}%",
                       f"{score_rpd :.1f}%|{score_rpd_hfl :.1f}%|{score_rdp_lfl :.1f}%",
-                      f"{total_orig:.0f}[bold magenta1]|[/bold magenta1]{total_pred:.0f}",
-                      f"{counted_pred:.0f}",
-                      f"{counted_best:.0f}",
-                      f"{counted_worst:.0f}")
+                      f"{total_orig:.0f}[bold magenta1]|[/bold magenta1]{total_pred:.0f}", f"{counted_pred:.0f}",
+                      f"{counted_best:.0f}", f"{counted_worst:.0f}")
     else:
         # ["binary", "actual-all", "actual-hfl", "actual-lfl", "best-case", "worst-case",
         # "act/best-all", "act/best-hfl", "act-vs-best-direct-all",
         # "act-vs-best-direct-hfl", "rpd-all", "rpd-hfl", "rpd-lfl", "total-orig",
         # "total-act", "counted-actual", "counted-best", "counted-worst"]
 
-        table.loc[binary] = pd.Series({
-            "binary": binary,
-            "actual-all": f"{score_pred * 100:.2f}%",
-            "actual-hfl": f"{score_pred_hfl * 100:.2f}%",
-            "actual-lfl": f"{score_pred_lfl * 100:.2f}%",
-            "best-case": f"{score_best_hfl * 100:.2f}%",
-            "worst-case": f"{score_worst_hfl * 100:.2f}%",
-            "act/best-all": f"{score_best_vs_pred * 100:.1f}%",
-            "act/best-hfl": f"{score_best_vs_pred_hfl * 100:.1f}%",
-            "act-vs-best-direct-all": f"{score_best_vs_pred_direct * 100:.2f}%",
-            "act-vs-best-direct-hfl": f"{score_best_vs_pred_direct_hfl * 100:.2f}%",
-            "rpd-all": f"{score_rpd :.1f}%",
-            "rpd-hfl": f"{score_rpd_hfl :.1f}%",
-            "rpd-lfl": f"{score_rdp_lfl :.1f}%",
-            "total-orig": f"{total_orig:.0f}",
-            "total-act": f"{total_pred:.0f}",
-            "counted-actual": f"{counted_pred:.0f}",
-            "counted-best": f"{counted_best:.0f}",
-            "counted-worst": f"{counted_worst:.0f}"
-        })
+        table.loc[binary] = pd.Series(
+            {"binary": binary, "actual-all": f"{score_pred * 100:.2f}%", "actual-hfl": f"{score_pred_hfl * 100:.2f}%",
+             "actual-lfl": f"{score_pred_lfl * 100:.2f}%", "best-case": f"{score_best_hfl * 100:.2f}%",
+             "worst-case": f"{score_worst_hfl * 100:.2f}%", "act/best-all": f"{score_best_vs_pred * 100:.1f}%",
+             "act/best-hfl": f"{score_best_vs_pred_hfl * 100:.1f}%",
+             "act-vs-best-direct-all": f"{score_best_vs_pred_direct * 100:.2f}%",
+             "act-vs-best-direct-hfl": f"{score_best_vs_pred_direct_hfl * 100:.2f}%",
+             "rpd-all": f"{score_rpd :.1f}%", "rpd-hfl": f"{score_rpd_hfl :.1f}%",
+             "rpd-lfl": f"{score_rdp_lfl :.1f}%", "total-orig": f"{total_orig:.0f}",
+             "total-act": f"{total_pred:.0f}", "counted-actual": f"{counted_pred:.0f}",
+             "counted-best": f"{counted_best:.0f}", "counted-worst": f"{counted_worst:.0f}"})
 
 
 def fill_layered_table(table, scores, do_csv=False):
@@ -416,33 +401,18 @@ def fill_layered_table(table, scores, do_csv=False):
         rdp = calc_relative_percentage_difference(score_best, score_worst, score_pred)
 
         if not do_csv:
-            table.add_row(f"{layer_name}",
-                          f"{score_pred * 100:.2f}%",
-                          f"{score_best * 100:.2f}%",
-                          f"{score_worst * 100:.2f}%",
-                          f"{score_best_vs_pred * 100:.2f}%",
-                          f"{score_best_vs_pred_direct * 100:.2f}%",
-                          f"{rdp:.2f}%",
-                          f"{score_change * 100:.2f}%",
-                          f"{count_pred}",
-                          f"{count_best}",
-                          f"{count_worst}"
-                          )
+            table.add_row(f"{layer_name}", f"{score_pred * 100:.2f}%", f"{score_best * 100:.2f}%",
+                          f"{score_worst * 100:.2f}%", f"{score_best_vs_pred * 100:.2f}%",
+                          f"{score_best_vs_pred_direct * 100:.2f}%", f"{rdp:.2f}%", f"{score_change * 100:.2f}%",
+                          f"{count_pred}", f"{count_best}", f"{count_worst}")
         else:
-            table.loc[bucket_number] = pd.Series({
-                "Bucket": bucket_number,
-                "Layer": layer_name,
-                "Actual": float(f"{score_pred * 100:.2f}"),
-                "Best Case": float(f"{score_best * 100:.2f}"),
-                "Worst Case": float(f"{score_worst * 100:.2f}"),
-                "Act/Best": float(f"{score_best_vs_pred * 100:.2f}"),
-                "Act vs Best (direct)": float(f"{score_best_vs_pred_direct * 100:.2f}"),
-                "RDP": float(f"{rdp:.2f}"),
-                "Change": float(f"{score_change * 100:.2f}"),
-                "Counted Actual": float(f"{count_pred}"),
-                "Counted Best": float(f"{count_best}"),
-                "Counted Worst": float(f"{count_worst}")
-            })
+            table.loc[bucket_number] = pd.Series(
+                {"Bucket": bucket_number, "Layer": f"{layer_name} ({count_pred})", "Actual": float(f"{score_pred * 100:.2f}"),
+                 "Best Case": float(f"{score_best * 100:.2f}"), "Worst Case": float(f"{score_worst * 100:.2f}"),
+                 "Act/Best": float(f"{score_best_vs_pred * 100:.2f}"),
+                 "Act vs Best (direct)": float(f"{score_best_vs_pred_direct * 100:.2f}"), "RDP": float(f"{rdp:.2f}"),
+                 "Change": float(f"{score_change * 100:.2f}"), "Counted Actual": float(f"{count_pred}"),
+                 "Counted Best": float(f"{count_best}"), "Counted Worst": float(f"{count_worst}")})
         bucket_number += 1
         score_previous_layer = score_pred
 
@@ -472,16 +442,14 @@ def svg_2_png(svg_path):
 
 
 def plot_layered_multi_dataframe(axis, df: pandas.DataFrame, title):
-    df.plot(ax=axis, title=title, x="Bucket",
-            y=["Best Case", "Actual", "Worst Case", "RDP", "Act/Best"],
-            color=["green", "darkorange", "red", "mediumturquoise", "darkorchid"]).set_ylim(
-        0, 110)
+    df.plot(ax=axis, title=title, x="Bucket", y=["Best Case", "Actual", "Worst Case", "RDP", "Act/Best"],
+            color=["green", "darkorange", "red", "mediumturquoise", "darkorchid"]).set_ylim(0, 110)
     return len(df["Bucket"])
 
 
 def plot_dataframe(df: pandas.DataFrame, title, export_path):
-    fig = df.plot.bar(x="Layer", y=["Best Case", "Actual", "Worst Case", "RDP", "Act/Best"],
-                      title=title, figsize=(len(df["Layer"]) * 2, 8), layout=("tight"), width=0.8,
+    fig = df.plot.bar(x="Layer", y=["Best Case", "Actual", "Worst Case", "RDP", "Act/Best"], title=title,
+                      figsize=(len(df["Layer"]) * 2, 8), layout=("tight"), width=0.8,
                       color=["green", "darkorange", "red", "mediumturquoise", "darkorchid"]).get_figure()
     fig.figure.savefig(export_path + ".png")
 
@@ -501,16 +469,16 @@ def create_table(title):
                          Column(header="Counted\nActual", style="magenta1 on grey23"),
                          Column(header="Counted\nBest", style="blue on grey23"),
                          Column(header="Counted\nWorst", style="magenta3 on grey23"), title=title,
-                         title_style="bold bright_red on grey23 ", style="on grey23",
-                         border_style="bold bright_green", header_style="bold yellow1 on grey23", )
+                         title_style="bold bright_red on grey23 ", style="on grey23", border_style="bold bright_green",
+                         header_style="bold yellow1 on grey23", )
     return result_table
 
 
 def create_csv_table():
-    result_table = pd.DataFrame(columns=["binary", "actual-all", "actual-hfl", "actual-lfl", "best-case", "worst-case",
-                                         "act/best-all", "act/best-hfl", "act-vs-best-direct-all",
-                                         "act-vs-best-direct-hfl", "rpd-all", "rpd-hfl", "rpd-lfl", "total-orig",
-                                         "total-act", "counted-actual", "counted-best", "counted-worst"])
+    result_table = pd.DataFrame(
+        columns=["binary", "actual-all", "actual-hfl", "actual-lfl", "best-case", "worst-case", "act/best-all",
+                 "act/best-hfl", "act-vs-best-direct-all", "act-vs-best-direct-hfl", "rpd-all", "rpd-hfl", "rpd-lfl",
+                 "total-orig", "total-act", "counted-actual", "counted-best", "counted-worst"])
     return result_table
 
 
@@ -526,22 +494,13 @@ def create_layered_table(title):
                          Column(header="Counted\nActual", style="magenta1 on grey23"),
                          Column(header="Counted\nBest", style="blue on grey23"),
                          Column(header="Counted\nWorst", style="magenta3 on grey23"), title=title,
-                         title_style="bold bright_red on grey23 ", style="on grey23",
-                         border_style="bold bright_green", header_style="bold yellow1 on grey23", )
+                         title_style="bold bright_red on grey23 ", style="on grey23", border_style="bold bright_green",
+                         header_style="bold yellow1 on grey23", )
     return result_table
 
 
 def create_layered_csv_table():
-    csv_table = pd.DataFrame(columns=["Bucket",
-                                      "Layer",
-                                      "Actual",
-                                      "Best Case",
-                                      "Worst Case",
-                                      "Act/Best",
-                                      "Act vs Best (direct)",
-                                      "RDP",
-                                      "Change",
-                                      "Counted Actual",
-                                      "Counted Best",
-                                      "Counted Worst"])
+    csv_table = pd.DataFrame(
+        columns=["Bucket", "Layer", "Actual", "Best Case", "Worst Case", "Act/Best", "Act vs Best (direct)", "RDP",
+                 "Change", "Counted Actual", "Counted Best", "Counted Worst"])
     return csv_table
