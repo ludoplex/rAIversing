@@ -305,7 +305,7 @@ def calc_relative_percentage_difference(best, worst, actual):
         return (difference / range_) * 100
     except ZeroDivisionError:
         print("Division by zero!!!!! @ calc_relative_percentage_difference")
-        return 0
+        return 0.0
 
 
 def fill_table(table, scores, binary, do_csv=False):
@@ -354,10 +354,10 @@ def fill_table(table, scores, binary, do_csv=False):
                       f"{counted_best:.0f}",
                       f"{counted_worst:.0f}")
     else:
-        #["binary", "actual-all", "actual-hfl", "actual-lfl", "best-case", "worst-case",
-        #"act/best-all", "act/best-hfl", "act-vs-best-direct-all",
-        #"act-vs-best-direct-hfl", "rpd-all", "rpd-hfl", "rpd-lfl", "total-orig",
-        #"total-act", "counted-actual", "counted-best", "counted-worst"]
+        # ["binary", "actual-all", "actual-hfl", "actual-lfl", "best-case", "worst-case",
+        # "act/best-all", "act/best-hfl", "act-vs-best-direct-all",
+        # "act-vs-best-direct-hfl", "rpd-all", "rpd-hfl", "rpd-lfl", "total-orig",
+        # "total-act", "counted-actual", "counted-best", "counted-worst"]
 
         table.loc[binary] = pd.Series({
             "binary": binary,
@@ -413,6 +413,8 @@ def fill_layered_table(table, scores, do_csv=False):
         else:
             score_change = score_pred
 
+        rdp = calc_relative_percentage_difference(score_best, score_worst, score_pred)
+
         if not do_csv:
             table.add_row(f"{layer_name}",
                           f"{score_pred * 100:.2f}%",
@@ -420,6 +422,7 @@ def fill_layered_table(table, scores, do_csv=False):
                           f"{score_worst * 100:.2f}%",
                           f"{score_best_vs_pred * 100:.2f}%",
                           f"{score_best_vs_pred_direct * 100:.2f}%",
+                          f"{rdp:.2f}%",
                           f"{score_change * 100:.2f}%",
                           f"{count_pred}",
                           f"{count_best}",
@@ -434,6 +437,7 @@ def fill_layered_table(table, scores, do_csv=False):
                 "Worst Case": float(f"{score_worst * 100:.2f}"),
                 "Act/Best": float(f"{score_best_vs_pred * 100:.2f}"),
                 "Act vs Best (direct)": float(f"{score_best_vs_pred_direct * 100:.2f}"),
+                "RDP": float(f"{rdp:.2f}"),
                 "Change": float(f"{score_change * 100:.2f}"),
                 "Counted Actual": float(f"{count_pred}"),
                 "Counted Best": float(f"{count_best}"),
@@ -458,6 +462,28 @@ def layers_str_for_bucket(bucket_number, growth_factor=0.0, max_layer=0):
         return f"{num_prev_layers}"
     else:
         return f"{bucket_start}-{bucket_end}"
+
+
+def svg_2_png(svg_path):
+    with open(svg_path + ".svg", "r") as svg_file:
+        svg = svg_file.read()
+    svg2png(bytestring=svg, write_to=svg_path + ".png")
+    os.remove(svg_path + ".svg")
+
+
+def plot_layered_multi_dataframe(axis, df: pandas.DataFrame, title):
+    df.plot(ax=axis, title=title, x="Bucket",
+            y=["Best Case", "Actual", "Worst Case", "RDP", "Act/Best"],
+            color=["green", "darkorange", "red", "mediumturquoise", "darkorchid"]).set_ylim(
+        0, 110)
+    return len(df["Bucket"])
+
+
+def plot_dataframe(df: pandas.DataFrame, title, export_path):
+    fig = df.plot.bar(x="Layer", y=["Best Case", "Actual", "Worst Case", "RDP", "Act/Best"],
+                      title=title, figsize=(len(df["Layer"]) * 2, 8), layout=("tight"), width=0.8,
+                      color=["green", "darkorange", "red", "mediumturquoise", "darkorchid"]).get_figure()
+    fig.figure.savefig(export_path + ".png")
 
 
 def create_table(title):
@@ -488,25 +514,21 @@ def create_csv_table():
     return result_table
 
 
-def svg_2_png(svg_path):
-    with open(svg_path + ".svg", "r") as svg_file:
-        svg = svg_file.read()
-    svg2png(bytestring=svg, write_to=svg_path + ".png")
-    os.remove(svg_path + ".svg")
-
-
-def plot_layered_multi_dataframe(axis, df: pandas.DataFrame, title):
-    df.plot(ax=axis, title=title, x="Bucket",
-            y=["Actual", "Best Case", "Worst Case", "Act/Best", "Act vs Best (direct)"]).set_ylim(
-        0, 110)
-    return len(df["Bucket"])
-
-
-def plot_dataframe(df: pandas.DataFrame, title, export_path):
-    fig = df.plot.bar(x="Layer", y=["Best Case", "Actual", "Worst Case", "Act/Best", "Act vs Best (direct)"],
-                      title=title, figsize=(len(df["Layer"]) * 2, 8), layout=("tight"), width=0.8,
-                      color=["green", "darkorange", "red", "mediumturquoise", "darkorchid"]).get_figure()
-    fig.figure.savefig(export_path + ".png")
+def create_layered_table(title):
+    result_table = Table(Column(header="Layer", style="bold bright_yellow on grey23"),
+                         Column(header="Actual", style="bold cyan1 on grey23", justify="center"),
+                         Column(header="Best\nCase", style="bold green on grey23", justify="center"),
+                         Column(header="Worst\nCase", style="bold red on grey23", justify="center"),
+                         Column(header="Act/Best", style="bold green1 on grey23", justify="center"),
+                         Column(header="Act vs Best\n(direct)", style="bold green1 on grey23", justify="center"),
+                         Column(header="RPD", style="bold spring_green2 on grey23", justify="center"),
+                         Column(header="Change", style="bold spring_green2 on grey23", justify="center"),
+                         Column(header="Counted\nActual", style="magenta1 on grey23"),
+                         Column(header="Counted\nBest", style="blue on grey23"),
+                         Column(header="Counted\nWorst", style="magenta3 on grey23"), title=title,
+                         title_style="bold bright_red on grey23 ", style="on grey23",
+                         border_style="bold bright_green", header_style="bold yellow1 on grey23", )
+    return result_table
 
 
 def create_layered_csv_table():
@@ -517,6 +539,7 @@ def create_layered_csv_table():
                                       "Worst Case",
                                       "Act/Best",
                                       "Act vs Best (direct)",
+                                      "RDP",
                                       "Change",
                                       "Counted Actual",
                                       "Counted Best",

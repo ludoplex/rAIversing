@@ -6,7 +6,7 @@ from rich.console import Console, CONSOLE_SVG_FORMAT
 from rAIversing.evaluator.EvaluatorInterface import EvaluatorInterface
 from rAIversing.evaluator.ScoringAlgos import calc_score
 from rAIversing.evaluator.utils import *
-from rAIversing.evaluator.utils import create_layered_csv_table
+from rAIversing.evaluator.utils import create_layered_csv_table, create_layered_table
 from rAIversing.utils import save_to_json, save_to_csv
 from rich.progress import Progress, TimeElapsedColumn
 import multiprocessing as mp
@@ -104,7 +104,7 @@ class LayeredEvaluator(EvaluatorInterface):
         for binary in usable_binaries:
             # Table and DataFrame for a single binary with layering
             single_median_title = f"Median {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
-            single_median_layered_table = self.create_layered_table(single_median_title)
+            single_median_layered_table = create_layered_table(single_median_title)
             single_median_df_table = create_layered_csv_table()
 
             # Scores for a single binary
@@ -334,21 +334,6 @@ class LayeredEvaluator(EvaluatorInterface):
         model_name, source_dir_name, run, binary = split_run_path(run_path)
         # self.console.log(f"Inserting {result} for {compare_type} in {run_path}")
         self.results[model_name][source_dir_name][run][binary][compare_type] = result
-
-    def create_layered_table(self, title):
-        result_table = Table(Column(header="Layer", style="bold bright_yellow on grey23"),
-                             Column(header="Actual", style="bold cyan1 on grey23", justify="center"),
-                             Column(header="Best\nCase", style="bold green on grey23", justify="center"),
-                             Column(header="Worst\nCase", style="bold red on grey23", justify="center"),
-                             Column(header="Act/Best", style="bold green1 on grey23", justify="center"),
-                             Column(header="Act vs Best\n(direct)", style="bold green1 on grey23", justify="center"),
-                             Column(header="Change", style="bold spring_green2 on grey23", justify="center"),
-                             Column(header="Counted\nActual", style="magenta1 on grey23"),
-                             Column(header="Counted\nBest", style="blue on grey23"),
-                             Column(header="Counted\nWorst", style="magenta3 on grey23"), title=title,
-                             title_style="bold bright_red on grey23 ", style="on grey23",
-                             border_style="bold bright_green", header_style="bold yellow1 on grey23", )
-        return result_table
 
     def get_median_results(self, model_name, source_dir_name, binary):
         scores = dict(self.results[model_name][source_dir_name][0][binary].copy())
