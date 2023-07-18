@@ -386,6 +386,14 @@ def key_finder(key_parts, dictionary):
         raise Exception(f"Could not find key {key_parts} in {dictionary}")
 
 
+def remove_comments(response):
+    response = re.sub(re.compile("/\*.*?\*/", re.DOTALL), "",
+                    response)  # remove all occurrences streamed comments (/*COMMENT */) from string
+    response = re.sub(re.compile("//.*?\n"), "",
+                    response)  # remove all occurrence single-line comments (//COMMENT\n ) from string
+    return response
+
+
 def clean_bad_renamings(renaming_dict, code, name):
     forbidden_strings = ["\\", "/", "*", "?", "\"", "<", ">", "|", " ", "PTR_", "DAT_", "FUNC_"]
     clean_dict = {}
@@ -488,34 +496,33 @@ def nondestructive_savefile_merge(base_file_path, new_file_path):
                       f"({base_function['entrypoint']}) and new file ({new_function['entrypoint']}), skipping")
                 continue
             if base_function["improved"] and len(base_function["renaming"]) == 0:
-                base_functions[name]=new_function
+                base_functions[name] = new_function
                 continue
             elif not base_function["improved"] and not base_function["skipped"]:
-                base_functions[name]=new_function
+                base_functions[name] = new_function
                 continue
             elif base_function["improved"] and len(base_function["renaming"]) > 0:
                 if len(base_function["code"].split("\n")) != len(new_function["code"].split("\n")):
                     if len(base_function["called"]) != len(new_function["called"]):
                         print(f"Function {name} has different number of callers in base file "
-                          f"({len(base_function['called'])}) and new file ({len(new_function['called'])}), skipping")
+                              f"({len(base_function['called'])}) and new file ({len(new_function['called'])}), skipping")
                         continue
                     if len(base_function["calling"]) != len(new_function["calling"]):
                         print(f"Function {name} has different number of callees in base file "
-                          f"({len(base_function['calling'])}) and new file ({len(new_function['calling'])}), skipping")
+                              f"({len(base_function['calling'])}) and new file ({len(new_function['calling'])}), skipping")
                         continue
                 else:
                     print(f"Function {name} seems to have the same number of lines in base file and new file, "
                           f"skipping")
                     continue
 
-
             print(f"Function {name} already exists in base file, skipping")
             continue
         else:
             base_functions[name] = new_function
-            #print("merged function", name)
+            # print("merged function", name)
     if False:
         with open(base_file_path, "w") as f:
             save_file = {"functions": base_functions, "used_tokens": base_used_tokens, "layers": base_layers,
-                     "locked_functions": base_locked_functions}
+                         "locked_functions": base_locked_functions}
             json.dump(save_file, f, indent=4)

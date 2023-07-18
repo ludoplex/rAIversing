@@ -94,6 +94,7 @@ public class ExtractCcode extends GhidraScript {
             System.out.printf("More than %d functions in %s. Exiting!%n", limit,  program_name);
             String message = "More than "  + limit + " functions in " + program_name + ". Exiting!";
             Files.write(Paths.get(export_path, "not_extracted"), message.getBytes());
+            print("#@#@#@#@#@#@#");
             return;
         }
 

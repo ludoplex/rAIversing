@@ -15,7 +15,7 @@ from rAIversing.utils import extract_function_name, NoResponseException, clear_e
     MaxTriesExceeded, InvalidResponseException, format_newlines_in_code, escape_failed_escapes, \
     check_reverse_engineer_fail_happend, locator, insert_missing_delimiter, do_renaming, \
     IncompleteResponseException, insert_missing_double_quote, HardLimitReached, get_char, insert_missing_colon, \
-    remove_trailing_commas, EmptyResponseException, fix_single_quotes
+    remove_trailing_commas, EmptyResponseException, fix_single_quotes, remove_comments
 
 
 def assemble_prompt_v1(code):
@@ -238,6 +238,7 @@ class ChatGPTModule(AiModuleInterface):
             response_string = response_string.replace('`', '"')
 
         response_string = fix_single_quotes(response_string)
+        response_string = remove_comments(response_string)
 
         ideas_left = True
         json_decode_error_char=0
@@ -256,6 +257,7 @@ class ChatGPTModule(AiModuleInterface):
                     if current_char < json_decode_error_char:
                         print(type(e))
                         print(e)
+                        print(response_string)
                         with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                             f.write(response_string_orig)
                         raise e

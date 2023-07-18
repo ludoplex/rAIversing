@@ -52,9 +52,8 @@ class EvaluationManager:
                 for run in range(1, self.runs + 1):
                     model_name = ai_module.get_model_name()
                     usable_binaries = os.listdir(os.path.join(source_dir, "stripped"))
-                    # usable_binaries = ["CNC"]  # TODO remove
                     for binary in usable_binaries:
-                        if check_extracted(model_name, source_dir, binary):
+                        if not check_extracted(model_name, source_dir, binary):
                             continue
                         run_path = make_run_path(model_name, source_dir, run, binary)
                         self.run_atomic(ai_module, run_path, binary)
@@ -79,7 +78,7 @@ class EvaluationManager:
                         run_path = make_run_path(model_name, source_dir, run, binary)
 
     def extract_code(self):
-        debug = False
+        debug = True
 
         ##########################################################################################################
         with Progress(*Progress.get_default_columns(),TimeElapsedColumn(),transient=False) as progress:
@@ -161,7 +160,7 @@ class EvaluationManager:
                             if output:
                                 if debug:
                                     print(output.strip().decode())
-                                if "#@#@#@#@#@#@#" in output.decode():
+                                if "#@#@#@#@#@#@#" in output.decode() or "rAIversing/modules/ghidra/ghidra_scripts/ExtractCcode.java (HeadlessAnalyzer)" in output.decode():
                                     progress.advance(task_extraction)
 
                     except KeyboardInterrupt:
@@ -202,13 +201,15 @@ class EvaluationManager:
                         extraction_path = os.path.join(EVALUATION_ROOT, model_name, os.path.basename(source_dir),
                                                        "extraction", binary)
                         run_path = make_run_path(model_name, source_dir, run, binary)
-                        if check_extracted(model_name, source_dir, binary):
+                        if not check_extracted(model_name, source_dir, binary):
                             continue
                         for file in os.listdir(extraction_path):
                             if file.endswith(".json"):
-
                                 if not os.path.exists(os.path.join(run_path, file)):
                                     shutil.copy(os.path.join(extraction_path, file), run_path)
+
+
+    #TODO: Fix this
     def evaluate(self, evaluator=None,growth_factor=None):
         if evaluator is None:
             evaluator = self.evaluator
