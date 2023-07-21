@@ -241,7 +241,7 @@ class ChatGPTModule(AiModuleInterface):
         response_string = remove_comments(response_string)
 
         ideas_left = True
-        json_decode_error_char=0
+        json_decode_error_char=-1
         iterations = 10
         while ideas_left:
             #print(response_string)
@@ -254,11 +254,11 @@ class ChatGPTModule(AiModuleInterface):
             except json.JSONDecodeError as e:
                 if "char" in str(e):
                     current_char = get_char(e)
-                    if current_char < json_decode_error_char:
+                    if current_char <= json_decode_error_char:
                         print(type(e))
                         print(e)
                         print(response_string)
-                        with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                        with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "process_response.json"), "w") as f:
                             f.write(response_string_orig)
                         raise e
                     json_decode_error_char = current_char
@@ -293,7 +293,7 @@ class ChatGPTModule(AiModuleInterface):
                         raise e
 
                     self.logger.exception(e)
-                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "process_response.json"), "w") as f:
                         f.write(response_string_orig)
                     print(f"###### RESPONSE START @ {locator()}######")
                     print(response_string_orig)
@@ -305,7 +305,7 @@ class ChatGPTModule(AiModuleInterface):
                 else:
                     print(type(e))
                     print(e)
-                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "process_response.json"), "w") as f:
                         f.write(response_string_orig)
                     raise e
 
@@ -381,7 +381,7 @@ class ChatGPTModule(AiModuleInterface):
                 else:
                     self.console.log(
                         f"[blue]{old_func_name}[/blue]:[orange3]Got invalid code from model, Retry  {i + 1}/{retries}[/orange3]")
-                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "invalid_code.json"), "w") as f:
                         f.write(response_string_orig)
                         f.write("\n\n")
                         f.write(improved_code)
@@ -396,7 +396,7 @@ class ChatGPTModule(AiModuleInterface):
 
             except IncompleteResponseException as e:
                 if i >= retries - 1:
-                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                    with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "incomplete_response.json"), "w") as f:
                         f.write(response_string_orig)
                     self.console.log(response_string_orig)
                     raise MaxTriesExceeded("Max tries exceeded " + str(e) + locator())
@@ -404,7 +404,7 @@ class ChatGPTModule(AiModuleInterface):
                     try_larger = True
                 self.console.log(
                     f"[orange3]Got incomplete response for [blue]{old_func_name}[/blue], Retry  {i + 1}/{retries}! Is it maybe too long: {self.calc_used_tokens(full_prompt)}[/orange3]")
-                with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
+                with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "incomplete_response.json"), "w") as f:
                     f.write(response_string_orig)
                 continue
 
