@@ -63,8 +63,8 @@ def calc_score(original, predicted, entrypoint):
     if "FUNC" in predicted:
         return 0.0
     #return calc_score_v3(original, predicted, entrypoint)
-    #return calc_score_punstrip(original, predicted, entrypoint)
-    return calc_score_dev_hybrid(original, predicted, entrypoint)
+    return calc_score_punstrip(original, predicted, entrypoint)
+    #return calc_score_dev_hybrid(original, predicted, entrypoint)
 
 def calc_score_v1(original, predicted, entrypoint):
     #original = original.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
@@ -200,15 +200,14 @@ def calc_score_punstrip(original, predicted, entrypoint):
 
 
 def calc_score_dev_hybrid(original, predicted, entrypoint):
-    original = original.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
-    predicted = predicted.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
+
 
     original_string = original
-    predicted_string = predicted
-
+    original = original.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
+    predicted = predicted.lower().replace(f"_{entrypoint.replace('0x', '')}", "")
     for old, new in replacement_dict.items():
-        if new not in original and old == original:
-            original = original.replace(old, new)
+        if new not in original_string and old == original_string:
+            original = original_string.replace(old, new)
             break
 
     original = to_snake_case(original)

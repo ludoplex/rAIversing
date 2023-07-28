@@ -21,10 +21,8 @@ def testbench(ai_module):
 
 def evaluation(ai_module=None, parallel=1, bucketing=False, growth_factor=0.33, no_layering=False, runs=1):
     ai_modules = [ai_module]
-    # ai_modules = [chatGPT.api_key(engine=PromptEngine.GPT_4)]
-    # source_dirs = [os.path.join(BINARIES_ROOT, "punstrip_cc_selection_static"),
-    #               os.path.join(BINARIES_ROOT, "punstrip_cc_selection_dyn")]
-    source_dirs = [P2IM_BINS_ROOT]
+    #ai_modules = [chatGPT.api_key(engine=PromptEngine.GPT_4)]
+    source_dirs = [P2IM_BINS_ROOT,BINUTILS]
 
     eval_man = EvaluationManager(source_dirs, ai_modules, runs, connections=parallel)
     eval_man.run()
