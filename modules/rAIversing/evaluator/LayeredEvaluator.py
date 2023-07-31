@@ -201,10 +201,12 @@ class LayeredEvaluator(EvaluatorInterface):
                         layer["count"])
 
             for layer_index, layer in self.results[model][source_dir][0][binary][compare_type].items():
-                self.results[model][source_dir][0][binary][compare_type][layer_index]["score"] = sum(
-                    self.results[model][source_dir][0][binary][compare_type][layer_index]["scores"]) / self.runs
-                self.results[model][source_dir][0][binary][compare_type][layer_index]["count"] = sum(
-                    self.results[model][source_dir][0][binary][compare_type][layer_index]["counts"]) / self.runs
+                scores = self.results[model][source_dir][0][binary][compare_type][layer_index]["scores"]
+                score = statistics.mean(scores)
+                self.results[model][source_dir][0][binary][compare_type][layer_index]["score"] = score
+                counts = self.results[model][source_dir][0][binary][compare_type][layer_index]["counts"]
+                count = statistics.mean(counts)
+                self.results[model][source_dir][0][binary][compare_type][layer_index]["count"] = count
 
     def get_results(self, model_name, source_dir_name, run, binary):
         return self.results[model_name][source_dir_name][run][binary]
@@ -270,6 +272,8 @@ class LayeredEvaluator(EvaluatorInterface):
             save_to_json(best_vs_predict_scored, os.path.join(run_path, f"{binary}_best_vs_pred-scored.json"))
 
     def generate_comparison(self, original_fn, original_layers, predicted_fn, predicted_layers):
+        # can have imprecisions at the 17th decimal place
+
         direct = collect_layered_pairs(original_fn, original_layers, predicted_fn, predicted_layers)
         scored = {}
         for layer_index, layer in direct.items():
@@ -346,5 +350,5 @@ class LayeredEvaluator(EvaluatorInterface):
                 output[group_name][layer_name]["count"] = statistics.median(layer["counts"])
         return output
 
-    def get_average_results(self, model_name, source_dir, binary):
+    def get_mean_results(self, model_name, source_dir, binary):
         return self.results[model_name][source_dir][0][binary]

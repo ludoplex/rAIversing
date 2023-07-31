@@ -1,6 +1,7 @@
 import json
 import math
 import os
+import statistics
 
 import pandas
 import pandas as pd
@@ -213,6 +214,7 @@ def collect_layered_partial_scores(scored, bucket_factor=0.0):
     layer_key = current_bucket if bucket_factor == 0.0 else layers_str_for_bucket(current_bucket, bucket_factor,
                                                                                   max_layer)
     while layers_left > 0:
+        layer_results = []
         for i in range(num_layers_for_bucket(current_bucket, bucket_factor)):
             layer_index = layer_indices.pop(0)
             layer = scored[layer_index]
@@ -226,13 +228,13 @@ def collect_layered_partial_scores(scored, bucket_factor=0.0):
                     if debug:
                         print(f"skipping {pred_name}")
                     continue
-                result[layer_key]["score"] += entry["score"]
+                layer_results.append(entry["score"])
                 result[layer_key]["count"] += 1
             layers_left -= 1
             if layers_left == 0:
                 break
         if result[layer_key]["count"] > 0 and result[layer_key]["score"] > 0:
-            result[layer_key]["score"] /= result[layer_key]["count"]
+            result[layer_key]["score"] = statistics.mean(layer_results)
         elif result[layer_key]["score"] > 0:
             print(
                 f"Bucket {current_bucket} has score {result[current_bucket]['score']} but count {result[current_bucket]['count']}")
@@ -505,3 +507,15 @@ def create_layered_csv_table():
         columns=["Bucket", "Layer", "Actual", "Best Case", "Worst Case", "Act/Best", "Act vs Best (direct)", "RDP",
                  "Change", "Counted Actual", "Counted Best", "Counted Worst"])
     return csv_table
+
+
+def findDiff(d1, d2, path=""):
+    for k in d1:
+        if k in d2:
+            if type(d1[k]) is dict:
+                findDiff(d1[k],d2[k], "%s -> %s" % (path, k) if path else k)
+            if d1[k] != d2[k]:
+                result = [ "%s: " % path, " - %s : %s" % (k, d1[k]) , " + %s : %s" % (k, d2[k])]
+                print("\n".join(result))
+        else:
+            print ("%s%s as key not in d2\n" % ("%s: " % path if path else "", k))
