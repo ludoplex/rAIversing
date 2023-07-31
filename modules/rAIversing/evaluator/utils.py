@@ -233,7 +233,7 @@ def collect_layered_partial_scores(scored, bucket_factor=0.0):
             layers_left -= 1
             if layers_left == 0:
                 break
-        if result[layer_key]["count"] > 0 and result[layer_key]["score"] > 0:
+        if result[layer_key]["count"] > 0 and len(layer_results) > 0:
             result[layer_key]["score"] = statistics.mean(layer_results)
         elif result[layer_key]["score"] > 0:
             print(
@@ -305,7 +305,8 @@ def calc_relative_percentage_difference(best, worst, actual):
         difference = (actual * 100) - (worst * 100)
         return (difference / range_) * 100
     except ZeroDivisionError:
-        print("Division by zero!!!!! @ calc_relative_percentage_difference")
+        print("Division by zero!!!!! @ calc_relative_percentage_difference " + str(best) + " " + str(worst) + " " + str(
+            actual))
         return 0.0
 
 
