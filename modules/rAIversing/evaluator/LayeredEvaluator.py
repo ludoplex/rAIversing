@@ -97,11 +97,10 @@ class LayeredEvaluator(EvaluatorInterface):
         median_layered_fig, median_layered_axes = plt.subplots(nrows=len(usable_binaries), ncols=1,
                                                                figsize=(10, len(usable_binaries) * 4), layout=("tight"))
 
-        axes_index = 0
         size_max = 0
         axis_max = 0
 
-        for binary in usable_binaries:
+        for axes_index, binary in enumerate(usable_binaries):
             # Table and DataFrame for a single binary with layering
             single_median_title = f"Median {model_name} on {source_dir_name}/{binary} ({self.runs} runs)"
             single_median_layered_table = create_layered_table(single_median_title)
@@ -125,15 +124,17 @@ class LayeredEvaluator(EvaluatorInterface):
                                        ,
                                        f"Layered_Eval_Median_{model_name}_{source_dir_name}_{binary}_{self.runs}_runs")
             # Export results for the median_layered_table
-            median_export_console.save_svg(export_path + ".svg",
-                                           clear=False,
-                                           title="",
-                                           code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
+            median_export_console.save_svg(
+                f"{export_path}.svg",
+                clear=False,
+                title="",
+                code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""),
+            )
             # Convert svg to png and delete svg
             svg_2_png(export_path)
 
             # Export csv
-            single_median_df_table.to_csv(export_path + ".csv")
+            single_median_df_table.to_csv(f"{export_path}.csv")
 
             # Plot results for the median_df_table
             plot_dataframe(single_median_df_table, single_median_title, export_path)
@@ -146,8 +147,6 @@ class LayeredEvaluator(EvaluatorInterface):
             if size_curr > size_max:
                 axis_max = axes_index
             size_max = max(size_curr, size_max)
-            axes_index += 1
-
         # Setup results export that contains results for all binaries in a source directory no layering
         median_export_console = Console(record=True, width=180)
         median_export_console.print(median_table)
@@ -156,12 +155,14 @@ class LayeredEvaluator(EvaluatorInterface):
         export_path = os.path.join(make_run_path(model_name, source_dir, "0", ""),
                                    f"Eval_Median_{model_name}_{source_dir_name}_{self.runs}_runs")
         # Export results for the median_table
-        median_export_console.save_svg(export_path + ".svg",
-                                       code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""))
+        median_export_console.save_svg(
+            f"{export_path}.svg",
+            code_format=CONSOLE_SVG_FORMAT.replace("{chrome}", ""),
+        )
         svg_2_png(export_path)
 
         # Export csv
-        median_df_table.to_csv(export_path + ".csv")
+        median_df_table.to_csv(f"{export_path}.csv")
 
         # Fix missing tick labels and share longest x axis
         for a in median_layered_fig.axes:
@@ -221,7 +222,9 @@ class LayeredEvaluator(EvaluatorInterface):
         worst_fn, worst_layers = load_funcs_data(os.path.join(run_path, f"{binary}_no_propagation.json"),
                                                  get_layers=True)
 
-        task_gen_comp = self.progress.add_task(f"[bold bright_yellow]Generating 4 comparisons", total=4)
+        task_gen_comp = self.progress.add_task(
+            "[bold bright_yellow]Generating 4 comparisons", total=4
+        )
         self.task_gen_comp = task_gen_comp
 
         predict_direct, predict_scored = self.generate_comparison(original_fn, original_layers, predicted_fn,
@@ -275,15 +278,11 @@ class LayeredEvaluator(EvaluatorInterface):
         # can have imprecisions at the 17th decimal place
 
         direct = collect_layered_pairs(original_fn, original_layers, predicted_fn, predicted_layers)
-        scored = {}
-        for layer_index, layer in direct.items():
-            scored[layer_index] = {}
-        total = 0
-        for layer in direct.values():
-            total += len(layer)
+        scored = {layer_index: {} for layer_index, layer in direct.items()}
+        total = sum(len(layer) for layer in direct.values())
         task_score = self.progress.add_task(f"[bold bright_yellow]Scoring {total} functions", total=total)
 
-        if self.pool_size > 1 and True:
+        if self.pool_size > 1:
             processed_pairs = 0
             scoring_args = []
             processes = []
@@ -321,8 +320,6 @@ class LayeredEvaluator(EvaluatorInterface):
                         p.terminate()
                     exit(0)
             self.progress.advance(self.task_gen_comp, advance=((total // 20) / total))
-            self.progress.remove_task(task_score)
-            return direct, scored
         else:
             for group, layer in direct.items():
                 for orig_name, pred_name in layer.items():
@@ -331,8 +328,9 @@ class LayeredEvaluator(EvaluatorInterface):
                     scored[group][entrypoint] = {"original": orig_name, "predicted": pred_name,
                                                  "score": score}
                     self.progress.advance(task_score)
-            self.progress.remove_task(task_score)
-            return direct, scored
+
+        self.progress.remove_task(task_score)
+        return direct, scored
 
     def insert_result(self, run_path, result, compare_type):
         model_name, source_dir_name, run, binary = split_run_path(run_path)
@@ -345,8 +343,7 @@ class LayeredEvaluator(EvaluatorInterface):
         for group_name, group in scores.items():
             output[group_name] = {}
             for layer_name, layer in group.items():
-                output[group_name][layer_name] = {}
-                output[group_name][layer_name]["score"] = statistics.median(layer["scores"])
+                output[group_name][layer_name] = {"score": statistics.median(layer["scores"])}
                 output[group_name][layer_name]["count"] = statistics.median(layer["counts"])
         return output
 

@@ -67,7 +67,9 @@ class DefaultEvaluator(EvaluatorInterface):
         best_fn = load_funcs_data(os.path.join(run_path, f"{binary}_original_stripped.json"))
         worst_fn = load_funcs_data(os.path.join(run_path, f"{binary}_no_propagation.json"))
 
-        task_gen_comp = self.progress.add_task(f"[bold bright_yellow]Generating 4 comparisons", total=4)
+        task_gen_comp = self.progress.add_task(
+            "[bold bright_yellow]Generating 4 comparisons", total=4
+        )
         self.task_gen_comp = task_gen_comp
 
         predict_direct, predict_scored = self.generate_comparison(original_fn, predicted_fn)
@@ -114,12 +116,10 @@ class DefaultEvaluator(EvaluatorInterface):
     def generate_comparison(self, original, predicted):
         direct = collect_pairs(original, predicted)
         scored = {"hfl": {}, "lfl": {}}
-        total = 0
-        for layer in direct.values():
-            total += len(layer)
+        total = sum(len(layer) for layer in direct.values())
         task_score = self.progress.add_task(f"[bold bright_yellow]Scoring {total} functions", total=total)
 
-        if self.pool_size >1 and True:
+        if self.pool_size > 1:
             processed_pairs = 0
             scoring_args = []
             processes = []
@@ -157,8 +157,6 @@ class DefaultEvaluator(EvaluatorInterface):
                         p.terminate()
                     exit(0)
             self.progress.advance(self.task_gen_comp,advance=((total//20)/total))
-            self.progress.remove_task(task_score)
-            return direct, scored
         else:
             for group, layer in direct.items():
                 for orig_name, pred_name in layer.items():
@@ -167,8 +165,9 @@ class DefaultEvaluator(EvaluatorInterface):
                     scored[group][entrypoint] = {"original": orig_name, "predicted": pred_name,
                                                  "score": score}
                     self.progress.advance(task_score)
-            self.progress.remove_task(task_score)
-            return direct, scored
+
+        self.progress.remove_task(task_score)
+        return direct, scored
 
     def insert_result(self, run_path, result, group):
         model_name, source_dir_name, run, binary = split_run_path(run_path)
@@ -210,8 +209,7 @@ class DefaultEvaluator(EvaluatorInterface):
         for group_name, group in scores.items():
             output[group_name] = {}
             for layer_name, layer in group.items():
-                output[group_name][layer_name] = {}
-                output[group_name][layer_name]["score"] = statistics.median(layer["scores"])
+                output[group_name][layer_name] = {"score": statistics.median(layer["scores"])}
                 output[group_name][layer_name]["count"] = statistics.median(layer["counts"])
         return output
 

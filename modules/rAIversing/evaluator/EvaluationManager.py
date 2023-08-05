@@ -40,11 +40,10 @@ class EvaluationManager:
             if json_path.name == f"{binary}_original.json" or json_path.name.endswith(
                     "comp.json") or json_path.name.endswith("scored.json"):
                 continue
-            else:
-                no_prop = json_path.name.endswith("no_propagation.json")
-                raie = rAIverseEngine(ai_module, json_path=json_path)
-                raie.max_parallel_functions = self.connections
-                raie.run_parallel_rev(no_propagation=no_prop)
+            no_prop = json_path.name.endswith("no_propagation.json")
+            raie = rAIverseEngine(ai_module, json_path=json_path)
+            raie.max_parallel_functions = self.connections
+            raie.run_parallel_rev(no_propagation=no_prop)
 
     def run(self):
         for ai_module in self.ai_modules:

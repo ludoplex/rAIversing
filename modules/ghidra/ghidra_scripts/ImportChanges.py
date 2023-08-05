@@ -39,9 +39,11 @@ def main(json_file_path=None):
 
     program_name = str(fpapi.getCurrentProgram()).split(" ")[0].replace(".", "_")
     if json_file_path is None:
-        json_file_path = os.path.join(PROJECTS_ROOT, program_name, program_name + ".json")
+        json_file_path = os.path.join(
+            PROJECTS_ROOT, program_name, f"{program_name}.json"
+        )
     else:
-        json_file_path = os.path.join(json_file_path, program_name + ".json")
+        json_file_path = os.path.join(json_file_path, f"{program_name}.json")
 
     save_file = {}
     with open(json_file_path, "r") as f:
@@ -63,7 +65,7 @@ def main(json_file_path=None):
         # Getting original function name if it already has been in ghidra
         func_name = str(func.getName())
         if func_name not in current_lookup.keys():
-            if func_name in original_lookup.keys():
+            if func_name in original_lookup:
                 func_name = original_lookup[func_name]
 
         # Renaming if it is present in the json
@@ -83,7 +85,7 @@ def main(json_file_path=None):
             # Renaming the function
             if func.getName() != new_name:
                 func.setName(new_name, IMPORTED)
-                print("Renaming " + func_name + " to " + new_name)
+                print(f"Renaming {func_name} to {new_name}")
             # print("Symbols:")
 
             # Getting symbols and HighFunction
@@ -105,9 +107,8 @@ def main(json_file_path=None):
                         symbol.setName(new_name, IMPORTED)
 
 
-                    # If the name is already taken, we add an underscore to the end
                     except ghidra.util.exception.DuplicateNameException:
-                        new_name = new_name + "_"
+                        new_name = f"{new_name}_"
                         try:
                             symbol.setName(new_name, IMPORTED)
                         except ghidra.util.exception.DuplicateNameException:
@@ -116,10 +117,10 @@ def main(json_file_path=None):
                     except Exception as e:
                         if "NoneType" in str(e):
                             continue
-                        print("Error while renaming " + symname + " in function " + func_name)
+                        print(f"Error while renaming {symname} in function {func_name}")
                         print(e)
                         continue
-                    #print("Symbol Renaming " + symname + " to " + new_name + " in function " + func_name)
+                                    #print("Symbol Renaming " + symname + " to " + new_name + " in function " + func_name)
 
             # Committing changes to the database
             HighFunctionDBUtil.commitLocalNamesToDatabase(hf, IMPORTED)
@@ -141,16 +142,15 @@ def main(json_file_path=None):
                         continue
                     try:
                         var.setName(new_name, IMPORTED)
-                    # If the name is already taken, we add an underscore to the end (again)
                     except ghidra.util.exception.DuplicateNameException:
-                        new_name = new_name + "_"
+                        new_name = f"{new_name}_"
                         try:
                             var.setName(new_name, IMPORTED)
                         except ghidra.util.exception.DuplicateNameException:
                             continue
 
-                    #print(str(type(var)) + " Renaming " + var_name + " to " + new_name + " in function " + func_name)
-                    #print("Var Renaming " + var_name + " to " + new_name + " in function " + func_name)
+                                    #print(str(type(var)) + " Renaming " + var_name + " to " + new_name + " in function " + func_name)
+                                    #print("Var Renaming " + var_name + " to " + new_name + " in function " + func_name)
             functions_dict[func_name]["imported"] = True
 
     for func_name, data in functions_dict.items():
@@ -167,8 +167,7 @@ def main(json_file_path=None):
 
 def get_high_function(func):
     res = ifc.decompileFunction(func, 60, monitor)
-    high = res.getHighFunction()
-    return high
+    return res.getHighFunction()
 
 
 def get_function_symbols(func):
@@ -178,8 +177,7 @@ def get_function_symbols(func):
 
 
 if __name__ == "__main__":
-    args = list(getScriptArgs())
-    if len(args) > 0:
+    if args := list(getScriptArgs()):
         main(str(args[0]))
     else:
         main()

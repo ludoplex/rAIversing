@@ -41,21 +41,19 @@ def ptr_escape(string):
 def check_and_fix_bin_path(binary_path):
     if os.path.isfile(os.path.abspath(binary_path)):
         return os.path.abspath(binary_path)
+    if os.path.isfile(os.path.join(BINARIES_ROOT, binary_path)):
+        return os.path.join(BINARIES_ROOT, binary_path)
     else:
-        if os.path.isfile(os.path.join(BINARIES_ROOT, binary_path)):
-            return os.path.join(BINARIES_ROOT, binary_path)
-        else:
-            raise FileNotFoundError(f"Binary {binary_path} not found in {BINARIES_ROOT}")
+        raise FileNotFoundError(f"Binary {binary_path} not found in {BINARIES_ROOT}")
 
 
 def check_and_fix_project_path(project_path):
     if os.path.isdir(os.path.abspath(project_path)):
         return os.path.abspath(project_path)
+    if os.path.isdir(os.path.join(PROJECTS_ROOT, project_path)):
+        return os.path.join(PROJECTS_ROOT, project_path)
     else:
-        if os.path.isdir(os.path.join(PROJECTS_ROOT, project_path)):
-            return os.path.join(PROJECTS_ROOT, project_path)
-        else:
-            raise NotADirectoryError(f"Project {project_path} not found in {PROJECTS_ROOT}")
+        raise NotADirectoryError(f"Project {project_path} not found in {PROJECTS_ROOT}")
 
 
 def check_and_create_project_path(project_path):
@@ -98,35 +96,30 @@ def check_and_fix_double_function_renaming(code, renaming_dict, name):
     if name in renaming_dict.keys():
         present_name = extract_function_name(code)
         if present_name != renaming_dict[name]:
-            if present_name not in renaming_dict[name]:
-                # print(f"Replacing {present_name} with {renaming_dict[name]} in {name}")
-                pass
             code = code.replace(present_name, renaming_dict[name])
     return code
 
 
 def is_already_exported(project_location, binary_name):
-    if os.path.isfile(os.path.join(project_location, f"{binary_name.replace('.', '_')}.json")):
-        return True
-    else:
-        # print(f"""File {os.path.join(project_location, f'{binary_name.replace(".", "_")}.json')} not found""")
-        return False
+    return bool(
+        os.path.isfile(
+            os.path.join(
+                project_location, f"{binary_name.replace('.', '_')}.json"
+            )
+        )
+    )
 
 
 def get_random_string(length):
     # choose from all lowercase letter
     letters = string.ascii_uppercase
-    result_str = ''.join(random.choice(letters) for i in range(length))
-    return result_str
+    return ''.join(random.choice(letters) for _ in range(length))
 
 
 def check_do_nothing(code):
     code = "{" + code.split("{")[1].split("}")[0] + "}"
     code = code.replace(" ", "").replace("\n", "").rstrip().strip()
-    if "{return;}" == code:
-        return True
-    else:
-        return False
+    return code == "{return;}"
 
 
 def clear_extra_data(response, error):
@@ -157,14 +150,13 @@ def split_response(response_dict):
         for key in response_dict:
             if "code" in key:
                 improved_code = response_dict[key]
-            else:
-                if type(response_dict[key]) == dict:
-                    for old, new in response_dict[key].items():
+            elif type(response_dict[key]) == dict:
+                for old, new in response_dict[key].items():
+                    renaming_dict[old] = new
+            elif type(response_dict[key]) == list:
+                for entry in response_dict[key]:
+                    for old, new in entry.items():
                         renaming_dict[old] = new
-                elif type(response_dict[key]) == list:
-                    for entry in response_dict[key]:
-                        for old, new in entry.items():
-                            renaming_dict[old] = new
 
     elif len(response_dict) == 3:
         for key in response_dict:
@@ -175,7 +167,7 @@ def split_response(response_dict):
             elif "new" in key:
                 new_key = key
             else:
-                raise InvalidResponseException("Invalid response format " + str(response_dict))
+                raise InvalidResponseException(f"Invalid response format {str(response_dict)}")
         if type(response_dict[old_key]) == list and type(response_dict[new_key]) == list:
             for old, new in zip(response_dict[old_key], response_dict[new_key]):
                 renaming_dict[old] = new
@@ -190,10 +182,7 @@ def split_response(response_dict):
 
 
 def check_valid_code(code):
-    if "{" not in code or "}" not in code or "(" not in code or ")" not in code:
-        return False
-    else:
-        return True
+    return "{" in code and "}" in code and "(" in code and ")" in code
 
 
 def format_newlines_in_code(code):
@@ -205,7 +194,7 @@ def format_newlines_in_code(code):
     main = main.replace('"', '\\"')
     main = main.replace('\'', '\\"')
 
-    return front + 'improved_code": "' + main + '}\",' + back
+    return f'{front}improved_code": "{main}' + '}\",' + back
 
 
 def escape_failed_escapes(response_string, e):
@@ -249,7 +238,7 @@ def prompt_parallel(ai_module, result_queue, name, code, retries):
 
     except Exception as e:
 
-        print(f"Error in {name}: {e} " + locator())
+        print(f"Error in {name}: {e} {locator()}")
         print(f"Type: {type(e)}")
 
         result_queue.put((name, "SKIP"))
@@ -324,15 +313,14 @@ def insert_missing_delimiter(response, exception):
     char = int(target.split("char")[1].split(")")[0])
     line_wrap = ",\n" + (response[:char].split("\n")[-1])
     pre_wrap = response[:char].rstrip()
-    fixed = pre_wrap + line_wrap + response[char:]
-    return fixed
+    return pre_wrap + line_wrap + response[char:]
 
 
 def insert_missing_double_quote(response, exception):
     # Expecting property name enclosed in double quotes: line 9 column 5 (char 252)
     target = str(exception).split("char ")[1].split(")")[0]
     char = int(target)
-    pre = response[:char] + '"'
+    pre = f'{response[:char]}"'
     if ":" in response[char:]:
         mid = response[char:].split(':')[0] + '":'
         post = response[char:].split(':', 1)[1]
@@ -351,15 +339,14 @@ def insert_missing_colon(response, exception):
     # Expecting ':' delimiter: line 9 column 5 (char 252)
     target = str(exception).split("char ")[1].split(")")[0]
     char = int(target)
-    pre = response[:char - 1] + ': '
+    pre = f'{response[:char - 1]}: '
     post = response[char:]
     return pre + post
 
 
 def get_char(exception):
     target = str(exception).split("char ")[1].split(")")[0]
-    char = int(target)
-    return char
+    return int(target)
 
 
 def key_finder(key_parts, dictionary):
@@ -398,11 +385,7 @@ def clean_bad_renamings(renaming_dict, code, name):
     forbidden_strings = ["\\", "/", "*", "?", "\"", "<", ">", "|", " ", "PTR_", "DAT_", "FUNC_"]
     clean_dict = {}
     if name not in renaming_dict.keys():
-        candidates = []
-        for key in renaming_dict.keys():
-            if name in key:
-                candidates.append(key)
-        if len(candidates) > 0:
+        if candidates := [key for key in renaming_dict.keys() if name in key]:
             renaming_dict[name] = renaming_dict[candidates[0]]
             renaming_dict.pop(candidates[0])
         else:
@@ -412,7 +395,10 @@ def clean_bad_renamings(renaming_dict, code, name):
         if old in code and (old != new):
             if new == "" or old == "":
                 continue
-            if any([forbidden in new or forbidden in old for forbidden in forbidden_strings]):
+            if any(
+                forbidden in new or forbidden in old
+                for forbidden in forbidden_strings
+            ):
                 continue
             if "FUN_" in old and name != old:
                 continue
@@ -426,7 +412,7 @@ def clean_bad_renamings(renaming_dict, code, name):
                 continue
             except:
                 pass
-            if old in clean_dict.keys():
+            if old in clean_dict:
                 raise Exception(f"Duplicate key {old} in renaming dict")
             clean_dict[old] = new
 
@@ -521,8 +507,3 @@ def nondestructive_savefile_merge(base_file_path, new_file_path):
         else:
             base_functions[name] = new_function
             # print("merged function", name)
-    if False:
-        with open(base_file_path, "w") as f:
-            save_file = {"functions": base_functions, "used_tokens": base_used_tokens, "layers": base_layers,
-                         "locked_functions": base_locked_functions}
-            json.dump(save_file, f, indent=4)

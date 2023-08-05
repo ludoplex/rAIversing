@@ -66,17 +66,20 @@ def main(export_path=None, export_with_stripped_names=False):
 
     if export_path is None:
         export_path = os.path.join(PROJECTS_ROOT, program_name)
-    else:
-        if not program_name.replace("_no_propagation", "").replace("_original", "") in \
-               export_path.split("/")[-1].split("\\")[-1]:
-            export_path = os.path.join(export_path,
-                                       program_name.replace("_no_propagation", "").replace("_original", ""))
+    elif (
+        program_name.replace("_no_propagation", "").replace("_original", "")
+        not in export_path.split("/")[-1].split("\\")[-1]
+    ):
+        export_path = os.path.join(export_path,
+                                   program_name.replace("_no_propagation", "").replace("_original", ""))
     export_path = export_path.replace('"', "")
 
-    if os.path.exists(os.path.join(export_path, program_name + ".json")):
+    if os.path.exists(os.path.join(export_path, f"{program_name}.json")):
         if export_with_stripped_names:
-            program_name_temp = program_name + "_stripped"
-            if os.path.exists(os.path.join(export_path, program_name_temp + ".json")):
+            program_name_temp = f"{program_name}_stripped"
+            if os.path.exists(
+                os.path.join(export_path, f"{program_name_temp}.json")
+            ):
                 print("#@#@#@#@#@#@#")
                 return
         else:
@@ -86,10 +89,10 @@ def main(export_path=None, export_with_stripped_names=False):
 
     cCode = "".encode("utf-8")
 
-    if len(funcs) > 700 and True:
-        print("More than 700 functions in " + program_name + ". exiting!")
+    if len(funcs) > 700:
+        print(f"More than 700 functions in {program_name}. exiting!")
         with open(os.path.join(export_path, "not_extracted"), "w") as f:
-            f.write("More than 700 functions in " + program_name + ". exiting!")
+            f.write(f"More than 700 functions in {program_name}. exiting!")
         print("#@#@#@#@#@#@#")
         return
 
@@ -122,19 +125,19 @@ def main(export_path=None, export_with_stripped_names=False):
         code = code.replace("/* WARNING: Subroutine does not return */", "")
         code = code.replace("/* WARNING: Globals starting with '_' overlap smaller symbols at the same address */", "")
 
-        function_metadata[function_name] = {}
-        function_metadata[function_name]["entrypoint"] = entrypoint
-        function_metadata[function_name]["current_name"] = function_name
-        function_metadata[function_name]["code"] = code
-        function_metadata[function_name]["renaming"] = {}
-        function_metadata[function_name]["calling"] = []
-        function_metadata[function_name]["called"] = []
-        function_metadata[function_name]["improved"] = "FUN_" not in function_name or (
-                function_name not in code and "FUN_" in function_name)
-        function_metadata[function_name]["skipped"] = False
-        function_metadata[function_name]["imported"] = False
-        function_metadata[function_name]["tags"] = []
-
+        function_metadata[function_name] = {
+            "entrypoint": entrypoint,
+            "current_name": function_name,
+            "code": code,
+            "renaming": {},
+            "calling": [],
+            "called": [],
+            "improved": "FUN_" not in function_name
+            or (function_name not in code and "FUN_" in function_name),
+            "skipped": False,
+            "imported": False,
+            "tags": [],
+        }
         for calling in func.getCallingFunctions(getMonitor()):
             function_metadata[function_name]["calling"].append(calling.getName())
 
@@ -152,7 +155,7 @@ def main(export_path=None, export_with_stripped_names=False):
         os.mkdir(export_path)
 
     if not export_with_stripped_names:
-        with open(os.path.join(export_path, program_name + ".c"), "w") as f:
+        with open(os.path.join(export_path, f"{program_name}.c"), "w") as f:
             f.write(cCode)
             f.close()
     save_file = {
@@ -164,8 +167,8 @@ def main(export_path=None, export_with_stripped_names=False):
     if export_with_stripped_names:
         program_name += "_stripped"
 
-    if not os.path.exists(os.path.join(export_path, program_name + ".json")):
-        with open(os.path.join(export_path, program_name + ".json"), "w") as f:
+    if not os.path.exists(os.path.join(export_path, f"{program_name}.json")):
+        with open(os.path.join(export_path, f"{program_name}.json"), "w") as f:
             f.write(json.dumps(save_file, indent=4))
             f.close()
     print("#@#@#@#@#@#@#")
@@ -173,8 +176,7 @@ def main(export_path=None, export_with_stripped_names=False):
 
 def get_high_function(func):
     res = ifc.decompileFunction(func, 60, monitor)
-    high = res.getHighFunction()
-    return high
+    return res.getHighFunction()
 
 
 def get_function_symbols(func):

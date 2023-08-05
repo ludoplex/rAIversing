@@ -47,7 +47,7 @@ class rAIverseEngine:
             with open(self.path_to_save_file) as f:
                 save_file = json.load(f)
         else:
-            self.console.print(f"[bold red]No functions.json found[/bold red]")
+            self.console.print("[bold red]No functions.json found[/bold red]")
             raise Exception(f"Path to functions.json not found: {self.path_to_save_file}")
 
         if "functions" in save_file.keys():
@@ -73,10 +73,10 @@ class rAIverseEngine:
             json.dump(save_file, f, indent=4)
 
     def is_import_needed(self):
-        for name, data in self.functions.items():
-            if data["imported"] == False and not data["skipped"]:
-                return True
-        return False
+        return any(
+            data["imported"] == False and not data["skipped"]
+            for name, data in self.functions.items()
+        )
 
     def get_lowest_function_layer(self,is_lower_layer=False):
         lflList = []
@@ -85,7 +85,7 @@ class rAIverseEngine:
                 escaped_code = ptr_escape(data["code"])
                 if len(escaped_code.split("FUN_")) == 2 or "called" not in data.keys() or len(data["called"]) == 0:
                     lflList.append(name)
-        if len(lflList) == 0:
+        if not lflList:
             missing = self.get_missing_functions()
             for name in missing:
                 data = self.functions[name]
@@ -93,7 +93,7 @@ class rAIverseEngine:
                 if len(escaped_code.split(name)) == len(escaped_code.split("FUN_")):
                     lflList.append(name)
 
-        if len(lflList) == 0:
+        if not lflList:
             sorted_missing = self.get_sorted_missing()
             if len(sorted_missing) > 1:
                 self.console.log(f'[bold yellow]Still[/bold yellow] {len(sorted_missing)} [bold yellow]functions missing, locking [blue]{sorted_missing[0]}')
@@ -112,7 +112,6 @@ class rAIverseEngine:
             regex = r"FUN_\w+"
             for name in missing:  # Probably just one entry
                 print(name)
-                pass
         if not is_lower_layer and len(self.locked_functions) > 0:
             self.console.log(f"[bold yellow]Locked functions: [/bold yellow]{self.locked_functions}")
 
@@ -164,11 +163,11 @@ class rAIverseEngine:
         self.rename_for_all_functions(renaming_dict, overwrite=True)
 
     def get_missing_functions(self):
-        missing = []
-        for name, data in self.functions.items():
-            if not data["improved"] and not data["skipped"]:
-                missing.append(name)
-        return missing
+        return [
+            name
+            for name, data in self.functions.items()
+            if not data["improved"] and not data["skipped"]
+        ]
 
     def fix_function_name(self, code, rename_dict, function_name):
         if function_name not in code:
@@ -198,7 +197,7 @@ class rAIverseEngine:
                 if "FUN_" in new and not overwrite:
                     # self.logger.warning(f"Skipping renaming of {old} to {new}")
                     continue
-                if not "FUN_" in old and not overwrite:  # Currently just renaming functions but i already have the "hooks" for pointers
+                if "FUN_" not in old and not overwrite:  # Currently just renaming functions but i already have the "hooks" for pointers
                     continue
                 data["code"] = data["code"].replace(old, new)
 
@@ -261,17 +260,17 @@ class rAIverseEngine:
         return code
 
     def check_all_processed(self):
-        for name, data in self.functions.items():
-            if not data["improved"] and not data["skipped"]:
-                return False
-        return True
+        return not any(
+            not data["improved"] and not data["skipped"]
+            for name, data in self.functions.items()
+        )
 
     def count_processed(self):
-        count = 0
-        for name, data in self.functions.items():
-            if data["improved"] == True or data["skipped"] == True:
-                count += 1
-        return count
+        return sum(
+            1
+            for name, data in self.functions.items()
+            if data["improved"] == True or data["skipped"] == True
+        )
 
     def run_parallel_rev(self, no_propagation=False):
         function_layer = len(self.layers) + 1
@@ -294,12 +293,13 @@ class rAIverseEngine:
             else:
                 if len(self.layers) > 0:
                     old_layer = self.layers[-1]
-                    leftover_functions = list(set(old_layer).intersection(set(lfl)))
-                    if len(leftover_functions) == 0:
-                        self.layers.append(lfl)
-                    else:
+                    if leftover_functions := list(
+                        set(old_layer).intersection(set(lfl))
+                    ):
                         lfl = leftover_functions
                         continue_layer = True
+                    else:
+                        self.layers.append(lfl)
                 else:
                     self.layers.append(lfl)
 
@@ -320,7 +320,7 @@ class rAIverseEngine:
             self.build_prompting_args(lfl, prompting_args, result_queue)
             total = len(prompting_args)
 
-            for i in range(0, min(total, self.max_parallel_functions)):
+            for _ in range(0, min(total, self.max_parallel_functions)):
                 p = mp.Process(target=prompt_parallel, args=prompting_args.pop(0))
                 p.start()
                 processes.append(p)
@@ -335,7 +335,7 @@ class rAIverseEngine:
                         handle_spawn_worker(processes, prompting_args, started)
                         continue
                     elif result == "EXIT":
-                        self.console.log(f"[bold red]Exiting due to Hard Limit Reached!!![/bold red]")
+                        self.console.log("[bold red]Exiting due to Hard Limit Reached!!![/bold red]")
                         raise HardLimitReached("Got Hard Limit Reached from prompt_parallel")
 
                     else:
@@ -371,7 +371,7 @@ class rAIverseEngine:
 
                 except Exception as e:
                     self.console.log(f"Exception occured: {e}")
-                    self.console.log(f"Saving functions")
+                    self.console.log("Saving functions")
                     self.save_functions()
                     self.console.log(f"{processed_functions}/{total} | Saved functions! Exiting!")
                     exit(0)
@@ -416,7 +416,9 @@ class rAIverseEngine:
             renaming_dict[name] = new_name
 
         except Exception as e:
-            self.console.print(f"[bold red]Error while improving {name} {e}[/bold red]" + locator())
+            self.console.print(
+                f"[bold red]Error while improving {name} {e}[/bold red]{locator()}"
+            )
             raise e
 
         self.functions[name]["improved"] = True

@@ -54,7 +54,7 @@ replacement_dict = {"strchr": "find_character_in_string", "strrchr": "find_last_
 for file in os.listdir(EXPANDERS_ROOT):
     with open(os.path.join(EXPANDERS_ROOT, file)) as f:
         replacement_dict_part = json.load(f)
-        replacement_dict.update(replacement_dict_part)
+        replacement_dict |= replacement_dict_part
 
 nlp = SymbolNLP()
 
@@ -119,7 +119,7 @@ def calc_score_v2(original, predicted, entrypoint):
     original_tokens = set(tokenize_name_v1(original))
     predicted_tokens = set(tokenize_name_v1(predicted))
 
-    if len(original_tokens.intersection(predicted_tokens)) > 0:
+    if original_tokens.intersection(predicted_tokens):
         return 1.0
     else:
         # return 0.0
@@ -147,7 +147,7 @@ def calc_score_v3(original, predicted, entrypoint):
     original_tokens = set(tokenize_name_v1(original))
     predicted_tokens = set(tokenize_name_v1(predicted))
 
-    if len(original_tokens.intersection(predicted_tokens)) > 0:
+    if original_tokens.intersection(predicted_tokens):
         return 1.0
 
     if original in predicted or predicted in original:
@@ -214,7 +214,7 @@ def calc_score_dev_hybrid(original, predicted, entrypoint):
     original_tokens = set(tokenize_name_v1(original))
     predicted_tokens = set(tokenize_name_v1(predicted))
 
-    if len(original_tokens.intersection(predicted_tokens)) > 0:
+    if original_tokens.intersection(predicted_tokens):
         return 1.0
     score = calc_group_similarity(original, predicted)
     if score != 0.0:
@@ -229,7 +229,12 @@ def calc_score_dev_hybrid(original, predicted, entrypoint):
 
 
 def calc_group_similarity(original_function_name, reversed_function_name):
-    for group in similarity_indicator_groups:
-        if re.match(group[0], original_function_name) and re.match(group[1], reversed_function_name):
-            return 1.0
-    return 0.0
+    return next(
+        (
+            1.0
+            for group in similarity_indicator_groups
+            if re.match(group[0], original_function_name)
+            and re.match(group[1], reversed_function_name)
+        ),
+        0.0,
+    )

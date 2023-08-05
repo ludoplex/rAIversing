@@ -37,20 +37,16 @@ def run_on_ghidra_project(path, project_name=None, binary_name=None, ai_module=N
                           max_tokens=None, dry_run=False, parallel=1):
     if ai_module is None:
         raise ValueError("No AI module was provided")
-    if not os.path.isdir(os.path.abspath(path)):
-        if os.path.isdir(f"{os.path.join(PROJECTS_ROOT, path)}"):
-            path = f"{os.path.join(PROJECTS_ROOT, path)}"
-        else:
-            print(f"Path {path} does not exist")
-            return
-    else:
+    if os.path.isdir(os.path.abspath(path)):
         path = os.path.abspath(path)
 
+    elif os.path.isdir(f"{os.path.join(PROJECTS_ROOT, path)}"):
+        path = f"{os.path.join(PROJECTS_ROOT, path)}"
+    else:
+        print(f"Path {path} does not exist")
+        return
     if binary_name is None:
-        if project_name is None:
-            binary_name = os.path.basename(path)
-        else:
-            binary_name = project_name
+        binary_name = os.path.basename(path) if project_name is None else project_name
     if project_name is None:
         project_name = os.path.basename(path).split(".")[0]
     import_path = check_and_fix_project_path(path)
@@ -168,25 +164,18 @@ if __name__ == "__main__":
 
     elif args.command == "binary":
         if not (args.language_id and args.compiler_id):
-            if args.language_id and args.compiler_id:
-                print(
-                    f"WARNING: Custom Language ID: {args.language_id} and Compiler ID: {args.compiler_id} will be used!\n"
-                    f"         This might lead to unexpected results!\n"
-                    f"         Please make sure that the binary was compiled with the specified compiler and language!")
+            if args.language_id:
+                print(f"WARNING: ONLY Custom Language ID: {args.language_id} was specified!\n"
+                      f"         This might lead to unexpected results!\n"
+                      f"         Make sure that the headless Ghidra instance can detect the compilerID correctly or specify it manually!\n")
                 time.sleep(10)
-            else:
-                if args.language_id:
-                    print(f"WARNING: ONLY Custom Language ID: {args.language_id} was specified!\n"
-                          f"         This might lead to unexpected results!\n"
-                          f"         Make sure that the headless Ghidra instance can detect the compilerID correctly or specify it manually!\n")
-                    time.sleep(10)
 
-                else:
-                    print(f"WARNING: Custom Compiler ID: {args.compiler_id} was specified without a Language ID!\n"
-                          f"         This is not supported by Ghidra!\n"
-                          f"         Please specify a Language ID or let Ghidra detect it automatically!\n"
-                          f"Exiting...")
-                    exit(1)
+            else:
+                print(f"WARNING: Custom Compiler ID: {args.compiler_id} was specified without a Language ID!\n"
+                      f"         This is not supported by Ghidra!\n"
+                      f"         Please specify a Language ID or let Ghidra detect it automatically!\n"
+                      f"Exiting...")
+                exit(1)
 
         run_on_new_binary(args.path, language_id=args.language_id, compiler_id=args.compiler_id, ai_module=ai_module,
                           custom_headless_binary=args.ghidra_path,

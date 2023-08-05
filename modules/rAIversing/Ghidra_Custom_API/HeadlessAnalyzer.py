@@ -50,18 +50,17 @@ class HeadlessAnalyzerWrapper:
         self.__noanalysis__ = ""
         self.__recursive__ = ""
 
-        if os.path.exists(self.__analyzeHeadlessBinary__):
-            if not os.access(self.__analyzeHeadlessBinary__, os.X_OK):
-                raise PermissionError(f'analyzeHeadlessBinary is not executable: {self.__analyzeHeadlessBinary__}\n run "chmod +x {self.__analyzeHeadlessBinary__}"')
-        else:
+        if not os.path.exists(self.__analyzeHeadlessBinary__):
             raise FileNotFoundError(f'analyzeHeadlessBinary not found: {self.__analyzeHeadlessBinary__}')
+        if not os.access(self.__analyzeHeadlessBinary__, os.X_OK):
+            raise PermissionError(f'analyzeHeadlessBinary is not executable: {self.__analyzeHeadlessBinary__}\n run "chmod +x {self.__analyzeHeadlessBinary__}"')
 
     def noanalysis(self):
-        self.__noanalysis__ = f' -noanalysis'
+        self.__noanalysis__ = ' -noanalysis'
         return self
 
     def recursive(self):
-        self.__recursive__ = f' -recursive'
+        self.__recursive__ = ' -recursive'
         return self
 
     def process(self, file):
@@ -113,15 +112,15 @@ class HeadlessAnalyzerWrapper:
         return self
 
     def overwrite(self):
-        self.__overwrite__ = f' -overwrite'
+        self.__overwrite__ = ' -overwrite'
         return self
 
     def readOnly(self):
-        self.__readOnly__ = f' -readOnly'
+        self.__readOnly__ = ' -readOnly'
         return self
 
     def deleteProject(self):
-        self.__deleteProject__ = f' -deleteProject'
+        self.__deleteProject__ = ' -deleteProject'
         return self
 
     def processor(self, processor):

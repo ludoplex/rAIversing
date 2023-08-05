@@ -108,12 +108,14 @@ def existing_project_to_c_code(project_location, binary_name=None, project_name=
         binary_name = project_name
 
     export_path = export_path if export_path is not None else project_location
-    if is_already_exported(export_path, binary_name + "_stripped" if export_with_stripped_names else binary_name):
+    if is_already_exported(
+        export_path,
+        f"{binary_name}_stripped"
+        if export_with_stripped_names
+        else binary_name,
+    ):
         return
-    if export_with_stripped_names:
-        export_with_stripped_names = "True"
-    else:
-        export_with_stripped_names = ""
+    export_with_stripped_names = "True" if export_with_stripped_names else ""
     ah = HeadlessAnalyzerWrapper(custom_headless_binary)
     ah.project_location(f'{project_location}') \
         .project_name(project_name) \

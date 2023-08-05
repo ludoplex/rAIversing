@@ -143,7 +143,7 @@ class ChatGPTModule(AiModuleInterface):
     def assemble_prompt(self, input_code):
         return assemble_prompt_v1(input_code)
 
-    def prompt(self, prompt, try_larger=False):  # type: (str,int) -> (str,int)
+    def prompt(self, prompt, try_larger=False):    # type: (str,int) -> (str,int)
         """Prompts the model and returns the result and the number of used tokens"""
         # self.console.print("Prompting ChatGPT with: " + str(self.calc_used_tokens(prompt)) + " tokens")
         needed_tokens = self.calc_used_tokens(prompt)
@@ -151,17 +151,19 @@ class ChatGPTModule(AiModuleInterface):
         answer = ""
 
         if needed_tokens > self.get_max_tokens():
-            raise Exception("Used more tokens than allowed: " + str(needed_tokens) + " > " + str(self.get_max_tokens()))
+            raise Exception(
+                f"Used more tokens than allowed: {str(needed_tokens)} > {str(self.get_max_tokens())}"
+            )
         elif needed_tokens in self.engine.large_range() or try_larger:
             self.chat_large.reset()
             answer = self.chat_large.ask(prompt)
 
             if answer == "":
                 raise EmptyResponseException("Empty Response from Chat (empty string)")
-            if "{" not in answer :
+            if "{" not in answer:
                 if len(self.chat_large.conversation['default']) < 3:
                     print(f"messages: {self.chat_large.conversation['default']}")
-                print(f"Answer: >{answer}<\n" + locator())
+                print(f"Answer: >{answer}<\n{locator()}")
                 print(f"length of messages: {len(self.chat_large.conversation['default'])}")
                 raise IncompleteResponseException("Incomplete Response from Chat (no { found)" + locator())
             self.chat_large.conversation["default"].pop()
@@ -176,7 +178,7 @@ class ChatGPTModule(AiModuleInterface):
             if "{" not in answer:
                 if len(self.chat_medium.conversation['default']) < 3:
                     print(f"messages: {self.chat_medium.conversation['default']}")
-                print(f"Answer: >{answer}<\n" + locator())
+                print(f"Answer: >{answer}<\n{locator()}")
                 raise IncompleteResponseException("Incomplete Response from Chat (no { found)" + locator())
             self.chat_medium.conversation["default"].pop()
             used_tokens = self.chat_medium.get_token_count()
@@ -190,14 +192,16 @@ class ChatGPTModule(AiModuleInterface):
             if "{" not in answer:
                 if len(self.chat_small.conversation['default']) < 3:
                     print(f"messages: {self.chat_small.conversation['default']}")
-                print(f"Answer: >{answer}<\n" + locator())
+                print(f"Answer: >{answer}<\n{locator()}")
                 print(f"needed tokens: {needed_tokens}")
                 raise IncompleteResponseException("Incomplete Response from Chat (no { found)" + locator())
             self.chat_small.conversation["default"].pop()
             used_tokens = self.chat_small.get_token_count()
             self.chat_small.reset()
         else:
-            raise Exception("Used more tokens than allowed: " + str(needed_tokens) + " > " + str(self.get_max_tokens()))
+            raise Exception(
+                f"Used more tokens than allowed: {str(needed_tokens)} > {str(self.get_max_tokens())}"
+            )
         if answer is None or answer == "":
             raise NoResponseException("No Answer from Chat (empty string)")
 
@@ -222,8 +226,7 @@ class ChatGPTModule(AiModuleInterface):
 
 
         try:
-            response_dict = json.loads(response_string_orig, strict=False)
-            return response_dict
+            return json.loads(response_string_orig, strict=False)
         except Exception as e:
             pass
         response_string = self.remove_plaintext_from_response(response_string_orig)
@@ -301,14 +304,12 @@ class ChatGPTModule(AiModuleInterface):
                     print(f"###### CURRENT STATE @ {locator()}######")
                     print(response_string)
                     print(f"###### CURRENT STATE END @ {locator()}######")
-                    raise e
                 else:
                     print(type(e))
                     print(e)
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "process_response.json"), "w") as f:
                         f.write(response_string_orig)
-                    raise e
-
+                raise e
             except Exception as e:
                 self.logger.exception(e)
                 with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
@@ -324,7 +325,7 @@ class ChatGPTModule(AiModuleInterface):
 
         return response_dict
 
-    def prompt_with_renaming(self, input_code, retries=5, name=None):  # type: (str,int) -> (str, dict)
+    def prompt_with_renaming(self, input_code, retries=5, name=None):    # type: (str,int) -> (str, dict)
         """Prompts the model and returns the resulting code and a dict of renamed Names
             This version uses the new prompt format and is more efficient than the old one
             It only asks the model for the renaming dict and then applies it to the code
@@ -399,7 +400,7 @@ class ChatGPTModule(AiModuleInterface):
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "incomplete_response.json"), "w") as f:
                         f.write(response_string_orig)
                     self.console.log(response_string_orig)
-                    raise MaxTriesExceeded("Max tries exceeded " + str(e) + locator())
+                    raise MaxTriesExceeded(f"Max tries exceeded {str(e)}{locator()}")
                 if i >= (retries - 1) / 2:
                     try_larger = True
                 self.console.log(
@@ -409,12 +410,12 @@ class ChatGPTModule(AiModuleInterface):
                 continue
 
             except json.JSONDecodeError as e:
-                self.console.log(f"Got JSONDecodeError: {e}" + locator())
+                self.console.log(f"Got JSONDecodeError: {e}{locator()}")
                 if i >= retries - 1:
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                         f.write(response_string_orig)
                     self.console.log(response_string_orig)
-                    raise MaxTriesExceeded("Max tries exceeded " + str(e) + locator())
+                    raise MaxTriesExceeded(f"Max tries exceeded {str(e)}{locator()}")
                 if "Expecting value: line 1 column 1 (char 0)" in str(e) or "Unterminated string starting at:" in str(
                         e):
                     self.console.log(
@@ -439,12 +440,12 @@ class ChatGPTModule(AiModuleInterface):
                 if i >= retries - 1:
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                         f.write(e)
-                    raise MaxTriesExceeded("Max tries exceeded " + locator())
+                    raise MaxTriesExceeded(f"Max tries exceeded {locator()}")
 
                 if "Too Many Requests" in str(e):
 
                     if "You exceeded your current quota, please check your plan and billing details." in str(e):
-                        raise HardLimitReached(f"Your HardLimit is reached!!!!")
+                        raise HardLimitReached("Your HardLimit is reached!!!!")
                     if "That model is currently overloaded with other requests" in str(e):
                         self.console.log(
                             f"[blue]{old_func_name}[/blue]:[orange3] [red]Model Overloaded!![/red], will sleep now! Retry {i + 1}/{retries}[/orange3]")
@@ -465,13 +466,13 @@ class ChatGPTModule(AiModuleInterface):
                 self.console.log(
                     f"[blue]{old_func_name}[/blue]:[orange3]Got InvalidResponseException {str(e)}, Retry  {i + 1}/{retries}[/orange3]")
                 if i >= retries - 1:
-                    raise MaxTriesExceeded("Max tries exceeded " + locator())
+                    raise MaxTriesExceeded(f"Max tries exceeded {locator()}")
                 continue
             except requests.exceptions.ChunkedEncodingError as e:
                 if i >= retries - 1:
                     with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
                         f.write(response_string_orig)
-                    raise MaxTriesExceeded("Max tries exceeded " + locator())
+                    raise MaxTriesExceeded(f"Max tries exceeded {locator()}")
                 self.console.log(
                     f"[blue]{old_func_name}[/blue]:[orange3]Got ChunkedEncodingError, Retry  {i + 1}/{retries}!")
                 continue
@@ -482,28 +483,27 @@ class ChatGPTModule(AiModuleInterface):
                 print(f"###### RESPONSE END @ {locator()} ######")
                 self.logger.exception(e)
                 self.logger.error(locator())
-                self.logger.error(f"Critical error, aborting")
+                self.logger.error("Critical error, aborting")
                 exit(-1)
 
             except Exception as e:
                 self.logger.warning(f"Type of error: {type(e)}")
                 if "The server is overloaded or not ready yet." in str(e):
-                    self.logger.warning(f"Got server overload from model, aborting")
+                    self.logger.warning("Got server overload from model, aborting")
                     exit(-1)
 
                 if "max_tokens" in str(e):
                     raise Exception("Function too long, skipping!")
-                else:
-                    self.logger.exception(e)
-                    print("###### RESPONSE START ######")
-                    print(response_string_orig)
-                    print("###### RESPONSE END ######")
-                    raise Exception(e)
+                self.logger.exception(e)
+                print("###### RESPONSE START ######")
+                print(response_string_orig)
+                print("###### RESPONSE END ######")
+                raise Exception(e)
         with open(os.path.join(AI_MODULES_ROOT, "openAI_core", "temp", "temp_response.json"), "w") as f:
             f.write(response_string_orig)
 
         self.console.log(f"[blue]{old_func_name}[/blue]:[orange3] Max Tries Exceeded[/orange3]")
-        raise MaxTriesExceeded("Max tries exceeded " + locator())
+        raise MaxTriesExceeded(f"Max tries exceeded {locator()}")
 
     def calc_used_tokens(self, function):
         """Calculates the used tokens for a given function, based on the engine
@@ -517,7 +517,9 @@ class ChatGPTModule(AiModuleInterface):
         elif "gpt-4" in self.engine.value or "gpt-3.5" in self.engine.value:
             enc = tiktoken.encoding_for_model("gpt-4")
         else:
-            raise NotImplementedError(f"Engine {self.engine} not supported yet!" + locator())
+            raise NotImplementedError(
+                f"Engine {self.engine} not supported yet!{locator()}"
+            )
         return int(1.015 * len(enc.encode(function)))
 
     def add_missing_commas(self, response_string):

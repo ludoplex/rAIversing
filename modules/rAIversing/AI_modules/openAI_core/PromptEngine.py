@@ -22,7 +22,7 @@ class PromptEngine(Enum):
             return PromptEngine.GPT_4.value
         elif self == PromptEngine.HYBRID:
             return PromptEngine.GPT_3_5_TURBO.value
-        elif self == PromptEngine.GPT_3_5_TURBO or self == PromptEngine.DEFAULT:
+        elif self in [PromptEngine.GPT_3_5_TURBO, PromptEngine.DEFAULT]:
             return PromptEngine.GPT_3_5_TURBO.value
         else:
             raise NotImplementedError("Small context size not implemented for this engine")
@@ -32,7 +32,7 @@ class PromptEngine(Enum):
             return range(0, small_threshold)
         elif self == PromptEngine.HYBRID:
             return range(0, small_threshold)
-        elif self == PromptEngine.GPT_3_5_TURBO or self == PromptEngine.DEFAULT:
+        elif self in [PromptEngine.GPT_3_5_TURBO, PromptEngine.DEFAULT]:
             return range(0, small_threshold)
         else:
             raise NotImplementedError("Small context size not implemented for this engine")
@@ -41,9 +41,9 @@ class PromptEngine(Enum):
         if self == PromptEngine.GPT_4:
             return PromptEngine.GPT_4.value
         elif self == PromptEngine.HYBRID:
-            return PromptEngine.GPT_3_5_TURBO.value + "-16k"
-        elif self == PromptEngine.GPT_3_5_TURBO or self == PromptEngine.DEFAULT:
-            return PromptEngine.GPT_3_5_TURBO.value + "-16k"
+            return f"{PromptEngine.GPT_3_5_TURBO.value}-16k"
+        elif self in [PromptEngine.GPT_3_5_TURBO, PromptEngine.DEFAULT]:
+            return f"{PromptEngine.GPT_3_5_TURBO.value}-16k"
         else:
             raise NotImplementedError("Medium context size not implemented for this engine")
 
@@ -52,7 +52,7 @@ class PromptEngine(Enum):
             return range(small_threshold, medium_threshold)
         elif self == PromptEngine.HYBRID:
             return range(small_threshold, medium_large_threshold)
-        elif self == PromptEngine.GPT_3_5_TURBO or self == PromptEngine.DEFAULT:
+        elif self in [PromptEngine.GPT_3_5_TURBO, PromptEngine.DEFAULT]:
             return range(small_threshold, medium_large_threshold)
         else:
             raise NotImplementedError("Medium context size not implemented for this engine")
@@ -62,8 +62,8 @@ class PromptEngine(Enum):
             return PromptEngine.GPT_4.value #+ "-32k-0613"
         elif self == PromptEngine.HYBRID:
             return PromptEngine.GPT_4.value #+ "-32k-0613"
-        elif self == PromptEngine.GPT_3_5_TURBO or self == PromptEngine.DEFAULT:
-            return PromptEngine.GPT_3_5_TURBO.value + "-16k"
+        elif self in [PromptEngine.GPT_3_5_TURBO, PromptEngine.DEFAULT]:
+            return f"{PromptEngine.GPT_3_5_TURBO.value}-16k"
         else:
             raise NotImplementedError("Large context size not implemented for this engine")
 
@@ -73,7 +73,7 @@ class PromptEngine(Enum):
             #return range(7001, 31001)
         elif self == PromptEngine.HYBRID:
             return range(medium_large_threshold, large_threshold)
-        elif self == PromptEngine.GPT_3_5_TURBO or self == PromptEngine.DEFAULT:
+        elif self in [PromptEngine.GPT_3_5_TURBO, PromptEngine.DEFAULT]:
             return range(small_threshold, medium_large_threshold)  # Same as medium
         else:
             raise NotImplementedError("Large context size not implemented for this engine")

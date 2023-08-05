@@ -27,10 +27,7 @@ def load_funcs_data(file, get_layers=False):
         save_file = json.load(f)
         functions = save_file["functions"]
         layers = save_file["layers"]
-    if get_layers:
-        return functions, layers
-    else:
-        return functions
+    return (functions, layers) if get_layers else functions
 
 
 def make_run_path(model_name, source_dir, run, binary):
@@ -87,9 +84,7 @@ def collect_layered_pairs(original_fn, original_layers, predicted_fn, predicted_
     :param predicted_fn: list of functions
     :return: dict of pairs of function names grouped by layer
     """
-    pairs = {}
-    for x in range(0, len(predicted_layers)):
-        pairs[x] = {}
+    pairs = {x: {} for x in range(0, len(predicted_layers))}
     if len(predicted_layers) == 0:
         print(original_layers)
         print(predicted_layers)
@@ -130,13 +125,7 @@ def collect_layered_pairs(original_fn, original_layers, predicted_fn, predicted_
 
         pairs[layer_index][orig_name] = predicted_name
 
-    result_pairs = {}
-    # remove empty layers
-    for layer, pair in pairs.items():
-        if len(pair) != 0:
-            result_pairs[layer] = pair
-
-    return result_pairs
+    return {layer: pair for layer, pair in pairs.items() if len(pair) != 0}
 
 
 def get_layers_index(layers, function_name):
@@ -175,8 +164,7 @@ def collect_partial_scores(scored):
     hfl_sum = 0
     hfl_count = 0
 
-    layer = 0
-    for group, scores in scored.items():
+    for layer, (group, scores) in enumerate(scored.items()):
         for entrypoint, entry in scores.items():
             pred_name = entry["predicted"]
             if "nothing" in pred_name.lower() or "FUNC_" in pred_name or (
@@ -191,7 +179,6 @@ def collect_partial_scores(scored):
             else:
                 lfl_sum += entry["score"]
                 lfl_count += 1
-        layer += 1
     return {"all": {"score": ((hfl_sum + lfl_sum) / (hfl_count + lfl_count)) if (hfl_count + lfl_count) else 0,
                     "count": hfl_count + lfl_count},
             "hfl": {"score": (hfl_sum / hfl_count) if hfl_count else 0, "count": hfl_count},
@@ -215,7 +202,7 @@ def collect_layered_partial_scores(scored, bucket_factor=0.0):
                                                                                   max_layer)
     while layers_left > 0:
         layer_results = []
-        for i in range(num_layers_for_bucket(current_bucket, bucket_factor)):
+        for _ in range(num_layers_for_bucket(current_bucket, bucket_factor)):
             layer_index = layer_indices.pop(0)
             layer = scored[layer_index]
             if layer_key not in result.keys():
@@ -233,7 +220,7 @@ def collect_layered_partial_scores(scored, bucket_factor=0.0):
             layers_left -= 1
             if layers_left == 0:
                 break
-        if result[layer_key]["count"] > 0 and len(layer_results) > 0:
+        if result[layer_key]["count"] > 0 and layer_results:
             result[layer_key]["score"] = statistics.mean(layer_results)
         elif result[layer_key]["score"] > 0:
             print(
@@ -305,8 +292,9 @@ def calc_relative_percentage_difference(best, worst, actual):
         difference = (actual * 100) - (worst * 100)
         return (difference / range_) * 100
     except ZeroDivisionError:
-        print("Division by zero!!!!! @ calc_relative_percentage_difference " + str(best) + " " + str(worst) + " " + str(
-            actual))
+        print(
+            f"Division by zero!!!!! @ calc_relative_percentage_difference {str(best)} {str(worst)} {str(actual)}"
+        )
         return 0.0
 
 
@@ -371,8 +359,7 @@ def fill_table(table, scores, binary, do_csv=False):
 
 def fill_layered_table(table, scores, do_csv=False):
     score_previous_layer = 0
-    bucket_number = 0
-    for layer_name, layer in scores["pred-layered"].items():
+    for bucket_number, (layer_name, layer) in enumerate(scores["pred-layered"].items()):
         score_pred = scores["pred-layered"][layer_name]["score"]
         count_pred = scores["pred-layered"][layer_name]["count"]
 
@@ -396,11 +383,11 @@ def fill_layered_table(table, scores, do_csv=False):
             if score_pred == 0:
                 score_best_vs_pred = 0
 
-        if score_previous_layer != 0:
-            score_change = (score_pred - score_previous_layer) / score_previous_layer
-        else:
-            score_change = score_pred
-
+        score_change = (
+            (score_pred - score_previous_layer) / score_previous_layer
+            if score_previous_layer != 0
+            else score_pred
+        )
         rdp = calc_relative_percentage_difference(score_best, score_worst, score_pred)
 
         if not do_csv:
@@ -416,7 +403,6 @@ def fill_layered_table(table, scores, do_csv=False):
                  "Act vs Best (direct)": float(f"{score_best_vs_pred_direct * 100:.2f}"), "RDP": float(f"{rdp:.2f}"),
                  "Change": float(f"{score_change * 100:.2f}"), "Counted Actual": float(f"{count_pred}"),
                  "Counted Best": float(f"{count_best}"), "Counted Worst": float(f"{count_worst}")})
-        bucket_number += 1
         score_previous_layer = score_pred
 
 
@@ -425,14 +411,14 @@ def num_layers_for_bucket(bucket_number, growth_factor=0.0):
 
 
 def layers_str_for_bucket(bucket_number, growth_factor=0.0, max_layer=0):
-    num_prev_layers = 0
     needed_layers = num_layers_for_bucket(bucket_number, growth_factor)
-    for i in range(bucket_number):
-        num_prev_layers += num_layers_for_bucket(i, growth_factor)
+    num_prev_layers = sum(
+        num_layers_for_bucket(i, growth_factor) for i in range(bucket_number)
+    )
     bucket_end = min(num_prev_layers + num_layers_for_bucket(bucket_number, growth_factor) - 1, max_layer)
     bucket_start = num_prev_layers
     if needed_layers == 1 or bucket_start == bucket_end:
-        return f"{num_prev_layers}"
+        return f"{bucket_start}"
     else:
         return f"{bucket_start}-{bucket_end}"
 
@@ -459,64 +445,152 @@ def plot_dataframe(df: pandas.DataFrame, title, export_path):
 
 
 def create_table(title):
-    result_table = Table(Column(header="Binary", style="bold bright_yellow on grey23"),
-                         Column(header="Actual\nAll", style="bold cyan1 on grey23", justify="center"),
-                         Column(header="Actual\nHigher", style="bold cyan2 on grey23", justify="center"),
-                         Column(header="Actual\nLowest", style="bold cyan3 on grey23", justify="center"),
-                         Column(header="Best\nCase", style="bold green on grey23", justify="center"),
-                         Column(header=" Worst\nCase", style="bold red on grey23", justify="center"),
-                         Column(header="Act/Best\nAll|Hfl", style="bold green1 on grey23", justify="center"),
-                         Column(header="Act vs Best\n(direct)\nAll|Hfl", style="bold green1 on grey23",
-                                justify="center"),
-                         Column(header="RPD\nAll|Hfl|Lfl", style="bold spring_green2 on grey23", justify="center"),
-                         Column(header="Total\nOrig|Act", style="magenta on grey23", justify="center"),
-                         Column(header="Counted\nActual", style="magenta1 on grey23"),
-                         Column(header="Counted\nBest", style="blue on grey23"),
-                         Column(header="Counted\nWorst", style="magenta3 on grey23"), title=title,
-                         title_style="bold bright_red on grey23 ", style="on grey23", border_style="bold bright_green",
-                         header_style="bold yellow1 on grey23", )
-    return result_table
+    return Table(
+        Column(header="Binary", style="bold bright_yellow on grey23"),
+        Column(
+            header="Actual\nAll",
+            style="bold cyan1 on grey23",
+            justify="center",
+        ),
+        Column(
+            header="Actual\nHigher",
+            style="bold cyan2 on grey23",
+            justify="center",
+        ),
+        Column(
+            header="Actual\nLowest",
+            style="bold cyan3 on grey23",
+            justify="center",
+        ),
+        Column(
+            header="Best\nCase", style="bold green on grey23", justify="center"
+        ),
+        Column(
+            header=" Worst\nCase", style="bold red on grey23", justify="center"
+        ),
+        Column(
+            header="Act/Best\nAll|Hfl",
+            style="bold green1 on grey23",
+            justify="center",
+        ),
+        Column(
+            header="Act vs Best\n(direct)\nAll|Hfl",
+            style="bold green1 on grey23",
+            justify="center",
+        ),
+        Column(
+            header="RPD\nAll|Hfl|Lfl",
+            style="bold spring_green2 on grey23",
+            justify="center",
+        ),
+        Column(
+            header="Total\nOrig|Act",
+            style="magenta on grey23",
+            justify="center",
+        ),
+        Column(header="Counted\nActual", style="magenta1 on grey23"),
+        Column(header="Counted\nBest", style="blue on grey23"),
+        Column(header="Counted\nWorst", style="magenta3 on grey23"),
+        title=title,
+        title_style="bold bright_red on grey23 ",
+        style="on grey23",
+        border_style="bold bright_green",
+        header_style="bold yellow1 on grey23",
+    )
 
 
 def create_csv_table():
-    result_table = pd.DataFrame(
-        columns=["binary", "actual-all", "actual-hfl", "actual-lfl", "best-case", "worst-case", "act/best-all",
-                 "act/best-hfl", "act-vs-best-direct-all", "act-vs-best-direct-hfl", "rpd-all", "rpd-hfl", "rpd-lfl",
-                 "total-orig", "total-act", "counted-actual", "counted-best", "counted-worst"])
-    return result_table
+    return pd.DataFrame(
+        columns=[
+            "binary",
+            "actual-all",
+            "actual-hfl",
+            "actual-lfl",
+            "best-case",
+            "worst-case",
+            "act/best-all",
+            "act/best-hfl",
+            "act-vs-best-direct-all",
+            "act-vs-best-direct-hfl",
+            "rpd-all",
+            "rpd-hfl",
+            "rpd-lfl",
+            "total-orig",
+            "total-act",
+            "counted-actual",
+            "counted-best",
+            "counted-worst",
+        ]
+    )
 
 
 def create_layered_table(title):
-    result_table = Table(Column(header="Layer", style="bold bright_yellow on grey23"),
-                         Column(header="Actual", style="bold cyan1 on grey23", justify="center"),
-                         Column(header="Best\nCase", style="bold green on grey23", justify="center"),
-                         Column(header="Worst\nCase", style="bold red on grey23", justify="center"),
-                         Column(header="Act/Best", style="bold green1 on grey23", justify="center"),
-                         Column(header="Act vs Best\n(direct)", style="bold green1 on grey23", justify="center"),
-                         Column(header="RPD", style="bold spring_green2 on grey23", justify="center"),
-                         Column(header="Change", style="bold spring_green2 on grey23", justify="center"),
-                         Column(header="Counted\nActual", style="magenta1 on grey23"),
-                         Column(header="Counted\nBest", style="blue on grey23"),
-                         Column(header="Counted\nWorst", style="magenta3 on grey23"), title=title,
-                         title_style="bold bright_red on grey23 ", style="on grey23", border_style="bold bright_green",
-                         header_style="bold yellow1 on grey23", )
-    return result_table
+    return Table(
+        Column(header="Layer", style="bold bright_yellow on grey23"),
+        Column(
+            header="Actual", style="bold cyan1 on grey23", justify="center"
+        ),
+        Column(
+            header="Best\nCase", style="bold green on grey23", justify="center"
+        ),
+        Column(
+            header="Worst\nCase", style="bold red on grey23", justify="center"
+        ),
+        Column(
+            header="Act/Best", style="bold green1 on grey23", justify="center"
+        ),
+        Column(
+            header="Act vs Best\n(direct)",
+            style="bold green1 on grey23",
+            justify="center",
+        ),
+        Column(
+            header="RPD",
+            style="bold spring_green2 on grey23",
+            justify="center",
+        ),
+        Column(
+            header="Change",
+            style="bold spring_green2 on grey23",
+            justify="center",
+        ),
+        Column(header="Counted\nActual", style="magenta1 on grey23"),
+        Column(header="Counted\nBest", style="blue on grey23"),
+        Column(header="Counted\nWorst", style="magenta3 on grey23"),
+        title=title,
+        title_style="bold bright_red on grey23 ",
+        style="on grey23",
+        border_style="bold bright_green",
+        header_style="bold yellow1 on grey23",
+    )
 
 
 def create_layered_csv_table():
-    csv_table = pd.DataFrame(
-        columns=["Bucket", "Layer", "Actual", "Best Case", "Worst Case", "Act/Best", "Act vs Best (direct)", "RDP",
-                 "Change", "Counted Actual", "Counted Best", "Counted Worst"])
-    return csv_table
+    return pd.DataFrame(
+        columns=[
+            "Bucket",
+            "Layer",
+            "Actual",
+            "Best Case",
+            "Worst Case",
+            "Act/Best",
+            "Act vs Best (direct)",
+            "RDP",
+            "Change",
+            "Counted Actual",
+            "Counted Best",
+            "Counted Worst",
+        ]
+    )
 
 
 def findDiff(d1, d2, path=""):
     for k in d1:
         if k in d2:
             if type(d1[k]) is dict:
-                findDiff(d1[k],d2[k], "%s -> %s" % (path, k) if path else k)
+                findDiff(d1[k], d2[k], f"{path} -> {k}" if path else k)
             if d1[k] != d2[k]:
-                result = [ "%s: " % path, " - %s : %s" % (k, d1[k]) , " + %s : %s" % (k, d2[k])]
+                result = [f"{path}: ", f" - {k} : {d1[k]}", f" + {k} : {d2[k]}"]
                 print("\n".join(result))
         else:
-            print ("%s%s as key not in d2\n" % ("%s: " % path if path else "", k))
+            print("%s%s as key not in d2\n" % (f"{path}: " if path else "", k))
